@@ -48,6 +48,7 @@ print.prt
 */build/
 build/
 install/
+isis/src/.vscode/
 
 # Unignore the documentation build
 !isis/src/docsys/build
