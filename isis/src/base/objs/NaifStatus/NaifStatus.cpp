@@ -16,7 +16,15 @@ find files of those names at the top level of this repository. **/
 #include "PvlToPvlTranslationManager.h"
 
 namespace Isis {
-  bool NaifStatus::initialized = false;
+  /**
+   * Readies the current CSPICE stack entry for proper error handling.
+   */
+  void NaifStatus::Initialize() {
+    SpiceChar returnAct[32] = "RETURN";
+    SpiceChar printAct[32] = "NONE";
+    erract_c("SET", sizeof(returnAct), returnAct);   // Reset action to return
+    errprt_c("SET", sizeof(printAct), printAct);     // ... and print nothing
+  }
 
   /**
    * This method looks for any naif errors that might have occurred. It
@@ -26,14 +34,6 @@ namespace Isis {
    * @param resetNaif True if the NAIF error status should be reset (naif calls valid)
    */
   void NaifStatus::CheckErrors(bool resetNaif) {
-    if(!initialized) {
-      SpiceChar returnAct[32] = "RETURN";
-      SpiceChar printAct[32] = "NONE";
-      erract_c("SET", sizeof(returnAct), returnAct);   // Reset action to return
-      errprt_c("SET", sizeof(printAct), printAct);     // ... and print nothing
-      initialized = true;
-    }
-
     // Do nothing if NAIF didn't fail
     //getmsg_c("", 0, NULL);
     if(!failed_c()) return;
