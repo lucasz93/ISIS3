@@ -21,6 +21,7 @@ find files of those names at the top level of this repository. **/
 #include "mocxtrack.h"
 #include "TextFile.h"
 #include "AlphaCube.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -422,9 +423,9 @@ namespace Isis {
    */
   void MocLabels::InitWago() {
     // Only do this once
-    static bool firstTime = true;
-    if(!firstTime) return;
-    firstTime = false;
+    auto naifState = NaifContext::get()->top();
+    if(!naifState->mocWagoLoaded()) return;
+    naifState->set_mocWagoLoaded(true);
 
     // Load naif kernels
     QString lskKern = p_lsk.expanded();

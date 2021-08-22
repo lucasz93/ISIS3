@@ -20,6 +20,7 @@ find files of those names at the top level of this repository. **/
 #include "iTime.h"
 #include "NaifStatus.h"
 #include "Spice.h"
+#include "NaifContext.h"
 
 /**
  * @author ????-??-?? Kris Becker
@@ -67,8 +68,8 @@ namespace Isis {
    * bodies.
    */
   static void loadNaifTiming() {
-    static bool naifLoaded = false;
-    if (!naifLoaded) {
+    auto naifState = NaifContext::get()->top();
+    if (!naifState->mdisTimingLoaded()) {
       //  Load the NAIF kernels to determine timing data
       Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
       leapseconds = leapseconds.highestVersion();
@@ -88,7 +89,7 @@ namespace Isis {
       furnsh_c(pckName.toLatin1().data());
 
       //  Ensure it is loaded only once
-      naifLoaded = true;
+      naifState->set_mdisTimingLoaded(true);
     }
     return;
   }

@@ -26,12 +26,11 @@ find files of those names at the top level of this repository. **/
 #include "Pvl.h"
 #include "SpecialPixel.h"
 #include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 
 namespace Isis {
-
-bool HiCalConf::_naifLoaded = false;
 
 /**
  * @brief Default constructor for HiCalConf
@@ -411,7 +410,8 @@ bool HiCalConf::_naifLoaded = false;
  */
 void HiCalConf::loadNaifTiming( ) {
   NaifStatus::CheckErrors();
-  if (!_naifLoaded) {
+  auto naifState = NaifContext::get()->top();
+  if (!naifState->hiCalTimingLoaded()) {
 //  Load the NAIF kernels to determine timing data
     Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
     leapseconds = leapseconds.highestVersion();
@@ -437,7 +437,7 @@ void HiCalConf::loadNaifTiming( ) {
     NaifStatus::CheckErrors();
 
 //  Ensure it is loaded only once
-    _naifLoaded = true;
+    naifState->set_hiCalTimingLoaded(tre);
   }
   return;
 }

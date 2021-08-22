@@ -21,6 +21,7 @@ find files of those names at the top level of this repository. **/
 #include "Pvl.h"
 #include "PvlGroup.h"
 #include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace UA::HiRISE;
 using std::endl;
@@ -31,7 +32,6 @@ namespace Isis {
 
 
   static  geos::geom::GeometryFactory::Ptr geosFactory = geos::geom::GeometryFactory::create();
-  bool HiJitCube::naifLoaded = false;
   int npSamp0[] = {0, 1971, 3964, 5963, 7970, 7971, 7971, 9975, 9976, 9976, 11981, 13986, 15984, 17982};
   int npSamps[] = {2021, 2043, 2048, 2052, 2055, 2053, 2053, 2053, 2054, 2055, 2051, 2049, 2043, 2018};
   bool sampinit = false;
@@ -138,7 +138,8 @@ namespace Isis {
 
 
   void HiJitCube::loadNaifTiming() {
-    if(!naifLoaded) {
+    auto naifState = NaifContext::get()->top();
+    if(!naifState->hiJitCubeLoaded()) {
 //  Load the NAIF kernels to determine timing data
       Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
       leapseconds = leapseconds.highestVersion();
@@ -156,7 +157,7 @@ namespace Isis {
       NaifStatus::CheckErrors();
 
 //  Ensure it is loaded only once
-      naifLoaded = true;
+      naifState->set_hiJitCubeLoaded(true);
     }
     return;
   }

@@ -21,6 +21,7 @@ find files of those names at the top level of this repository. **/
 #include "FileName.h"
 #include "LineManager.h"
 #include "NaifStatus.h"
+#include "NaifContext.h"
 #include "IString.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
@@ -50,8 +51,8 @@ namespace Isis {
  */
 
 static void loadNaifTiming() {
-  static bool naifLoaded = false;
-  if (!naifLoaded) {
+  auto naifState = NaifContext::get()->top();
+  if (!naifState->amicaTimingLoaded()) {
 
 //  Load the NAIF kernels to determine timing data
     Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
@@ -81,7 +82,7 @@ static void loadNaifTiming() {
 
 
 //  Ensure it is loaded only once
-    naifLoaded = true;
+    naifState->set_amicaTimingLoaded(true);
   }
   return;
 }
