@@ -21,8 +21,6 @@ namespace Isis {
   class NaifStatus {
     public:
       static void CheckErrors(bool resetNaif = true);
-    private:
-      static bool initialized;
   };
 };
 
