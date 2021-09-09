@@ -16,7 +16,7 @@ find files of those names at the top level of this repository. **/
 #include "CameraSkyMap.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "RadialDistortionMap.h"
 
 using namespace std;

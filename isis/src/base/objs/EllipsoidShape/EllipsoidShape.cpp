@@ -9,16 +9,14 @@ find files of those names at the top level of this repository. **/
 #include <QVector>
 
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Distance.h"
 #include "IException.h"
 #include "IString.h"
 #include "Latitude.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "ShapeModel.h"
 #include "SurfacePoint.h"
 

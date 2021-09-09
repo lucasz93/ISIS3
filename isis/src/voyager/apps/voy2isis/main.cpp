@@ -22,13 +22,13 @@ find files of those names at the top level of this repository. **/
 #include <QString>
 #include <QTextStream>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "FileName.h"
 #include "History.h"
 #include "IException.h"
 #include "IString.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "ProcessImportPds.h"
 #include "ProgramLauncher.h"
 #include "Pvl.h"

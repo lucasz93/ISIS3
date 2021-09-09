@@ -20,7 +20,7 @@ find files of those names at the top level of this repository. **/
 #include "iTime.h"
 #include "FileName.h"
 #include "LineManager.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "NaifContext.h"
 #include "IString.h"
 #include "Pvl.h"

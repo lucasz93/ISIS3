@@ -19,9 +19,7 @@ find files of those names at the top level of this repository. **/
 #include <vector>
 
 // naif third party includes
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Cube.h"
 #include "CubeManager.h"
@@ -33,7 +31,7 @@ find files of those names at the top level of this repository. **/
 #include "Latitude.h"
 //#include "LinearAlgebra.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Portal.h"
 #include "Projection.h"
 #include "Pvl.h"

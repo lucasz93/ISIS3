@@ -20,7 +20,7 @@ find files of those names at the top level of this repository. **/
 #include "IString.h"
 #include "iTime.h"
 #include "FileName.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Preference.h"
 
 using namespace std;

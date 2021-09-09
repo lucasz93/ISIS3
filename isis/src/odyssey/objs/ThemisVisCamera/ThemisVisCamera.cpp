@@ -16,7 +16,7 @@ find files of those names at the top level of this repository. **/
 #include "CameraFocalPlaneMap.h"
 #include "CameraSkyMap.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "PushFrameCameraDetectorMap.h"
 #include "PushFrameCameraGroundMap.h"
 #include "ThemisVisDistortionMap.h"

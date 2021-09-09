@@ -11,9 +11,7 @@ find files of those names at the top level of this repository. **/
 #include <iostream>
 #include <iomanip>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include <QString>
 
@@ -24,7 +22,7 @@ find files of those names at the top level of this repository. **/
 #include "IString.h"
 #include "iTime.h"
 #include "FileName.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Pvl.h"
 #include "ReseauDistortionMap.h"
 

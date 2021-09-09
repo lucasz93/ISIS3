@@ -11,9 +11,7 @@ find files of those names at the top level of this repository. **/
 
 #include <vector>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 class QString;
 
@@ -64,7 +62,7 @@ namespace Isis {
 
     public:
       // constructors
-      Target(Spice *spice, Pvl &label);
+      Target(Spice *spice, Pvl &label, NaifContextPtr naif);
       Target(Pvl &label);
       Target();
 
@@ -93,10 +91,10 @@ namespace Isis {
       std::vector<Angle> poleDecCoefs();
       std::vector<Angle> pmCoefs();
 
-      static SpiceInt lookupNaifBodyCode(QString name);
+      static SpiceInt lookupNaifBodyCode(QString name, NaifContextPtr naif = NaifContext::acquire());
       // Static conversion methods
-      static PvlGroup radiiGroup(QString target);
-      static PvlGroup radiiGroup(Pvl &cubeLab, const PvlGroup &mapGroup);
+      static PvlGroup radiiGroup(QString target, NaifContextPtr naif = NaifContext::acquire());
+      static PvlGroup radiiGroup(Pvl &cubeLab, const PvlGroup &mapGroup, NaifContextPtr naif = NaifContext::acquire());
 
       std::vector<double> poleRaNutPrecCoefs();
       std::vector<double> poleDecNutPrecCoefs();
@@ -107,8 +105,8 @@ namespace Isis {
       std::vector<Angle> sysNutPrecCoefs();
 
     private:
-      SpiceInt lookupNaifBodyCode(Pvl &lab) const;
-      static PvlGroup radiiGroup(int bodyFrameCode);
+      SpiceInt lookupNaifBodyCode(Pvl &lab, NaifContextPtr naif) const;
+      static PvlGroup radiiGroup(int bodyFrameCode, NaifContextPtr naif);
       SpiceInt *m_bodyCode;          /**< The NaifBodyCode value, if it exists in the
                                        labels. Otherwise, if the target is sky,
                                        it's the SPK code and if not sky then it's

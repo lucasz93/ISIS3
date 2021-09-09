@@ -10,9 +10,7 @@ find files of those names at the top level of this repository. **/
 #include <string>
 #include <vector>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Pvl.h"
 #include "ShapeModel.h"
@@ -290,36 +288,38 @@ namespace Isis {
       virtual ~Spice();
 
       // Methods
-      virtual void setTime(const iTime &time);
-      void instrumentPosition(double p[3]) const;
-      virtual void instrumentBodyFixedPosition(double p[3]) const;
+      virtual void setTime(const iTime &time, NaifContextPtr naif);
+      void instrumentPosition(double p[3], NaifContextPtr naif) const;
+      virtual void instrumentBodyFixedPosition(double p[3], NaifContextPtr naif) const;
       virtual void sunPosition(double p[3]) const;
-      virtual double targetCenterDistance() const;
-      virtual double sunToBodyDist() const;
+      virtual double targetCenterDistance(NaifContextPtr naif) const;
+      virtual double sunToBodyDist(NaifContextPtr naif) const;
 
       virtual Longitude solarLongitude();
-      virtual void instrumentBodyFixedVelocity(double v[3]) const;
+      virtual void instrumentBodyFixedVelocity(double v[3], NaifContextPtr naif) const;
       iTime time() const;
 
       void radii(Distance r[3]) const;
 
       virtual void createCache(iTime startTime, iTime endTime,
-                               const int size, double tol);
+                               const int size, double tol,
+                               NaifContextPtr naif);
       virtual iTime cacheStartTime() const;
       virtual iTime cacheEndTime() const;
 
-      virtual void subSpacecraftPoint(double &lat, double &lon);
-      virtual void subSolarPoint(double &lat, double &lon);
+      virtual void subSpacecraftPoint(double &lat, double &lon, NaifContextPtr naif);
+      virtual void subSolarPoint(double &lat, double &lon, NaifContextPtr naif);
 
       virtual Target *target() const;
       QString targetName() const;
 
-      virtual iTime getClockTime(QString clockValue,
+      virtual iTime getClockTime(NaifContextPtr naif,
+                                 QString clockValue,
                                  int sclkCode = -1,
                                  bool clockTicks=false);
-      SpiceDouble getDouble(const QString &key, int index = 0);
-      SpiceInt getInteger(const QString &key,   int index = 0);
-      QString getString(const QString &key,     int index = 0);
+      SpiceDouble getDouble(NaifContextPtr naif, const QString &key, int index = 0);
+      SpiceInt getInteger(NaifContextPtr naif, const QString &key,   int index = 0);
+      QString getString(NaifContextPtr naif, const QString &key,     int index = 0);
 
       virtual SpicePosition *sunPosition() const;
       virtual SpicePosition *instrumentPosition() const;
@@ -352,7 +352,7 @@ namespace Isis {
         SpiceByteCodeType //!< SpiceByteCode type
       };
 
-      QVariant readValue(QString key, SpiceValueType type, int index = 0);
+      QVariant readValue(NaifContextPtr naif, QString key, SpiceValueType type, int index = 0);
 
       void storeResult(QString name, SpiceValueType type, QVariant value);
       QVariant getStoredResult(QString name, SpiceValueType type);
@@ -360,7 +360,7 @@ namespace Isis {
       void storeValue(QString key, int index, SpiceValueType type,
                       QVariant value);
       QVariant readStoredValue(QString key, SpiceValueType type, int index);
-      virtual void computeSolarLongitude(iTime et);
+      virtual void computeSolarLongitude(iTime et, NaifContextPtr naif);
 
       // Leave these protected so that inheriting classes don't
       // have to convert between double and spicedouble
@@ -391,7 +391,7 @@ namespace Isis {
       void csmInit(Cube &cube, Pvl label);
       void defaultInit();
 
-      void load(PvlKeyword &key, bool notab);
+      void load(PvlKeyword &key, bool notab, NaifContextPtr naif);
 
       QVector<QString> * m_kernels; //!< Vector containing kernels filenames
 

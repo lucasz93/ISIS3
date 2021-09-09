@@ -10,7 +10,7 @@ find files of those names at the top level of this repository. **/
 #include <sstream>
 #include <string>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "Camera.h"
 #include "FileName.h"
@@ -20,7 +20,7 @@ find files of those names at the top level of this repository. **/
 #include "iTime.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "NaifContext.h"
 
 using namespace UA::HiRISE;

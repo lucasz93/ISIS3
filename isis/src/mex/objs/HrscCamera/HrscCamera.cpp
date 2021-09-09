@@ -17,7 +17,7 @@ find files of those names at the top level of this repository. **/
 #include "iTime.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Statistics.h"
 #include "VariableLineScanCameraDetectorMap.h"
 

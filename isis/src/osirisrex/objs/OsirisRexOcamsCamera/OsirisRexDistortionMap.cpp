@@ -10,7 +10,7 @@ find files of those names at the top level of this repository. **/
 #include <QtGlobal>
 #include <QtMath>
 
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "OsirisRexDistortionMap.h"
 #include "CameraFocalPlaneMap.h"
 

@@ -12,7 +12,7 @@ find files of those names at the top level of this repository. **/
 #include <QString>
 #include <QVector>
 
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "iTime.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"

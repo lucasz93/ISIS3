@@ -10,9 +10,7 @@ find files of those names at the top level of this repository. **/
 #include <iostream>
 #include <iomanip>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Camera.h"
 #include "TProjection.h"

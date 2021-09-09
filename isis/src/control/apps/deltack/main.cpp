@@ -13,7 +13,7 @@ find files of those names at the top level of this repository. **/
 #include <QList>
 #include <vector>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "BundleAdjust.h"
 #include "BundleResults.h"

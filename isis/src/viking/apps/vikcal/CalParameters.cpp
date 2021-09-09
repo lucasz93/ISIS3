@@ -10,9 +10,7 @@ find files of those names at the top level of this repository. **/
 
 #include <QString>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "CalParameters.h"
 #include "Camera.h"
@@ -24,7 +22,7 @@ find files of those names at the top level of this repository. **/
 #include "LeastSquares.h"
 #include "Pvl.h"
 #include "TextFile.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {

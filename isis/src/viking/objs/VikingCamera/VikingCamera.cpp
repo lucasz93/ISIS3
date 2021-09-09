@@ -9,9 +9,7 @@ find files of those names at the top level of this repository. **/
 
 #include "VikingCamera.h"
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include <QString>
 
@@ -22,7 +20,7 @@ find files of those names at the top level of this repository. **/
 #include "FileName.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "ReseauDistortionMap.h"
 
 using namespace std;

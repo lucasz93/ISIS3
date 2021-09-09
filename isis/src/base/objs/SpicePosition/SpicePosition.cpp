@@ -18,7 +18,7 @@ find files of those names at the top level of this repository. **/
 #include "IException.h"
 #include "LeastSquares.h"
 #include "LineEquation.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "NumericalApproximation.h"
 #include "PolynomialUnivariate.h"
 #include "TableField.h"
@@ -246,8 +246,8 @@ namespace Isis {
    *                      individual methods for each Source type
    *                      to make software more readable.
    */
-  const std::vector<double> &SpicePosition::SetEphemerisTime(double et) {
-    NaifStatus::CheckErrors();
+  const std::vector<double> &SpicePosition::SetEphemerisTime(double et, NaifContextPtr naif) {
+    naif->CheckErrors();
 
     // Save the time
     if(et == p_et) {
@@ -270,10 +270,10 @@ namespace Isis {
       SetEphemerisTimePolyFunctionOverHermiteConstant();
     }
     else {  // Read from the kernel
-      SetEphemerisTimeSpice();
+      SetEphemerisTimeSpice(naif);
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Return the coordinate
     return p_coordinate;
@@ -294,7 +294,7 @@ namespace Isis {
    * @param size        Number of coordinates/positions to keep in the cache
    *
    */
-  void SpicePosition::LoadCache(double startTime, double endTime, int size) {
+  void SpicePosition::LoadCache(double startTime, double endTime, int size, NaifContextPtr naif) {
     // Make sure cache isn't already loaded
     if(p_source == Memcache || p_source == HermiteCache) {
       QString msg = "A SpicePosition cache has already been created";
@@ -321,7 +321,7 @@ namespace Isis {
     std::vector<ale::State> stateCache;
     for(int i = 0; i < size; i++) {
       double et = p_cacheTime[i];
-      SetEphemerisTime(et);
+      SetEphemerisTime(et, naif);
       ale::State currentState = ale::State(ale::Vec3d(p_coordinate));
       if (p_hasVelocity) {
         currentState.velocity = ale::Vec3d(p_velocity);
@@ -351,8 +351,8 @@ namespace Isis {
    * @param time   single ephemeris time in seconds to cache
    *
    */
-  void SpicePosition::LoadCache(double time) {
-    LoadCache(time, time, 1);
+  void SpicePosition::LoadCache(double time, NaifContextPtr naif) {
+    LoadCache(time, time, 1, naif);
   }
 
 
@@ -365,7 +365,7 @@ namespace Isis {
    * @param isdPos The ALE ISD as a JSON object.
    *
    */
-  void SpicePosition::LoadCache(json &isdPos) {
+  void SpicePosition::LoadCache(json &isdPos, NaifContextPtr naif) {
     if (p_source != Spice) {
         throw IException(IException::Programmer, "SpicePosition::LoadCache(json) only supports Spice source", _FILEINFO_);
     }
@@ -401,7 +401,7 @@ namespace Isis {
     m_state = new ale::States(p_cacheTime, stateCache);
 
     p_source = Memcache;
-    SetEphemerisTime(p_cacheTime[0]);
+    SetEphemerisTime(p_cacheTime[0], naif);
   }
 
   /** Cache J2000 positions using a table file.
@@ -426,7 +426,7 @@ namespace Isis {
    *            PolyFunction section to only go up to table.Records() - 1
    *
    */
-  void SpicePosition::LoadCache(Table &table) {
+  void SpicePosition::LoadCache(Table &table, NaifContextPtr naif) {
 
     // Make sure cache isn't alread loaded
     if(p_source == Memcache || p_source == HermiteCache) {
@@ -524,9 +524,9 @@ namespace Isis {
       double baseTime = (double)rec[0];
       double timeScale = (double)rec[1];
       double degree = (double)rec[2];
-      SetPolynomialDegree((int) degree);
+      SetPolynomialDegree((int) degree, naif);
       SetOverrideBaseTime(baseTime, timeScale);
-      SetPolynomial(coeffX, coeffY, coeffZ);
+      SetPolynomial(naif, coeffX, coeffY, coeffZ);
       if (degree > 0)  p_hasVelocity = true;
       if(degree == 0  && m_state->hasVelocity()) p_hasVelocity = true;
     }
@@ -546,9 +546,9 @@ namespace Isis {
    *            p_source and will be read by LoadCache(Table).
    *   @history 2011-01-05 Debbie A. Cook - Added PolyFunction
    */
-  Table SpicePosition::Cache(const QString &tableName) {
+  Table SpicePosition::Cache(const QString &tableName, NaifContextPtr naif) {
     if (p_source == PolyFunctionOverHermiteConstant) {
-      LineCache(tableName);
+      LineCache(tableName, naif);
       // TODO Figure out how to get the tolerance -- for now hard code .01
       Memcache2HermiteCache(0.01);
     }
@@ -605,7 +605,7 @@ namespace Isis {
 
     else if(p_source == PolyFunction  &&  p_degree == 0  &&  p_fullCacheSize == 1){
       // Just load the position for the single epoch
-      return LineCache(tableName);
+      return LineCache(tableName, naif);
     }
     // Load the coefficients for the curves fit to the 3 camera angles
     else if (p_source == PolyFunction) {
@@ -701,17 +701,17 @@ namespace Isis {
    *   @history 2012-01-25 Debbie A. Cook - Modified error checking for p_source
    *                         to allow all function sources (>=HermiteCache)
    */
-  Table SpicePosition::LineCache(const QString &tableName) {
+  Table SpicePosition::LineCache(const QString &tableName, NaifContextPtr naif) {
 
     // Apply the function and fill the caches
-    if(p_source >= HermiteCache)  ReloadCache();
+    if(p_source >= HermiteCache)  ReloadCache(naif);
 
     if(p_source != Memcache) {
       QString msg = "Only cached positions can be returned as a line cache of positions and time";
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
     // Load the table and return it to caller
-    return Cache(tableName);
+    return Cache(tableName, naif);
   }
 
 
@@ -726,8 +726,8 @@ namespace Isis {
    *   @history 2012-01-25 Debbie A. Cook - Modified error checking for type
    *                        to allow all function types (>=HermiteCache)
    */
-  void SpicePosition::ReloadCache() {
-    NaifStatus::CheckErrors();
+  void SpicePosition::ReloadCache(NaifContextPtr naif) {
+    naif->CheckErrors();
 
     // Save current et
     double et = p_et;
@@ -749,7 +749,7 @@ namespace Isis {
       p_et = -DBL_MAX;   // Forces recalculation in SetEphemerisTime
       std::vector<ale::State> stateCache;
       for (std::vector<double>::size_type pos = 0; pos < p_cacheTime.size(); pos++) {
-        SetEphemerisTime(p_cacheTime.at(pos));
+        SetEphemerisTime(p_cacheTime.at(pos), naif);
         stateCache.push_back(ale::State(ale::Vec3d(p_coordinate), ale::Vec3d(p_velocity)));
       }
       if (m_state != NULL) {
@@ -760,7 +760,7 @@ namespace Isis {
     else {
     // Load the position for the single updated time instance
       p_et = p_cacheTime[0];
-      SetEphemerisTime(p_et);
+      SetEphemerisTime(p_et, naif);
       std::vector<ale::State> stateCache;
       stateCache.push_back(ale::Vec3d(p_coordinate));
       std::vector<double> timeCache;
@@ -774,9 +774,9 @@ namespace Isis {
     // Set source to cache and reset current et
     p_source = Memcache;
     p_et = -DBL_MAX;
-    SetEphemerisTime(et);
+    SetEphemerisTime(et, naif);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -790,18 +790,18 @@ namespace Isis {
    * from the polynomial function.
    *
    */
-   Table SpicePosition::LoadHermiteCache(const QString &tableName) {
+   Table SpicePosition::LoadHermiteCache(const QString &tableName, NaifContextPtr naif) {
     // find the first and last time values
     double firstTime = p_fullCacheStartTime;
     double lastTime = p_fullCacheEndTime;
     int cacheTimeSize = (int) p_fullCacheSize;
 
     // Framing cameras are already cached and don't need to be reduced.
-    if(cacheTimeSize == 1) return Cache(tableName);
+    if(cacheTimeSize == 1) return Cache(tableName, naif);
 
     //If it's already a hermite cache, just return it.
     if (p_source == HermiteCache) {
-      return Cache(tableName);
+      return Cache(tableName, naif);
     }
 
     // Make sure a polynomial function is already loaded
@@ -915,9 +915,9 @@ namespace Isis {
     p_source = HermiteCache;
     double et = p_et;
     p_et = -DBL_MAX;
-    SetEphemerisTime(et);
+    SetEphemerisTime(et, naif);
 
-    return Cache(tableName);
+    return Cache(tableName, naif);
   }
 
 
@@ -927,7 +927,7 @@ namespace Isis {
    *  where t = (time - p_baseTime) / p_timeScale.
    *
    */
-  void SpicePosition::SetPolynomial(Source type) {
+  void SpicePosition::SetPolynomial(NaifContextPtr naif, Source type) {
     std::vector<double> XC, YC, ZC;
 
     // Check to see if the position is already a Polynomial Function
@@ -948,7 +948,7 @@ namespace Isis {
       XC.assign(p_degree + 1, 0.);
       YC.assign(p_degree + 1, 0.);
       ZC.assign(p_degree + 1, 0.);
-      SetPolynomial(XC, YC, ZC, type);
+      SetPolynomial(naif, XC, YC, ZC, type);
       return;
     }
 
@@ -962,7 +962,7 @@ namespace Isis {
 
     if(size == 1) {
       double t = p_cacheTime.at(0);
-      SetEphemerisTime(t);
+      SetEphemerisTime(t, naif);
       XC.push_back(p_coordinate[0]);
       YC.push_back(p_coordinate[1]);
       ZC.push_back(p_coordinate[2]);
@@ -970,11 +970,11 @@ namespace Isis {
     else if(size == 2) {
       // Load the times and get the corresponding coordinates
       double t1 = p_cacheTime.at(0);
-      SetEphemerisTime(t1);
+      SetEphemerisTime(t1, naif);
       std::vector<double> coord1 = p_coordinate;
       t1 = (t1 - p_baseTime) / p_timeScale;
       double t2 = p_cacheTime.at(1);
-      SetEphemerisTime(t2);
+      SetEphemerisTime(t2, naif);
       std::vector<double> coord2 = p_coordinate;
       t2 = (t2 - p_baseTime) / p_timeScale;
       double slope[3];
@@ -1002,7 +1002,7 @@ namespace Isis {
       for(std::vector<double>::size_type pos = 0; pos < p_cacheTime.size(); pos++) {
         double t = p_cacheTime.at(pos);
         time.push_back( (t - p_baseTime) / p_timeScale);
-        SetEphemerisTime(t);
+        SetEphemerisTime(t, naif);
         std::vector<double> coord = p_coordinate;
 
         fitX->AddKnown(time, coord[0]);
@@ -1033,7 +1033,7 @@ namespace Isis {
     }
 
     // Now that the coefficients have been calculated set the polynomial with them
-    SetPolynomial(XC, YC, ZC);
+    SetPolynomial(naif, XC, YC, ZC);
     return;
   }
 
@@ -1051,7 +1051,8 @@ namespace Isis {
    * @internal
    *   @history 2012-02-05 Debbie A. Cook - Added type argument
    */
-  void SpicePosition::SetPolynomial(const std::vector<double>& XC,
+  void SpicePosition::SetPolynomial(NaifContextPtr naif,
+                                    const std::vector<double>& XC,
                                     const std::vector<double>& YC,
                                     const std::vector<double>& ZC,
                                     const Source type) {
@@ -1083,7 +1084,7 @@ namespace Isis {
     // Update the current position
     double et = p_et;
     p_et = -DBL_MAX;
-    SetEphemerisTime(et);
+    SetEphemerisTime(et, naif);
 
     return;
   }
@@ -1429,7 +1430,7 @@ namespace Isis {
    *            (moved code from SetEphemerisTime() to its own
    *            method)
    */
-  void SpicePosition::SetEphemerisTimeSpice() {
+  void SpicePosition::SetEphemerisTimeSpice(NaifContextPtr naif) {
 
     double state[6];
     bool hasVelocity;
@@ -1439,10 +1440,10 @@ namespace Isis {
     // the appropriate internal representation!!!
     computeStateVector(getAdjustedEphemerisTime(), getTargetCode(), getObserverCode(),
                        "J2000", GetAberrationCorrection(), state, hasVelocity,
-                       lt);
+                       lt, naif);
 
     // Set the internal state
-    setStateVector(state, hasVelocity);
+    setStateVector(state, hasVelocity, naif);
     setLightTime(lt);
     return;
   }
@@ -1499,7 +1500,7 @@ namespace Isis {
    * @param [in] degree Degree of the polynomial to be fit
    *
    */
-  void SpicePosition::SetPolynomialDegree(int degree) {
+  void SpicePosition::SetPolynomialDegree(int degree, NaifContextPtr naif) {
     // Adjust the degree for the data
     if(p_fullCacheSize == 1) {
       degree = 0;
@@ -1524,7 +1525,7 @@ namespace Isis {
         coefZ.push_back(0.);
       }
       p_degree = degree;
-      SetPolynomial(coefX, coefY, coefZ);
+      SetPolynomial(naif, coefX, coefY, coefZ);
     }
     // ... or reduced (decrease the number of terms)
     else if(p_degree > degree) {
@@ -1538,7 +1539,7 @@ namespace Isis {
         coefZ.push_back(p_coefficients[2][icoef]);
       }
       p_degree = degree;
-      SetPolynomial(coefX, coefY, coefZ);
+      SetPolynomial(naif, coefX, coefY, coefZ);
     }
   }
 
@@ -1555,10 +1556,10 @@ namespace Isis {
    * @internal
    *   @history 2009-08-03 Jeannie Walldren - Original version.
    */
-  void SpicePosition::ReloadCache(Table &table) {
+  void SpicePosition::ReloadCache(Table &table, NaifContextPtr naif) {
     p_source = Spice;
     ClearCache();
-    LoadCache(table);
+    LoadCache(table, naif);
   }
 
   /** Load the time cache.  This method should works with the LoadCache(startTime, endTime, size) method
@@ -1583,10 +1584,10 @@ namespace Isis {
   /** Compute and return the coordinate at the center time
    *
    */
-  const std::vector<double> &SpicePosition::GetCenterCoordinate() {
+  const std::vector<double> &SpicePosition::GetCenterCoordinate(NaifContextPtr naif) {
     // Compute the center time
     double etCenter = (p_fullCacheEndTime + p_fullCacheStartTime) / 2.;
-    SetEphemerisTime(etCenter);
+    SetEphemerisTime(etCenter, naif);
 
     return Coordinate();
   }
@@ -1743,27 +1744,28 @@ namespace Isis {
                                          const QString &refFrame,
                                          const QString &abcorr,
                                          double state[6], bool &hasVelocity,
-                                         double &lightTime) const {
+                                         double &lightTime,
+                                         NaifContextPtr naif) const {
 
     // First try getting the entire state (including the velocity vector)
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     hasVelocity = true;
     lightTime = 0.0;
-    spkez_c((SpiceInt) target, (SpiceDouble) et, refFrame.toLatin1().data(),
-            abcorr.toLatin1().data(), (SpiceInt) observer, state, &lightTime);
+    naif->spkez_c((SpiceInt) target, (SpiceDouble) et, refFrame.toLatin1().data(),
+                  abcorr.toLatin1().data(), (SpiceInt) observer, state, &lightTime);
 
     // If Naif fails attempting to get the entire state, assume the velocity vector is
     // not available and just get the position.  First turn off Naif error reporting and
     // return any error without printing them.
-    SpiceBoolean spfailure = failed_c();
-    reset_c();                   // Reset Naif error system to allow caller to recover
+    SpiceBoolean spfailure = naif->failed_c();
+    naif->reset_c();                   // Reset Naif error system to allow caller to recover
     if ( spfailure ) {
       hasVelocity = false;
       lightTime = 0.0;
-      spkezp_c((SpiceInt) target, (SpiceDouble) et, refFrame.toLatin1().data(),
-               abcorr.toLatin1().data(), (SpiceInt) observer, state, &lightTime);
+      naif->spkezp_c((SpiceInt) target, (SpiceDouble) et, refFrame.toLatin1().data(),
+                     abcorr.toLatin1().data(), (SpiceInt) observer, state, &lightTime);
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return;
   }
 
@@ -1792,7 +1794,8 @@ namespace Isis {
  *                     vector are valid, otherwise they should be ignored.
  */
   void SpicePosition::setStateVector(const double state[6],
-                                     const bool &hasVelocity) {
+                                     const bool &hasVelocity,
+                                     NaifContextPtr naif) {
 
     p_coordinate[0] = state[0];
     p_coordinate[1] = state[1];
@@ -1813,8 +1816,8 @@ namespace Isis {
     // Negate vectors if swap of observer target is requested so interface
     // remains consistent
     if (m_swapObserverTarget) {
-      vminus_c(&p_velocity[0],   &p_velocity[0]);
-      vminus_c(&p_coordinate[0], &p_coordinate[0]);
+      naif->vminus_c(&p_velocity[0],   &p_velocity[0]);
+      naif->vminus_c(&p_coordinate[0], &p_coordinate[0]);
     }
 
     return;

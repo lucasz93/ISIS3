@@ -6,7 +6,7 @@ find files of those names at the top level of this repository. **/
 /* SPDX-License-Identifier: CC0-1.0 */
 
 #include "CameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 namespace Isis {
   /** Constructor a map between focal plane x/y and right acension/declination

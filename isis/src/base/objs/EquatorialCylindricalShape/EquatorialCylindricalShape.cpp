@@ -15,9 +15,7 @@ find files of those names at the top level of this repository. **/
 #include <cmath>
 #include <vector>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Cube.h"
 #include "IException.h"
@@ -25,7 +23,7 @@ find files of those names at the top level of this repository. **/
 #include "Latitude.h"
 // #include "LinearAlgebra.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "SpecialPixel.h"
 #include "SurfacePoint.h"
 #include "Table.h"

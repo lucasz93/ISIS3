@@ -13,7 +13,7 @@ find files of those names at the top level of this repository. **/
 
 #include <QString>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "Brick.h"
 #include "Camera.h"
@@ -25,7 +25,7 @@ find files of those names at the top level of this repository. **/
 #include "IException.h"
 #include "Pvl.h"
 #include "SpecialPixel.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "NaifContext.h"
 
 using namespace std;

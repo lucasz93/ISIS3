@@ -18,7 +18,7 @@ find files of those names at the top level of this repository. **/
 #include "SerialNumberList.h"
 #include "Constants.h"
 #include "Statistics.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Spice.h"
 #include <fstream>
 #include <iostream>

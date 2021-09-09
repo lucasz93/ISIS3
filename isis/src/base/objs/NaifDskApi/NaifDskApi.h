@@ -12,8 +12,7 @@ find files of those names at the top level of this repository. **/
 
 #include <QDebug>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
+#include "NaifContext.h"
 
 // Specs for convenient NAIF vectors and matrices
 #include <tnt/tnt_array1d.h>

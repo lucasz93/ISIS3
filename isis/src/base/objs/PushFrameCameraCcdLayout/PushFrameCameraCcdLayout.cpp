@@ -7,14 +7,12 @@ find files of those names at the top level of this repository. **/
 #include <iostream>
 #include <sstream>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "FileName.h"
 #include "IString.h"
 #include "PushFrameCameraCcdLayout.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 namespace Isis {
   /** 

@@ -29,7 +29,7 @@ find files of those names at the top level of this repository. **/
 #include "Latitude.h"
 #include "LinearAlgebra.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Progress.h"
 #include "Pvl.h"
 #include "PvlGroup.h"

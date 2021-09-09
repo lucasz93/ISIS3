@@ -14,7 +14,7 @@ find files of those names at the top level of this repository. **/
 
 #include <QStringList>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "FileName.h"
 #include "FileList.h"

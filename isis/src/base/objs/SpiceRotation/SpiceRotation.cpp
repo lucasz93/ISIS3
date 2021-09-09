@@ -19,12 +19,12 @@ find files of those names at the top level of this repository. **/
 #include <SpiceZfc.h>
 #include <SpiceZmc.h>
 
+#include "NaifContext.h"
 #include "BasisFunction.h"
 #include "IException.h"
 #include "IString.h"
 #include "LeastSquares.h"
 #include "LineEquation.h"
-#include "NaifStatus.h"
 #include "PolynomialUnivariate.h"
 #include "Quaternion.h"
 #include "Table.h"
@@ -32,13 +32,6 @@ find files of those names at the top level of this repository. **/
 
 using json = nlohmann::json;
 
-// Declarations for bindings for Naif Spicelib routines that do not have
-// a wrapper
-extern int refchg_(integer *frame1, integer *frame2, doublereal *et,
-                   doublereal *rotate);
-extern int frmchg_(integer *frame1, integer *frame2, doublereal *et,
-                   doublereal *rotate);
-extern int invstm_(doublereal *mat, doublereal *invmat);
 // Temporary declarations for bindings for Naif supportlib routines
 
 // These three declarations should be removed once supportlib is in Isis3
@@ -91,7 +84,9 @@ namespace Isis {
    * @throws IException::Io "Cannot find [key] in text kernels"
    */
   SpiceRotation::SpiceRotation(int frameCode, int targetCode) {
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+    
+    naif->CheckErrors();
 
     p_constantFrames.push_back(frameCode);
     p_targetCode = targetCode;
@@ -124,7 +119,7 @@ namespace Isis {
     SpiceInt number;
     SpiceBoolean found;
     //Read starting at element 1 (skipping element 0)
-    gdpool_c(key.toLatin1().data(), 1, 2, &number, transX, &found);
+    naif->gdpool_c(key.toLatin1().data(), 1, 2, &number, transX, &found);
 
     if (!found) {
       QString msg = "Cannot find [" + key + "] in text kernels";
@@ -134,7 +129,7 @@ namespace Isis {
     p_axisV = 2;
     if (transX[0] < transX[1]) p_axisV = 1;
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -257,7 +252,7 @@ namespace Isis {
    *
    * @param et   ephemeris time in seconds
    */
-  void SpiceRotation::SetEphemerisTime(double et) {
+  void SpiceRotation::SetEphemerisTime(double et, NaifContextPtr naif) {
 
     // Save the time
     if (p_et == et) return;
@@ -265,32 +260,32 @@ namespace Isis {
 
     // Read from the cache
     if (p_source == Memcache) {
-      setEphemerisTimeMemcache();
+      setEphemerisTimeMemcache(naif);
     }
 
     // Apply coefficients defining a function for each of the three camera angles and angular
     //  velocity if available
     else if (p_source == PolyFunction) {
-      setEphemerisTimePolyFunction();
+      setEphemerisTimePolyFunction(naif);
     }
     // Apply coefficients defining a function for each of the three camera angles and angular
     //  velocity if available
     else if (p_source == PolyFunctionOverSpice) {
-      setEphemerisTimePolyFunctionOverSpice();
+      setEphemerisTimePolyFunctionOverSpice(naif);
     }
     // Read from the kernel
     else if (p_source == Spice) {
-      setEphemerisTimeSpice();
+      setEphemerisTimeSpice(naif);
       // Retrieve the J2000 (code=1) to reference rotation matrix
     }
     // Apply coefficients from PCK version of IAU solution for target body orientation and angular
     //  velocity???
     else if (p_source == PckPolyFunction) {
-      setEphemerisTimePckPolyFunction();
+      setEphemerisTimePckPolyFunction(naif);
     }
     // Compute from Nadir
     else {
-      setEphemerisTimeNadir();
+      setEphemerisTimeNadir(naif);
     }
 
     // Set the quaternion for this rotation
@@ -356,7 +351,7 @@ namespace Isis {
    * @throws IException::Programmer "Cache size must be more than 1 if startTime and endTime differ"
    * @throws IException::Programmer "A SpiceRotation cache has already men
    */
-  void SpiceRotation::LoadCache(double startTime, double endTime, int size) {
+  void SpiceRotation::LoadCache(double startTime, double endTime, int size, NaifContextPtr naif) {
 
     // Check for valid arguments
     if (size <= 0) {
@@ -391,14 +386,14 @@ namespace Isis {
     }
 
     // Make sure the constant frame is loaded.  This method also does the frame trace.
-    if (p_timeFrames.size() == 0) InitConstantRotation(startTime);
+    if (p_timeFrames.size() == 0) InitConstantRotation(startTime, naif);
 
     // Set the frame type.  If the frame class is PCK, load the constants.
     if (p_source == Spice) {
-      setFrameType();
+      setFrameType(naif);
     }
 
-    LoadTimeCache();
+    LoadTimeCache(naif);
     int cacheSize = p_cacheTime.size();
 
     // Loop and load the cache
@@ -407,7 +402,7 @@ namespace Isis {
     std::vector<ale::Vec3d> avCache;
     for (int i = 0; i < cacheSize; i++) {
       double et = p_cacheTime[i];
-      SetEphemerisTime(et);
+      SetEphemerisTime(et, naif);
       rotationCache.push_back(ale::Rotation(p_CJ));
       cache.push_back(p_CJ);
 
@@ -429,7 +424,7 @@ namespace Isis {
 
     // Downsize already loaded caches (both time and quats)
     if (p_minimizeCache == Yes  &&  cacheSize > 5) {
-      LoadTimeCache();
+      LoadTimeCache(naif);
     }
   }
 
@@ -447,8 +442,8 @@ namespace Isis {
    *
    * @param time   single ephemeris time in seconds to cache
    */
-  void SpiceRotation::LoadCache(double time) {
-    LoadCache(time, time, 1);
+  void SpiceRotation::LoadCache(double time, NaifContextPtr naif) {
+    LoadCache(time, time, 1, naif);
   }
 
 
@@ -512,14 +507,14 @@ namespace Isis {
     }
     else {
       p_TC.resize(9);
-      ident_c((SpiceDouble( *)[3]) &p_TC[0]);
+      naif->ident_c((SpiceDouble( *)[3]) &p_TC[0]);
       m_orientation = new ale::Orientations(rotationCache, p_cacheTime, avCache, 
                                           ale::Rotation(1,0,0,0), p_constantFrames, p_timeFrames);
     }
 
 
     p_source = Memcache;
-    SetEphemerisTime(p_cacheTime[0]);
+    SetEphemerisTime(p_cacheTime[0], naif);
   }
 
 
@@ -547,7 +542,7 @@ namespace Isis {
    * @throws IException::Programmer "Expecting either three, five, or eight fields in the
    *                                 SpiceRotation table"
    */
-  void SpiceRotation::LoadCache(Table &table) {
+  void SpiceRotation::LoadCache(Table &table, NaifContextPtr naif) {
     // Clear any existing cached data to make it reentrant (KJB 2011-07-20).
     p_timeFrames.clear();
     p_TC.clear();
@@ -587,7 +582,7 @@ namespace Isis {
     }
     else {
       p_TC.resize(9);
-      ident_c((SpiceDouble( *)[3]) &p_TC[0]);
+      naif->ident_c((SpiceDouble( *)[3]) &p_TC[0]);
     }
 
     // Load the full cache time information from the label if available
@@ -610,7 +605,7 @@ namespace Isis {
     }
 
     if (m_frameType  == PCK) {
-      loadPCFromTable(table.Label());
+      loadPCFromTable(table.Label(), naif);
     }
 
     int recFields = table[0].Fields();
@@ -751,19 +746,19 @@ namespace Isis {
 
       // Load the time cache first
       p_minimizeCache = No;
-      LoadTimeCache();
+      LoadTimeCache(naif);
 
       if (p_fullCacheSize > 1) {
       // Load the matrix and av caches
         for (std::vector<double>::size_type pos = 0; pos < p_cacheTime.size(); pos++) {
-          SetEphemerisTime(p_cacheTime.at(pos));
+          SetEphemerisTime(p_cacheTime.at(pos), naif);
           rotationCache.push_back(ale::Rotation(p_CJ));
           avCache.push_back(ale::Vec3d(p_av));
         }
       }
       else {
       // Load the matrix for the single updated time instance
-        SetEphemerisTime(p_cacheTime[0]);
+        SetEphemerisTime(p_cacheTime[0], naif);
         rotationCache.push_back(ale::Rotation(p_CJ));
         avCache.push_back(ale::Vec3d(p_av));
       }
@@ -777,10 +772,10 @@ namespace Isis {
 
       // Reload the time cache first
       p_minimizeCache = No;
-      LoadTimeCache();
+      LoadTimeCache(naif);
 
       for (std::vector<double>::size_type pos = 0; pos < maxSize; pos++) {
-        tempRot.SetEphemerisTime(p_cacheTime.at(pos));
+        tempRot.SetEphemerisTime(p_cacheTime.at(pos), naif);
         std::vector<double> CJ = tempRot.TimeBasedMatrix();
         rotationCache.push_back(ale::Rotation(CJ));
         if (p_hasAngularVelocity){
@@ -811,7 +806,7 @@ namespace Isis {
     // Make sure source is Memcache now
     p_source = Memcache;
     p_et = -DBL_MAX;
-    SetEphemerisTime(et);
+    SetEphemerisTime(et, naif);
   }
 
 
@@ -873,7 +868,7 @@ namespace Isis {
 
       //std::cout << "Full cache size is " << p_cache.size() << endl;
       p_minimizeCache = Yes;
-      LoadTimeCache();
+      LoadTimeCache(naif);
 
       //std::cout << "Minimized cache size is " << p_cache.size() << endl;
     }
@@ -988,8 +983,8 @@ namespace Isis {
    *
    * @param centerBody NAIF id for the planetary body to retrieve the PCK for
    */
-  void SpiceRotation::loadPCFromSpice(int centerBody) {
-    NaifStatus::CheckErrors();
+  void SpiceRotation::loadPCFromSpice(int centerBody, NaifContextPtr naif) {
+    naif->CheckErrors();
     SpiceInt centerBodyCode = (SpiceInt) centerBody;
 
     // Retrieve the frame class from Naif.  We distinguish PCK types into text PCK,
@@ -998,7 +993,7 @@ namespace Isis {
     // complexity models used with binary PCK.  Currently ISIS does not solve for
     // target body orientation on bodies not referenced to J2000, but it could be
     // changed to handle that case.
-    checkForBinaryPck();
+    checkForBinaryPck(naif);
 
     if (m_frameType == PCK) {
       // Make sure the reference frame is J2000.  We will need to modify FrameTrace and
@@ -1012,12 +1007,12 @@ namespace Isis {
       SpiceChar naifType;
       SpiceDouble relativeFrameCode = 0;
       SpiceBoolean found;
-      dtpool_c(naifKeyword.toLatin1().data(), &found, &numExpected, &naifType);
+      naif->dtpool_c(naifKeyword.toLatin1().data(), &found, &numExpected, &naifType);
 
       if (found) {
         // Go get the frame name if it is not the default J2000
         SpiceDouble relativeFrameCode;
-        bodvcd_c(centerBodyCode, "CONSTANTS_REF_FRAME", 1,
+        naif->bodvcd_c(centerBodyCode, "CONSTANTS_REF_FRAME", 1,
                         &numReturned, &relativeFrameCode);
       }
 
@@ -1026,7 +1021,7 @@ namespace Isis {
         // Make sure the standard coefficients are available for the body code by
         // checking for ra
         naifKeyword = "BODY" + toString(centerBodyCode) + "_POLE_RA" ;
-        dtpool_c(naifKeyword.toLatin1().data(), &found, &numExpected, &naifType);
+        naif->dtpool_c(naifKeyword.toLatin1().data(), &found, &numExpected, &naifType);
 
         if (found) {
           std::vector<SpiceDouble> d(3);
@@ -1034,17 +1029,17 @@ namespace Isis {
           m_decPole.resize(numExpected);
           m_pm.resize(numExpected);
 
-          bodvcd_c(centerBodyCode, "POLE_RA", numExpected, &numReturned, &d[0]);
+          naif->bodvcd_c(centerBodyCode, "POLE_RA", numExpected, &numReturned, &d[0]);
           m_raPole[0].setDegrees(d[0]);
           m_raPole[1].setDegrees(d[1]);
           m_raPole[2].setDegrees(d[2]);
 
-          bodvcd_c(centerBodyCode, "POLE_DEC", numExpected, &numReturned, &d[0]);
+          naif->bodvcd_c(centerBodyCode, "POLE_DEC", numExpected, &numReturned, &d[0]);
           m_decPole[0].setDegrees(d[0]);
           m_decPole[1].setDegrees(d[1]);
           m_decPole[2].setDegrees(d[2]);
 
-          bodvcd_c(centerBodyCode, "PM", numExpected, &numReturned, &d[0]);
+          naif->bodvcd_c(centerBodyCode, "PM", numExpected, &numReturned, &d[0]);
           m_pm[0].setDegrees(d[0]);
           m_pm[1].setDegrees(d[1]);
           m_pm[2].setDegrees(d[2]);
@@ -1055,24 +1050,24 @@ namespace Isis {
           // Now check for nutation/precession terms.  Check for nut/prec ra values
           // first to see if the terms are even used for this body.
           naifKeyword = "BODY" + toString(centerBodyCode) + "_NUT_PREC_RA" ;
-          dtpool_c(naifKeyword.toLatin1().data(), &found, &numReturned, &naifType);
+          naif->dtpool_c(naifKeyword.toLatin1().data(), &found, &numReturned, &naifType);
           if (found) {
             // Get the barycenter (bc) linear coefficients first (2 for each period).
             // Then we can get the maximum expected coefficients.
             SpiceInt bcCode = centerBodyCode/100;  // Ex: bc code for Jupiter (599) & its moons is 5
             naifKeyword = "BODY" + toString(bcCode) + "_NUT_PREC_ANGLES" ;
-            dtpool_c(naifKeyword.toLatin1().data(), &found, &numExpected, &naifType);
+            naif->dtpool_c(naifKeyword.toLatin1().data(), &found, &numExpected, &naifType);
             std::vector<double>npAngles(numExpected, 0.);
-            bodvcd_c(bcCode, "NUT_PREC_ANGLES", numExpected, &numReturned, &npAngles[0]);
+            naif->bodvcd_c(bcCode, "NUT_PREC_ANGLES", numExpected, &numReturned, &npAngles[0]);
             numExpected /= 2.;
             m_raNutPrec.resize(numExpected, 0.);
             m_decNutPrec.resize(numExpected, 0.);
             m_pmNutPrec.resize(numExpected, 0.);
 
             std::vector<SpiceDouble> angles(numExpected);
-            bodvcd_c(centerBodyCode, "NUT_PREC_RA", numExpected,  &numReturned, &m_raNutPrec[0]);
-            bodvcd_c(centerBodyCode, "NUT_PREC_DEC", numExpected,  &numReturned, &m_decNutPrec[0]);
-            bodvcd_c(centerBodyCode, "NUT_PREC_PM", numExpected,  &numReturned, &m_pmNutPrec[0]);
+            naif->bodvcd_c(centerBodyCode, "NUT_PREC_RA", numExpected,  &numReturned, &m_raNutPrec[0]);
+            naif->bodvcd_c(centerBodyCode, "NUT_PREC_DEC", numExpected,  &numReturned, &m_decNutPrec[0]);
+            naif->bodvcd_c(centerBodyCode, "NUT_PREC_PM", numExpected,  &numReturned, &m_pmNutPrec[0]);
 
             // Finally get the system linear terms separated into vectors of the constants and the
             //  linear coefficients
@@ -1089,7 +1084,7 @@ namespace Isis {
       }
     }   // PCK
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -1100,8 +1095,8 @@ namespace Isis {
    *
    * @param label const reference to the cube body rotation pvl label
    */
-  void SpiceRotation::loadPCFromTable(const PvlObject &label) {
-    NaifStatus::CheckErrors();
+  void SpiceRotation::loadPCFromTable(const PvlObject &label, NaifContextPtr naif) {
+    naif->CheckErrors();
 
     // First clear existing cached data
     m_raPole.clear();
@@ -1168,7 +1163,7 @@ namespace Isis {
       }
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -1180,7 +1175,7 @@ namespace Isis {
    * @param Table    Table to receive labels
    */
   void SpiceRotation::CacheLabel(Table &table) {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Load the constant and time-based frame traces and the constant rotation
     // into the table as labels
     if (p_timeFrames.size() > 1) {
@@ -1278,7 +1273,7 @@ namespace Isis {
     }
  // End section added 06-20-2015 DAC
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -1287,12 +1282,12 @@ namespace Isis {
    *
    * @return @b vector<double> Camera angles at center time
    */
-  std::vector<double> SpiceRotation::GetCenterAngles() {
+  std::vector<double> SpiceRotation::GetCenterAngles(NaifContextPtr naif) {
     // Compute the center time
     double etCenter = (p_fullCacheEndTime + p_fullCacheStartTime) / 2.;
-    SetEphemerisTime(etCenter);
+    SetEphemerisTime(etCenter, naif);
 
-    return Angles(p_axis3, p_axis2, p_axis1);
+    return Angles(p_axis3, p_axis2, p_axis1, naif);
   }
 
 
@@ -1306,18 +1301,18 @@ namespace Isis {
    *
    * @return @b vector<double> Camera angles (ra, dec, twist)
    */
-  std::vector<double> SpiceRotation::Angles(int axis3, int axis2, int axis1) {
-    NaifStatus::CheckErrors();
+  std::vector<double> SpiceRotation::Angles(int axis3, int axis2, int axis1, NaifContextPtr naif) {
+    naif->CheckErrors();
 
     SpiceDouble ang1, ang2, ang3;
-    m2eul_c((SpiceDouble *) &p_CJ[0], axis3, axis2, axis1, &ang3, &ang2, &ang1);
+    naif->m2eul_c((SpiceDouble *) &p_CJ[0], axis3, axis2, axis1, &ang3, &ang2, &ang1);
 
     std::vector<double> angles;
     angles.push_back(ang1);
     angles.push_back(ang2);
     angles.push_back(ang3);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return angles;
   }
 
@@ -1333,8 +1328,8 @@ namespace Isis {
    * @param[in]  axis2    The rotation axis for the second angle
    * @param[in]  axis1    The rotation axis for the first angle
    */
-  void SpiceRotation::SetAngles(std::vector<double> angles, int axis3, int axis2, int axis1) {
-    eul2m_c(angles[2], angles[1], angles[0], axis3, axis2, axis1, (SpiceDouble (*)[3]) &(p_CJ[0]));
+  void SpiceRotation::SetAngles(std::vector<double> angles, int axis3, int axis2, int axis1, NaifContextPtr naif) {
+    naif->eul2m_c(angles[2], angles[1], angles[0], axis3, axis2, axis1, (SpiceDouble (*)[3]) &(p_CJ[0]));
 
     if (m_orientation) {
       delete m_orientation;
@@ -1353,7 +1348,7 @@ namespace Isis {
 
     // Reset to get the new values
     p_et = -DBL_MAX;
-    SetEphemerisTime(p_et);
+    SetEphemerisTime(p_et, naif);
   }
 
 
@@ -1405,15 +1400,15 @@ namespace Isis {
    *
    * @return vector<double>  A direction vector in J2000 frame.
    */
-  std::vector<double> SpiceRotation::J2000Vector(const std::vector<double> &rVec) {
-    NaifStatus::CheckErrors();
+  std::vector<double> SpiceRotation::J2000Vector(const std::vector<double> &rVec, NaifContextPtr naif) {
+    naif->CheckErrors();
 
     std::vector<double> jVec;
     if (rVec.size() == 3) {
       double TJ[3][3];
-      mxm_c((SpiceDouble *) &p_TC[0], (SpiceDouble *) &p_CJ[0], TJ);
+      naif->mxm_c((SpiceDouble *) &p_TC[0], (SpiceDouble *) &p_CJ[0], TJ);
       jVec.resize(3);
-      mtxv_c(TJ, (SpiceDouble *) &rVec[0], (SpiceDouble *) &jVec[0]);
+      naif->mtxv_c(TJ, (SpiceDouble *) &rVec[0], (SpiceDouble *) &jVec[0]);
     }
 
     else if (rVec.size() == 6) {
@@ -1423,18 +1418,18 @@ namespace Isis {
         // throw an error
       }
       std::vector<double> stateTJ(36);
-      stateTJ = StateTJ();
+      stateTJ = StateTJ(naif);
 
       // Now invert (inverse of a state matrix is NOT simply the transpose)
-      xpose6_c(&stateTJ[0], (SpiceDouble( *) [6]) &stateTJ[0]);
+      naif->xpose6_c(&stateTJ[0], (SpiceDouble( *) [6]) &stateTJ[0]);
       double stateJT[6][6];
-      invstm_((doublereal *) &stateTJ[0], (doublereal *) stateJT);
-      xpose6_c(stateJT, stateJT);
+      naif->invstm_((doublereal *) &stateTJ[0], (doublereal *) stateJT);
+      naif->xpose6_c(stateJT, stateJT);
       jVec.resize(6);
 
-      mxvg_c(stateJT, (SpiceDouble *) &rVec[0], 6, 6, (SpiceDouble *) &jVec[0]);
+      naif->mxvg_c(stateJT, (SpiceDouble *) &rVec[0], 6, 6, (SpiceDouble *) &jVec[0]);
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return (jVec);
   }
 
@@ -1606,13 +1601,14 @@ namespace Isis {
    */
   std::vector<double> SpiceRotation::toJ2000Partial(const std::vector<double> &lookT,
                                                     SpiceRotation::PartialType partialVar,
-                                                    int coeffIndex) {
-    NaifStatus::CheckErrors();
+                                                    int coeffIndex,
+                                                    NaifContextPtr naif) {
+    naif->CheckErrors();
 
     std::vector<double> jVec;
 
     // Get the rotation angles and form the derivative matrix for the partialVar
-    std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1);
+    std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1, naif);
     int angleIndex = partialVar;
     int axes[3] = {p_axis1, p_axis2, p_axis3};
 
@@ -1620,9 +1616,9 @@ namespace Isis {
 
     // Get TJ and apply the transpose to the input vector to get it to J2000
     double dmatrix[3][3];
-    drotat_(&angle, (integer *) axes + angleIndex, (doublereal *) dmatrix);
+    naif->drotat_(&angle, (integer *) axes + angleIndex, (doublereal *) dmatrix);
     // Transpose to obtain row-major order
-    xpose_c(dmatrix, dmatrix);
+    naif->xpose_c(dmatrix, dmatrix);
 
     // Get the derivative of the polynomial with respect to partialVar
     double dpoly = 0.;
@@ -1660,32 +1656,32 @@ namespace Isis {
     double dCJ[3][3];
     switch (angleIndex) {
       case 0:
-        rotmat_c(dmatrix, angles[1], axes[1], dCJ);
-        rotmat_c(dCJ, angles[2], axes[2], dCJ);
+        naif->rotmat_c(dmatrix, angles[1], axes[1], dCJ);
+        naif->rotmat_c(dCJ, angles[2], axes[2], dCJ);
         break;
       case 1:
-        rotate_c(angles[0], axes[0], dCJ);
-        mxm_c(dmatrix, dCJ, dCJ);
-        rotmat_c(dCJ, angles[2], axes[2], dCJ);
+        naif->rotate_c(angles[0], axes[0], dCJ);
+        naif->mxm_c(dmatrix, dCJ, dCJ);
+        naif->rotmat_c(dCJ, angles[2], axes[2], dCJ);
         break;
       case 2:
-        rotate_c(angles[0], axes[0], dCJ);
-        rotmat_c(dCJ, angles[1], axes[1], dCJ);
-        mxm_c(dmatrix, dCJ, dCJ);
+        naif->rotate_c(angles[0], axes[0], dCJ);
+        naif->rotmat_c(dCJ, angles[1], axes[1], dCJ);
+        naif->mxm_c(dmatrix, dCJ, dCJ);
         break;
     }
 
     // Multiply the constant matrix to rotate to target reference frame
     double dTJ[3][3];
-    mxm_c((SpiceDouble *) &p_TC[0], dCJ[0], dTJ);
+    naif->mxm_c((SpiceDouble *) &p_TC[0], dCJ[0], dTJ);
 
     // Finally rotate the target vector with the transpose of the
     // derivative matrix, dTJ to get a J2000 vector
     std::vector<double> lookdJ(3);
 
-    mtxv_c(dTJ, (const SpiceDouble *) &lookT[0], (SpiceDouble *) &lookdJ[0]);
+    naif->mtxv_c(dTJ, (const SpiceDouble *) &lookT[0], (SpiceDouble *) &lookdJ[0]);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return (lookdJ);
   }
 
@@ -1697,16 +1693,16 @@ namespace Isis {
    *
    * @return @b vector<double> A direction vector in reference frame.
    */
-  std::vector<double> SpiceRotation::ReferenceVector(const std::vector<double> &jVec) {
-    NaifStatus::CheckErrors();
+  std::vector<double> SpiceRotation::ReferenceVector(const std::vector<double> &jVec, NaifContextPtr naif) {
+    naif->CheckErrors();
 
     std::vector<double> rVec(3);
 
     if (jVec.size() == 3) {
       double TJ[3][3];
-      mxm_c((SpiceDouble *) &p_TC[0], (SpiceDouble *) &p_CJ[0], TJ);
+      naif->mxm_c((SpiceDouble *) &p_TC[0], (SpiceDouble *) &p_CJ[0], TJ);
       rVec.resize(3);
-      mxv_c(TJ, (SpiceDouble *) &jVec[0], (SpiceDouble *) &rVec[0]);
+      naif->mxv_c(TJ, (SpiceDouble *) &jVec[0], (SpiceDouble *) &rVec[0]);
     }
     else if (jVec.size() == 6) {
       // See Naif routine frmchg for the format of the state matrix.  The constant rotation, TC,
@@ -1715,12 +1711,12 @@ namespace Isis {
         // throw an error
       }
       std::vector<double>  stateTJ(36);
-      stateTJ = StateTJ();
+      stateTJ = StateTJ(naif);
       rVec.resize(6);
-      mxvg_c((SpiceDouble *) &stateTJ[0], (SpiceDouble *) &jVec[0], 6, 6, (SpiceDouble *) &rVec[0]);
+      naif->mxvg_c((SpiceDouble *) &stateTJ[0], (SpiceDouble *) &jVec[0], 6, 6, (SpiceDouble *) &rVec[0]);
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return (rVec);
   }
 
@@ -1737,7 +1733,7 @@ namespace Isis {
    *                           beyond PolyFunction.
    */
   void SpiceRotation::SetPolynomial(const Source type) {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     std::vector<double> coeffAng1, coeffAng2, coeffAng3;
 
     // Rotation is already stored as a polynomial -- throw an error
@@ -1780,8 +1776,8 @@ namespace Isis {
 
     if (size == 1) {
       double t = p_cacheTime.at(0);
-      SetEphemerisTime(t);
-      std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1);
+      SetEphemerisTime(t, naif);
+      std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1, naif);
       coeffAng1.push_back(angles[0]);
       coeffAng2.push_back(angles[1]);
       coeffAng3.push_back(angles[2]);
@@ -1790,17 +1786,17 @@ namespace Isis {
       // Load the times and get the corresponding rotation angles
       p_degree = 1;
       double t1 = p_cacheTime.at(0);
-      SetEphemerisTime(t1);
+      SetEphemerisTime(t1, naif);
       t1 -= p_baseTime;
       t1 = t1 / p_timeScale;
-      std::vector<double> angles1 = Angles(p_axis3, p_axis2, p_axis1);
+      std::vector<double> angles1 = Angles(p_axis3, p_axis2, p_axis1, naif);
       double t2 = p_cacheTime.at(1);
-      SetEphemerisTime(t2);
+      SetEphemerisTime(t2, naif);
       t2 -= p_baseTime;
       t2 = t2 / p_timeScale;
-      std::vector<double> angles2 = Angles(p_axis3, p_axis2, p_axis1);
-      angles2[0] = WrapAngle(angles1[0], angles2[0]);
-      angles2[2] = WrapAngle(angles1[2], angles2[2]);
+      std::vector<double> angles2 = Angles(p_axis3, p_axis2, p_axis1, naif);
+      angles2[0] = WrapAngle(angles1[0], angles2[0], naif);
+      angles2[2] = WrapAngle(angles1[2], angles2[2], naif);
       double slope[3];
       double intercept[3];
 
@@ -1825,8 +1821,8 @@ namespace Isis {
       for (std::vector<double>::size_type pos = 0; pos < p_cacheTime.size(); pos++) {
         double t = p_cacheTime.at(pos);
         time.push_back((t - p_baseTime) / p_timeScale);
-        SetEphemerisTime(t);
-        std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1);
+        SetEphemerisTime(t, naif);
+        std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1, naif);
 
 // Fix 180/-180 crossovers on angles 1 and 3 before doing fit.
         if (pos == 0) {
@@ -1834,8 +1830,8 @@ namespace Isis {
           start3 = angles[2];
         }
         else {
-          angles[0] = WrapAngle(start1, angles[0]);
-          angles[2] = WrapAngle(start3, angles[2]);
+          angles[0] = WrapAngle(start1, angles[0], naif);
+          angles[2] = WrapAngle(start3, angles[2], naif);
         }
 
         fitAng1->AddKnown(time, angles[0]);
@@ -1869,7 +1865,7 @@ namespace Isis {
     // Now that the coefficients have been calculated set the polynomial with them
     SetPolynomial(coeffAng1, coeffAng2, coeffAng3);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return;
   }
 
@@ -1893,7 +1889,7 @@ namespace Isis {
                                     const std::vector<double> &coeffAng3,
                                     const Source type) {
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     Isis::PolynomialUnivariate function1(p_degree);
     Isis::PolynomialUnivariate function2(p_degree);
     Isis::PolynomialUnivariate function3(p_degree);
@@ -1921,9 +1917,9 @@ namespace Isis {
     // Update the current rotation
     double et = p_et;
     p_et = -DBL_MAX;
-    SetEphemerisTime(et);
+    SetEphemerisTime(et, naif);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return;
   }
 
@@ -2034,7 +2030,7 @@ namespace Isis {
     m_pm = pmCoeff;
     usePckPolynomial();
     // Apply new function parameters
-    setEphemerisTimePckPolyFunction();
+    setEphemerisTimePckPolyFunction(naif);
   }
 
 
@@ -2231,21 +2227,22 @@ namespace Isis {
    */
   std::vector<double> SpiceRotation::ToReferencePartial(std::vector<double> &lookJ,
                                                         SpiceRotation::PartialType partialVar,
-                                                        int coeffIndex) {
-    NaifStatus::CheckErrors();
+                                                        int coeffIndex,
+                                                        NaifContextPtr naif) {
+    naif->CheckErrors();
     //TODO** To save time possibly save partial matrices
 
     // Get the rotation angles and form the derivative matrix for the partialVar
-    std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1);
+    std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1, naif);
     int angleIndex = partialVar;
     int axes[3] = {p_axis1, p_axis2, p_axis3};
 
     double angle = angles.at(angleIndex);
 
     double dmatrix[3][3];
-    drotat_(&angle, (integer *) axes + angleIndex, (doublereal *) dmatrix);
+    naif->drotat_(&angle, (integer *) axes + angleIndex, (doublereal *) dmatrix);
     // Transpose to obtain row-major order
-    xpose_c(dmatrix, dmatrix);
+    naif->xpose_c(dmatrix, dmatrix);
 
     // Get the derivative of the polynomial with respect to partialVar
     double dpoly = 0.;
@@ -2274,32 +2271,32 @@ namespace Isis {
     double dCJ[3][3];
     switch (angleIndex) {
       case 0:
-        rotmat_c(dmatrix, angles[1], axes[1], dCJ);
-        rotmat_c(dCJ, angles[2], axes[2], dCJ);
+        naif->rotmat_c(dmatrix, angles[1], axes[1], dCJ);
+        naif->rotmat_c(dCJ, angles[2], axes[2], dCJ);
         break;
       case 1:
-        rotate_c(angles[0], axes[0], dCJ);
-        mxm_c(dmatrix, dCJ, dCJ);
-        rotmat_c(dCJ, angles[2], axes[2], dCJ);
+        naif->rotate_c(angles[0], axes[0], dCJ);
+        naif->mxm_c(dmatrix, dCJ, dCJ);
+        naif->rotmat_c(dCJ, angles[2], axes[2], dCJ);
         break;
       case 2:
-        rotate_c(angles[0], axes[0], dCJ);
-        rotmat_c(dCJ, angles[1], axes[1], dCJ);
-        mxm_c(dmatrix, dCJ, dCJ);
+        naif->rotate_c(angles[0], axes[0], dCJ);
+        naif->rotmat_c(dCJ, angles[1], axes[1], dCJ);
+        naif->mxm_c(dmatrix, dCJ, dCJ);
         break;
     }
 
     // Multiply the constant matrix to rotate to the targeted reference frame
     double dTJ[3][3];
-    mxm_c((SpiceDouble *) &p_TC[0], dCJ[0], dTJ);
+    naif->mxm_c((SpiceDouble *) &p_TC[0], dCJ[0], dTJ);
 
     // Finally rotate the J2000 vector with the derivative matrix, dTJ to
     // get the vector in the targeted reference frame.
     std::vector<double> lookdT(3);
 
-    mxv_c(dTJ, (const SpiceDouble *) &lookJ[0], (SpiceDouble *) &lookdT[0]);
+    naif->mxv_c(dTJ, (const SpiceDouble *) &lookJ[0], (SpiceDouble *) &lookdT[0]);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return lookdT;
   }
 
@@ -2312,18 +2309,18 @@ namespace Isis {
    *
    * @return @b double Wrapped angle.
    */
-  double SpiceRotation::WrapAngle(double compareAngle, double angle) {
-    NaifStatus::CheckErrors();
+  double SpiceRotation::WrapAngle(double compareAngle, double angle, NaifContextPtr naif) {
+    naif->CheckErrors();
     double diff1 = compareAngle - angle;
 
-    if (diff1 < -1 * pi_c()) {
-      angle -= twopi_c();
+    if (diff1 < -1 * naif->pi_c()) {
+      angle -= naif->twopi_c();
     }
-    else if (diff1 > pi_c()) {
-      angle += twopi_c();
+    else if (diff1 > naif->pi_c()) {
+      angle += naif->twopi_c();
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return angle;
   }
 
@@ -2469,8 +2466,8 @@ namespace Isis {
    * @throws IException::User "No camera kernels loaded...Unable to determine time cache to
    *                           downsize"
    */
-  void SpiceRotation::LoadTimeCache() {
-    NaifStatus::CheckErrors();
+  void SpiceRotation::LoadTimeCache(NaifContextPtr naif) {
+    naif->CheckErrors();
     int count = 0;
 
     double observStart  =  p_fullCacheStartTime + p_timeBias;
@@ -2481,8 +2478,8 @@ namespace Isis {
 
     // Get number of ck loaded for this rotation.  This method assumes only one SpiceRotation
     // object is loaded.
-    NaifStatus::CheckErrors();
-    ktotal_c("ck", (SpiceInt *) &count);
+    naif->CheckErrors();
+    naif->ktotal_c("ck", (SpiceInt *) &count);
 
     // Downsize the loaded cache
     if ((p_source == Memcache) && p_minimizeCache == Yes) {
@@ -2509,10 +2506,10 @@ namespace Isis {
                               rotationMatrix[3], rotationMatrix[4], rotationMatrix[5],
                               rotationMatrix[6], rotationMatrix[7], rotationMatrix[8]
                             };
-        m2q_c(CJ, quats[r]);
+        naif->m2q_c(CJ, quats[r]);
         if (p_hasAngularVelocity) {
           ale::Vec3d angularVelocity = angularVelocities[r];
-          vequ_c((SpiceDouble *) &angularVelocity.x, avvs[r]);
+          naif->vequ_c((SpiceDouble *) &angularVelocity.x, avvs[r]);
         }
      }
 
@@ -2546,9 +2543,9 @@ namespace Isis {
         et = timeSclkdp[r];
         p_cacheTime.push_back(et);
         std::vector<double> CJ(9);
-        q2m_c(quats[r], (SpiceDouble( *)[3]) &CJ[0]);
+        naif->q2m_c(quats[r], (SpiceDouble( *)[3]) &CJ[0]);
         rotationCache.push_back(CJ);
-        vequ_c(avvs[r], (SpiceDouble *) &av[0]);
+        naif->vequ_c(avvs[r], (SpiceDouble *) &av[0]);
         avCache.push_back(av);
       }
 
@@ -2583,9 +2580,9 @@ namespace Isis {
       double segStartEt;
       double segStopEt;
 
-      kdata_c(0, "ck", FILESIZ, TYPESIZ, SOURCESIZ, file, filtyp, source, &handle, &found);
-      dafbfs_c(handle);
-      daffna_c(&found);
+      naif->kdata_c(0, "ck", FILESIZ, TYPESIZ, SOURCESIZ, file, filtyp, source, &handle, &found);
+      naif->dafbfs_c(handle);
+      naif->daffna_c(&found);
       int spCode = ((int)(p_constantFrames[0] / 1000)) * 1000;
 
       while (found) {
@@ -2599,17 +2596,17 @@ namespace Isis {
         // velocity flag,
         // offset to quat 1,
         // offset to end.
-        dafgs_c(sum);
-        dafus_c(sum, (SpiceInt) 2, (SpiceInt) 6, dc, ic);
+        naif->dafgs_c(sum);
+        naif->dafus_c(sum, (SpiceInt) 2, (SpiceInt) 6, dc, ic);
 
         // Don't read type 5 ck here
         if (ic[2] == 5) break;
 
         // Check times for type 3 ck segment if spacecraft matches
         if (ic[0] == spCode && ic[2] == 3) {
-          sct2e_c((int) spCode / 1000, dc[0], &segStartEt);
-          sct2e_c((int) spCode / 1000, dc[1], &segStopEt);
-          NaifStatus::CheckErrors();
+          naif->sct2e_c((int) spCode / 1000, dc[0], &segStartEt);
+          naif->sct2e_c((int) spCode / 1000, dc[1], &segStopEt);
+          naif->CheckErrors();
           double et;
 
           // Get times for this segment
@@ -2646,20 +2643,20 @@ namespace Isis {
             dafgda_c(handle, sclkdp1off, sclkdpnoff, (SpiceDouble *) &sclkdp[0]);
 
             int instance = 0;
-            sct2e_c(sclkSpCode, sclkdp[0], &et);
+            naif->sct2e_c(sclkSpCode, sclkdp[0], &et);
 
             while (instance < (ninstances - 1)  &&  et < currentTime) {
               instance++;
-              sct2e_c(sclkSpCode, sclkdp[instance], &et);
+              naif->sct2e_c(sclkSpCode, sclkdp[instance], &et);
             }
 
             if (instance > 0) instance--;
-            sct2e_c(sclkSpCode, sclkdp[instance], &et);
+            naif->sct2e_c(sclkSpCode, sclkdp[instance], &et);
 
             while (instance < (ninstances - 1)  &&  et < observEnd) {
               p_cacheTime.push_back(et - p_timeBias);
               instance++;
-              sct2e_c(sclkSpCode, sclkdp[instance], &et);
+              naif->sct2e_c(sclkSpCode, sclkdp[instance], &et);
             }
             p_cacheTime.push_back(et - p_timeBias);
 
@@ -2673,8 +2670,8 @@ namespace Isis {
             }
           }
         }
-        dafcs_c(handle);     // Continue search in daf last searched
-        daffna_c(&found);    // Find next forward array in current daf
+        naif->dafcs_c(handle);     // Continue search in daf last searched
+        naif->daffna_c(&found);    // Find next forward array in current daf
       }
     }
     else if (count == 0  &&  p_source != Nadir  &&  p_minimizeCache == Yes) {
@@ -2694,7 +2691,7 @@ namespace Isis {
         p_minimizeCache = No;
       }
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -2737,8 +2734,8 @@ namespace Isis {
    * @throws IException::Programmer "The frame has a type not supported by your version of Naif
    *                                 Spicelib. You need to update."
    */
-  void SpiceRotation::FrameTrace(double et) {
-    NaifStatus::CheckErrors();
+  void SpiceRotation::FrameTrace(double et, NaifContextPtr naif) {
+    naif->CheckErrors();
     // The code for this method was extracted from the Naif routine rotget written by N.J. Bachman &
     //   W.L. Taber (JPL)
     int           center;
@@ -2747,7 +2744,7 @@ namespace Isis {
     SpiceBoolean  found;
     int           frmidx;  // Frame chain index for current frame
     SpiceInt      nextFrame;   // Naif frame code of next frame
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     std::vector<int> frameCodes;
     std::vector<int> frameTypes;
     frameCodes.push_back(p_constantFrames[0]);
@@ -2761,10 +2758,10 @@ namespace Isis {
       // logic for FrameTypes in this method is correct for all types except type 7.  Current pck
       // do not exercise this option.  Should we ever use pck with a target body not referenced to
       // the J2000 frame and epoch, both this method and loadPCFromSpice will need to be modified.
-      frinfo_c((SpiceInt) frameCodes[frmidx],
-               (SpiceInt *) &center,
-               (SpiceInt *) &type,
-               (SpiceInt *) &typid, &found);
+      naif->frinfo_c((SpiceInt) frameCodes[frmidx],
+                     (SpiceInt *) &center,
+                     (SpiceInt *) &type,
+                     (SpiceInt *) &typid, &found);
 
       if (!found) {
 
@@ -2784,7 +2781,7 @@ namespace Isis {
         nextFrame = J2000Code;
       }
       else if (type == CK) {
-        ckfrot_((SpiceInt *) &typid, &et, (double *) matrix, &nextFrame, (logical *) &found);
+        naif->ckfrot_((SpiceInt *) &typid, &et, (double *) matrix, &nextFrame, (logical *) &found);
 
         if (!found) {
 
@@ -2800,7 +2797,7 @@ namespace Isis {
         }
       }
       else if (type == TK) {
-        tkfram_((SpiceInt *) &typid, (double *) matrix, &nextFrame, (logical *) &found);
+        naif->tkfram_((SpiceInt *) &typid, (double *) matrix, &nextFrame, (logical *) &found);
         if (!found) {
           QString msg = "The tk rotation from frame " + toString(frameCodes[frmidx]) +
                         " can not be found";
@@ -2814,7 +2811,7 @@ namespace Isis {
         //        dynamic frame class ID. ZZDYNROT also requires the center ID
         //        we found via the FRINFO call.
 
-        zzdynrot_((SpiceInt *) &typid, (SpiceInt *) &center, &et, (double *) matrix, &nextFrame);
+        naif->zzdynrot_((SpiceInt *) &typid, (SpiceInt *) &center, &et, (double *) matrix, &nextFrame);
       }
 
       else {
@@ -2853,7 +2850,7 @@ namespace Isis {
       p_timeFrames.push_back(frameCodes[nConstants]);
       p_timeFrames.push_back(J2000Code);
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -2862,12 +2859,12 @@ namespace Isis {
    *
    * @return @b vector<double> Returned matrix.
    */
-  std::vector<double> SpiceRotation::Matrix() {
-    NaifStatus::CheckErrors();
+  std::vector<double> SpiceRotation::Matrix(NaifContextPtr naif) {
+    naif->CheckErrors();
     std::vector<double> TJ;
     TJ.resize(9);
-    mxm_c((SpiceDouble *) &p_TC[0], (SpiceDouble *) &p_CJ[0], (SpiceDouble( *) [3]) &TJ[0]);
-    NaifStatus::CheckErrors();
+    naif->mxm_c((SpiceDouble *) &p_TC[0], (SpiceDouble *) &p_CJ[0], (SpiceDouble( *) [3]) &TJ[0]);
+    naif->CheckErrors();
     return TJ;
   }
 
@@ -2877,12 +2874,12 @@ namespace Isis {
    *
    * @return @b vector<double> Constant rotation quaternion, TC.
    */
-  std::vector<double> SpiceRotation::ConstantRotation() {
-    NaifStatus::CheckErrors();
+  std::vector<double> SpiceRotation::ConstantRotation(NaifContextPtr naif) {
+    naif->CheckErrors();
     std::vector<double> q;
     q.resize(4);
-    m2q_c((SpiceDouble( *)[3]) &p_TC[0], &q[0]);
-    NaifStatus::CheckErrors();
+    naif->m2q_c((SpiceDouble( *)[3]) &p_TC[0], &q[0]);
+    naif->CheckErrors();
     return q;
   }
 
@@ -2912,12 +2909,12 @@ namespace Isis {
    *
    * @return @b vector<double> Time-based rotation quaternion, CJ.
    */
-  std::vector<double> SpiceRotation::TimeBasedRotation() {
-    NaifStatus::CheckErrors();
+  std::vector<double> SpiceRotation::TimeBasedRotation(NaifContextPtr naif) {
+    naif->CheckErrors();
     std::vector<double> q;
     q.resize(4);
-    m2q_c((SpiceDouble( *)[3]) &p_CJ[0], &q[0]);
-    NaifStatus::CheckErrors();
+    naif->m2q_c((SpiceDouble( *)[3]) &p_CJ[0], &q[0]);
+    naif->CheckErrors();
     return q;
   }
 
@@ -2948,15 +2945,15 @@ namespace Isis {
    *
    * @param et Ephemeris time.
    */
-  void SpiceRotation::InitConstantRotation(double et) {
-    FrameTrace(et);
+  void SpiceRotation::InitConstantRotation(double et, NaifContextPtr naif) {
+    FrameTrace(et, naif);
     // Get constant rotation which applies in all cases
     int targetFrame = p_constantFrames[0];
     int fromFrame = p_timeFrames[0];
     p_TC.resize(9);
-    refchg_((SpiceInt *) &fromFrame, (SpiceInt *) &targetFrame, &et, (doublereal *) &p_TC[0]);
+    naif->refchg_((SpiceInt *) &fromFrame, (SpiceInt *) &targetFrame, &et, (doublereal *) &p_TC[0]);
     // Transpose to obtain row-major order
-    xpose_c((SpiceDouble( *)[3]) &p_TC[0], (SpiceDouble( *)[3]) &p_TC[0]);
+    naif->xpose_c((SpiceDouble( *)[3]) &p_TC[0], (SpiceDouble( *)[3]) &p_TC[0]);
   }
 
 
@@ -2980,7 +2977,7 @@ namespace Isis {
    *                                 polynomials"
    */
   void SpiceRotation::ComputeAv() {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Make sure the angles have been fit to polynomials so we can calculate the derivative
     if (p_source < PolyFunction ) {
@@ -3002,7 +2999,7 @@ namespace Isis {
       case TK:
       case DYN:
       case CK:
-        DCJdt(dCJdt);
+        DCJdt(dCJdt, naif);
         break;
       case PCK:
       case BPC:
@@ -3014,7 +3011,7 @@ namespace Isis {
     p_av[0] = omega[2][1];
     p_av[1] = omega[0][2];
     p_av[2] = omega[1][0];
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -3024,11 +3021,11 @@ namespace Isis {
    *
    * @param[out]  dCJ       Derivative of p_CJ
    */
-  void SpiceRotation::DCJdt(std::vector<double> &dCJ) {
-    NaifStatus::CheckErrors();
+  void SpiceRotation::DCJdt(std::vector<double> &dCJ, NaifContextPtr naif) {
+    naif->CheckErrors();
 
     // Get the rotation angles and axes
-    std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1);
+    std::vector<double> angles = Angles(p_axis3, p_axis2, p_axis1, naif);
     int axes[3] = {p_axis1, p_axis2, p_axis3};
 
     double dmatrix[3][3];
@@ -3037,9 +3034,9 @@ namespace Isis {
     dCJ.assign(9, 0.);
 
     for (int angleIndex = 0; angleIndex < 3; angleIndex++) {
-      drotat_(&(angles[angleIndex]), (integer *) axes + angleIndex, (doublereal *) dmatrix);
+      naif->drotat_(&(angles[angleIndex]), (integer *) axes + angleIndex, (doublereal *) dmatrix);
       // Transpose to obtain row-major order
-      xpose_c(dmatrix, dmatrix);
+      naif->xpose_c(dmatrix, dmatrix);
 
       // To get the derivative of the polynomial fit to the angle with respect to time
       // first create the function object for this angle and load its coefficients
@@ -3059,18 +3056,18 @@ namespace Isis {
       // Apply the other 2 angles and chain them all together
       switch (angleIndex) {
         case 0:
-          rotmat_c(dmatrix, angles[1], axes[1], dmatrix);
-          rotmat_c(dmatrix, angles[2], axes[2], dmatrix);
+          naif->rotmat_c(dmatrix, angles[1], axes[1], dmatrix);
+          naif->rotmat_c(dmatrix, angles[2], axes[2], dmatrix);
           break;
         case 1:
-          rotate_c(angles[0], axes[0], wmatrix);
-          mxm_c(dmatrix, wmatrix, dmatrix);
-          rotmat_c(dmatrix, angles[2], axes[2], dmatrix);
+          naif->rotate_c(angles[0], axes[0], wmatrix);
+          naif->mxm_c(dmatrix, wmatrix, dmatrix);
+          naif->rotmat_c(dmatrix, angles[2], axes[2], dmatrix);
           break;
         case 2:
-          rotate_c(angles[0], axes[0], wmatrix);
-          rotmat_c(wmatrix, angles[1], axes[1], wmatrix);
-          mxm_c(dmatrix, wmatrix, dmatrix);
+          naif->rotate_c(angles[0], axes[0], wmatrix);
+          naif->rotmat_c(wmatrix, angles[1], axes[1], wmatrix);
+          naif->mxm_c(dmatrix, wmatrix, dmatrix);
           break;
       }
       int i, j;
@@ -3081,7 +3078,7 @@ namespace Isis {
       }
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -3090,12 +3087,12 @@ namespace Isis {
    *
    * @return @b vector<double> Returned rotation matrix.
    */
-  std::vector<double> SpiceRotation::StateTJ() {
+  std::vector<double> SpiceRotation::StateTJ(NaifContextPtr naif) {
     std::vector<double> stateTJ(36);
 
     // Build the state matrix for the time-based rotation from the matrix and angulary velocity
     double stateCJ[6][6];
-    rav2xf_c(&p_CJ[0], &p_av[0], stateCJ);
+    naif->rav2xf_c(&p_CJ[0], &p_av[0], stateCJ);
 // (SpiceDouble (*) [3]) &p_CJ[0]
     int irow = 0;
     int jcol = 0;
@@ -3133,8 +3130,8 @@ namespace Isis {
    *
    * @return @b vector<double> A quaternion defining the rotation at the input time.
    */
-   std::vector<double> SpiceRotation::Extrapolate(double timeEt) {
-    NaifStatus::CheckErrors();
+   std::vector<double> SpiceRotation::Extrapolate(double timeEt,NaifContextPtr naif) {
+    naif->CheckErrors();
 
     if (!p_hasAngularVelocity){
       return p_CJ;
@@ -3146,11 +3143,11 @@ namespace Isis {
 
     // Create a rotation matrix for the axis and magnitude of the angular velocity multiplied by
     //   the time difference
-    axisar_c((SpiceDouble *) &p_av[0], diffTime*vnorm_c((SpiceDouble *) &p_av[0]), dmat);
+    naif->axisar_c((SpiceDouble *) &p_av[0], diffTime*naif->vnorm_c((SpiceDouble *) &p_av[0]), dmat);
 
     // Rotate from the current time to the desired time assuming constant angular velocity
-    mxm_c(dmat, (SpiceDouble *) &p_CJ[0], (SpiceDouble( *)[3]) &CJ[0]);
-    NaifStatus::CheckErrors();
+    naif->mxm_c(dmat, (SpiceDouble *) &p_CJ[0], (SpiceDouble( *)[3]) &CJ[0]);
+    naif->CheckErrors();
     return CJ;
    }
 
@@ -3177,10 +3174,10 @@ namespace Isis {
    * to check loaded PCK to see if any are binary.  If any loaded PCK is binary, the body rotation
    * label keyword FrameTypeCode is set to BPC (6).
    */
-  void SpiceRotation::checkForBinaryPck() {
+  void SpiceRotation::checkForBinaryPck(NaifContextPtr naif) {
     // Get a count of all the loaded kernels
     SpiceInt count;
-    ktotal_c("PCK", &count);
+    naif->ktotal_c("PCK", &count);
 
     // Define some Naif constants
     int FILESIZ = 128;
@@ -3196,7 +3193,7 @@ namespace Isis {
     // "bpc" suffix to name a binary pck.  If a binary bpc does not have the "bpc" suffix, it will not
     // be found by this test.  This test was suggested by Boris Semenov at Naif.
     for (SpiceInt knum = 0; knum < count; knum++){
-      kdata_c(knum, "PCK", FILESIZ, TYPESIZ, SOURCESIZ, file, filetype, source, &handle, &found);
+      naif->kdata_c(knum, "PCK", FILESIZ, TYPESIZ, SOURCESIZ, file, filetype, source, &handle, &found);
 
       // search file for "bpc"
       if (strstr(file, "bpc") != NULL) {
@@ -3213,24 +3210,24 @@ namespace Isis {
    * to determine the frame type.  If the frame type is PCK, this method also loads the
    * planetary constants.  See SpiceRotation.h to see the valid frame types.
    */
-  void SpiceRotation::setFrameType() {
+  void SpiceRotation::setFrameType(NaifContextPtr naif) {
     SpiceInt frameCode = p_constantFrames[0];
     SpiceBoolean found;
     SpiceInt centerBodyCode;
     SpiceInt frameClass;
     SpiceInt classId;
-    frinfo_c(frameCode, &centerBodyCode, &frameClass, &classId, &found);
+    naif->frinfo_c(frameCode, &centerBodyCode, &frameClass, &classId, &found);
 
     if (found) {
       if (frameClass == 2  ||  (centerBodyCode > 0 && frameClass != 3)) {
         m_frameType = PCK;
         // Load the PC information while it is available and set member values
-        loadPCFromSpice(centerBodyCode);
+        loadPCFromSpice(centerBodyCode, naif);
       }
       else if (p_constantFrames.size() > 1) {
         for (std::vector<int>::size_type idx = 1; idx < p_constantFrames.size(); idx++) {
           frameCode = p_constantFrames[idx];
-          frinfo_c(frameCode, &centerBodyCode, &frameClass, &classId, &found);
+          naif->frinfo_c(frameCode, &centerBodyCode, &frameClass, &classId, &found);
           if (frameClass == 3) m_frameType = CK;
         }
       }
@@ -3265,9 +3262,9 @@ namespace Isis {
    *
    * @see SpiceRotation::SetEphemerisTime
    */
-  void SpiceRotation::setEphemerisTimeMemcache() {
-   // If the cache has only one rotation, set it
-    NaifStatus::CheckErrors();
+  void SpiceRotation::setEphemerisTimeMemcache(NaifContextPtr naif) {
+    // If the cache has only one rotation, set it
+    naif->CheckErrors();
     if (p_cacheTime.size() == 1) {
       p_CJ = m_orientation->getRotations()[0].toRotationMatrix();
       if (p_hasAngularVelocity) {
@@ -3288,7 +3285,7 @@ namespace Isis {
         p_av[2] = av.z;
       }
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -3297,32 +3294,32 @@ namespace Isis {
    *
    * @see SpiceRotation::SetEphemerisTime
    */
-  void SpiceRotation::setEphemerisTimeNadir() {
+  void SpiceRotation::setEphemerisTimeNadir(NaifContextPtr naif) {
    // TODO what about spk time bias and mission setting of light time corrections
    //      That information has only been passed to the SpicePosition class and
    //      is not available to this class, but probably should be applied to the
    //      spkez call.
 
    // Make sure the constant frame is loaded.  This method also does the frame trace.
-   NaifStatus::CheckErrors();
-    if (p_timeFrames.size() == 0) InitConstantRotation(p_et);
+   naif->CheckErrors();
+    if (p_timeFrames.size() == 0) InitConstantRotation(p_et, naif);
 
     SpiceDouble stateJ[6];  // Position and velocity vector in J2000
     SpiceDouble lt;
     SpiceInt spkCode = p_constantFrames[0] / 1000;
-    spkez_c((SpiceInt) spkCode, p_et, "J2000", "LT+S",
+    naif->spkez_c((SpiceInt) spkCode, p_et, "J2000", "LT+S",
             (SpiceInt) p_targetCode, stateJ, &lt);
    // reverse the position to be relative to the spacecraft.  This may be
    // a mission dependent value and possibly the sense of the velocity as well.
     SpiceDouble sJ[3], svJ[3];
-    vpack_c(-1 * stateJ[0], -1 * stateJ[1], -1 * stateJ[2], sJ);
-    vpack_c(stateJ[3], stateJ[4], stateJ[5], svJ);
-    twovec_c(sJ,
-             p_axisP,
-             svJ,
-             p_axisV,
-             (SpiceDouble( *)[3]) &p_CJ[0]);
-    NaifStatus::CheckErrors();
+    naif->vpack_c(-1 * stateJ[0], -1 * stateJ[1], -1 * stateJ[2], sJ);
+    naif->vpack_c(stateJ[3], stateJ[4], stateJ[5], svJ);
+    naif->twovec_c(sJ,
+                   p_axisP,
+                   svJ,
+                   p_axisV,
+                   (SpiceDouble( *)[3]) &p_CJ[0]);
+    naif->CheckErrors();
   }
 
 
@@ -3336,39 +3333,39 @@ namespace Isis {
    *
    * @see SpiceRotation::SetEphemerisTime
    */
-  void SpiceRotation::setEphemerisTimeSpice() {
-   NaifStatus::CheckErrors();
+  void SpiceRotation::setEphemerisTimeSpice(NaifContextPtr naif) {
+   naif->CheckErrors();
    SpiceInt j2000 = J2000Code;
 
    SpiceDouble time = p_et + p_timeBias;
    // Make sure the constant frame is loaded.  This method also does the frame trace.
-   if (p_timeFrames.size() == 0) InitConstantRotation(p_et);
+   if (p_timeFrames.size() == 0) InitConstantRotation(p_et, naif);
    int toFrame = p_timeFrames[0];
 
    // First try getting the entire state matrix (6x6), which includes CJ and the angular velocity
    double stateCJ[6][6];
-   frmchg_((integer *) &j2000, (integer *) &toFrame, &time, (doublereal *) stateCJ);
+   naif->frmchg_((integer *) &j2000, (integer *) &toFrame, &time, (doublereal *) stateCJ);
 
    // If Naif fails attempting to get the state matrix, assume the angular velocity vector is
    // not available and just get the rotation matrix.  First turn off Naif error reporting and
    // return any error without printing them.
-   SpiceBoolean ckfailure = failed_c();
-   reset_c();                   // Reset Naif error system to allow caller to recover
+   SpiceBoolean ckfailure = naif->failed_c();
+   naif->reset_c();                   // Reset Naif error system to allow caller to recover
 
    if (!ckfailure) {
-     xpose6_c(stateCJ, stateCJ);
-     xf2rav_c(stateCJ, (SpiceDouble( *)[3]) &p_CJ[0], (SpiceDouble *) &p_av[0]);
+     naif->xpose6_c(stateCJ, stateCJ);
+     naif->xf2rav_c(stateCJ, (SpiceDouble( *)[3]) &p_CJ[0], (SpiceDouble *) &p_av[0]);
      p_hasAngularVelocity = true;
    }
    else {
-     refchg_((integer *) &j2000, (integer *) &toFrame, &time, (SpiceDouble *) &p_CJ[0]);
+     naif->refchg_((integer *) &j2000, (integer *) &toFrame, &time, (SpiceDouble *) &p_CJ[0]);
 
-     if (failed_c()) {
+     if (naif->failed_c()) {
        char naifstr[64];
-       getmsg_c("SHORT", sizeof(naifstr), naifstr);
-       reset_c();  // Reset Naif error system to allow caller to recover
+       naif->getmsg_c("SHORT", sizeof(naifstr), naifstr);
+       naif->reset_c();  // Reset Naif error system to allow caller to recover
 
-       if (eqstr_c(naifstr, "SPICE(UNKNOWNFRAME)")) {
+       if (naif->eqstr_c(naifstr, "SPICE(UNKNOWNFRAME)")) {
          Isis::IString msg = Isis::IString((int) p_constantFrames[0]) + " is an unrecognized " +
                              "reference frame code.  Has the mission frames kernel been loaded?";
          throw IException(IException::Io, msg, _FILEINFO_);
@@ -3382,10 +3379,10 @@ namespace Isis {
      }
 
      // Transpose to obtain row-major order
-     xpose_c((SpiceDouble( *)[3]) &p_CJ[0], (SpiceDouble( *)[3]) &p_CJ[0]);
+     naif->xpose_c((SpiceDouble( *)[3]) &p_CJ[0], (SpiceDouble( *)[3]) &p_CJ[0]);
    }
 
-   NaifStatus::CheckErrors();
+   naif->CheckErrors();
   }
 
 
@@ -3395,7 +3392,7 @@ namespace Isis {
    *
    * @return @b vector<double> Vector containing the three rotation angles.
    */
-  std::vector<double> SpiceRotation::EvaluatePolyFunction() {
+  std::vector<double> SpiceRotation::EvaluatePolyFunction(NaifContextPtr naif) {
    Isis::PolynomialUnivariate function1(p_degree);
    Isis::PolynomialUnivariate function2(p_degree);
    Isis::PolynomialUnivariate function3(p_degree);
@@ -3413,11 +3410,11 @@ namespace Isis {
    angles.push_back(function3.Evaluate(rtime));
 
    // Get the first angle back into the range Naif expects [-180.,180.]
-   if (angles[0] <= -1 * pi_c()) {
-     angles[0] += twopi_c();
+   if (angles[0] <= -1 * naif->pi_c()) {
+     angles[0] += naif->twopi_c();
    }
-   else if (angles[0] > pi_c()) {
-     angles[0] -= twopi_c();
+   else if (angles[0] > naif->pi_c()) {
+     angles[0] -= naif->twopi_c();
    }
    return angles;
   }
@@ -3429,8 +3426,8 @@ namespace Isis {
    *
    * @see SpiceRotatation::SetEphemerisTime
    */
-  void SpiceRotation::setEphemerisTimePolyFunction() {
-   NaifStatus::CheckErrors();
+  void SpiceRotation::setEphemerisTimePolyFunction(NaifContextPtr naif) {
+   naif->CheckErrors();
    Isis::PolynomialUnivariate function1(p_degree);
    Isis::PolynomialUnivariate function2(p_degree);
    Isis::PolynomialUnivariate function3(p_degree);
@@ -3447,16 +3444,16 @@ namespace Isis {
    double angle3 = function3.Evaluate(rtime);
 
    // Get the first angle back into the range Naif expects [-180.,180.]
-   if (angle1 < -1 * pi_c()) {
-     angle1 += twopi_c();
+   if (angle1 < -1 * naif->pi_c()) {
+     angle1 += naif->twopi_c();
    }
-   else if (angle1 > pi_c()) {
-     angle1 -= twopi_c();
+   else if (angle1 > naif->pi_c()) {
+     angle1 -= naif->twopi_c();
    }
 
-   eul2m_c((SpiceDouble) angle3, (SpiceDouble) angle2, (SpiceDouble) angle1,
-           p_axis3,              p_axis2,              p_axis1,
-           (SpiceDouble( *)[3]) &p_CJ[0]);
+   naif->eul2m_c((SpiceDouble) angle3, (SpiceDouble) angle2, (SpiceDouble) angle1,
+                 p_axis3,              p_axis2,              p_axis1,
+                 (SpiceDouble( *)[3]) &p_CJ[0]);
 
    if (p_hasAngularVelocity) {
      if ( p_degree == 0){
@@ -3469,7 +3466,7 @@ namespace Isis {
        ComputeAv();
      }
    }
-   NaifStatus::CheckErrors();
+   naif->CheckErrors();
   }
 
 
@@ -3479,18 +3476,18 @@ namespace Isis {
    *
    * @see SpiceRotation::SetEphemerisTime
    */
-  void SpiceRotation::setEphemerisTimePolyFunctionOverSpice() {
-    setEphemerisTimeMemcache();
-    NaifStatus::CheckErrors();
+  void SpiceRotation::setEphemerisTimePolyFunctionOverSpice(NaifContextPtr naif) {
+    setEphemerisTimeMemcache(naif);
+    naif->CheckErrors();
     std::vector<double> cacheAngles(3);
     std::vector<double> cacheVelocity(3);
-    cacheAngles = Angles(p_axis3, p_axis2, p_axis1);
+    cacheAngles = Angles(p_axis3, p_axis2, p_axis1, naif);
     cacheVelocity = p_av;
-    setEphemerisTimePolyFunction();
+    setEphemerisTimePolyFunction(naif);
     std::vector<double> polyAngles(3);
     // The decomposition fails because the angles are outside the valid range for Naif
     // polyAngles = Angles(p_axis3, p_axis2, p_axis1);
-    polyAngles = EvaluatePolyFunction();
+    polyAngles = EvaluatePolyFunction(naif);
     std::vector<double> polyVelocity(3);
     polyVelocity = p_av;
     std::vector<double> angles(3);
@@ -3500,23 +3497,23 @@ namespace Isis {
       p_av[index] += cacheVelocity[index];
     }
 
-   if (angles[0] <= -1 * pi_c()) {
-     angles[0] += twopi_c();
+   if (angles[0] <= -1 * naif->pi_c()) {
+     angles[0] += naif->twopi_c();
    }
-   else if (angles[0] > pi_c()) {
-     angles[0] -= twopi_c();
-   }
-
-   if (angles[2] <= -1 * pi_c()) {
-     angles[2] += twopi_c();
-   }
-   else if (angles[2] > pi_c()) {
-     angles[2] -= twopi_c();
+   else if (angles[0] > naif->pi_c()) {
+     angles[0] -= naif->twopi_c();
    }
 
-   eul2m_c((SpiceDouble) angles[2], (SpiceDouble) angles[1], (SpiceDouble) angles[0],
-           p_axis3,                 p_axis2,                 p_axis1,
-           (SpiceDouble( *)[3]) &p_CJ[0]);
+   if (angles[2] <= -1 * naif->pi_c()) {
+     angles[2] += naif->twopi_c();
+   }
+   else if (angles[2] > naif->pi_c()) {
+     angles[2] -= naif->twopi_c();
+   }
+
+   naif->eul2m_c((SpiceDouble) angles[2], (SpiceDouble) angles[1], (SpiceDouble) angles[0],
+                 p_axis3,                 p_axis2,                 p_axis1,
+                 (SpiceDouble( *)[3]) &p_CJ[0]);
   }
 
 
@@ -3525,7 +3522,7 @@ namespace Isis {
    *
    * @see SpiceRotation::SetEphemerisTime
    */
-  void SpiceRotation::setEphemerisTimePckPolyFunction() {
+  void SpiceRotation::setEphemerisTimePckPolyFunction(NaifContextPtr naif) {
     // Set the scales
     double dTime =  p_et / 86400.;   // seconds to days conversion
     double centTime = dTime / 36525; // seconds to Julian centuries conversion
@@ -3563,18 +3560,18 @@ namespace Isis {
     // Get pm in correct range
     pm = Angle(fmod(pm.degrees(), 360), Angle::Degrees);  // Get pm back into the domain range
 
-    if (ra.radians() < -1 * pi_c()) {
-      ra += Angle(twopi_c(), Angle::Radians);
+    if (ra.radians() < -1 * naif->pi_c()) {
+      ra += Angle(naif->twopi_c(), Angle::Radians);
     }
-    else if (ra.radians() > pi_c()) {
-      ra -= Angle(twopi_c(), Angle::Radians);
+    else if (ra.radians() > naif->pi_c()) {
+      ra -= Angle(naif->twopi_c(), Angle::Radians);
     }
 
-    if (pm.radians() < -1 * pi_c()) {
-      pm += Angle(twopi_c(), Angle::Radians);
+    if (pm.radians() < -1 * naif->pi_c()) {
+      pm += Angle(naif->twopi_c(), Angle::Radians);
     }
-    else if (pm.radians() > pi_c()) {
-      pm -= Angle(twopi_c(), Angle::Radians);
+    else if (pm.radians() > naif->pi_c()) {
+      pm -= Angle(naif->twopi_c(), Angle::Radians);
     }
 
     // Convert to Euler angles to get the matrix
@@ -3588,11 +3585,11 @@ namespace Isis {
     // Load the Euler angles and their derivatives into an array and create the state matrix
     SpiceDouble angsDangs[6];
     SpiceDouble BJs[6][6];
-    vpack_c(w, delta, phi, angsDangs);
-    vpack_c(dw, ddelta, dphi, &angsDangs[3]);
-    eul2xf_c (angsDangs, p_axis3, p_axis2, p_axis1, BJs);
+    naif->vpack_c(w, delta, phi, angsDangs);
+    naif->vpack_c(dw, ddelta, dphi, &angsDangs[3]);
+    naif->eul2xf_c (angsDangs, p_axis3, p_axis2, p_axis1, BJs);
 
     // Decompose the state matrix to the rotation and its angular velocity
-    xf2rav_c(BJs, (SpiceDouble( *)[3]) &p_CJ[0], (SpiceDouble *) &p_av[0]);
+    naif->xf2rav_c(BJs, (SpiceDouble( *)[3]) &p_CJ[0], (SpiceDouble *) &p_av[0]);
   }
 }

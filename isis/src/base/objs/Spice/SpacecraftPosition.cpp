@@ -19,7 +19,7 @@ find files of those names at the top level of this repository. **/
 #include "IString.h"
 #include "iTime.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 

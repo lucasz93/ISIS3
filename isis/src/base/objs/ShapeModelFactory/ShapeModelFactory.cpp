@@ -21,7 +21,7 @@ find files of those names at the top level of this repository. **/
 #include "IException.h"
 #include "IString.h"
 #include "NaifDskShape.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "PlaneShape.h"
 #include "Projection.h"
 #include "Preference.h"

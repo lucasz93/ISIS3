@@ -11,9 +11,7 @@ find files of those names at the top level of this repository. **/
 #include <string>
 #include <vector>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 namespace Isis {
   /**

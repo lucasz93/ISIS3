@@ -33,7 +33,7 @@ find files of those names at the top level of this repository. **/
 #include "iTime.h"
 #include "Latitude.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Projection.h"
 #include "ProjectionFactory.h"
 #include "RingPlaneProjection.h"
