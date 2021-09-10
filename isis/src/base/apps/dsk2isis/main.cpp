@@ -32,7 +32,8 @@ void initialize(Buffer &out) {
 }
 
 void IsisMain() {
- 
+  auto naif = NaifContext::acquire();
+  
   // We will be processing by line
   ProcessByLine p;
   UserInterface &ui = Application::GetUserInterface();
@@ -115,12 +116,12 @@ void IsisMain() {
           point.ToNaifArray(&observer[0]);
 
           naif->CheckErrors();
-          vscl_c(1.5, &observer[0], &observer[0]);
+          naif->vscl_c(1.5, &observer[0], &observer[0]);
           naif->CheckErrors();
 
           // Get look vector
           NaifVector raydir(3);
-          vminus_c(&observer[0], &raydir[0]);
+          naif->vminus_c(&observer[0], &raydir[0]);
           naif->CheckErrors();
   
           // Check for valid intercept

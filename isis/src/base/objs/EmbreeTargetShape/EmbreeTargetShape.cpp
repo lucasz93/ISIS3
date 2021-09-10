@@ -280,7 +280,7 @@ namespace Isis {
       }
       // DSKs
       else if (file.extension() == "bds") {
-        mesh = readDSK(file);
+        mesh = readDSK(file, NaifContext::acquire());
       }
       // Let PCL try to handle other formats (obj, ply, etc.)
       else {
@@ -307,7 +307,7 @@ namespace Isis {
    * @throws IException::User
    * @throws IException::Io
    */
-  pcl::PolygonMesh::Ptr EmbreeTargetShape::readDSK(FileName file) {
+  pcl::PolygonMesh::Ptr EmbreeTargetShape::readDSK(FileName file, NaifContextPtr naif) {
 
     /** NAIF DSK parameter setup   */
     SpiceInt      dskHandle;      //!< The DAS file handle of the DSK file.
@@ -324,19 +324,19 @@ namespace Isis {
     }
   
     // Open the NAIF Digital Shape Kernel (DSK)
-    dasopr_c( file.expanded().toLatin1().data(), &dskHandle );
+    naif->dasopr_c( file.expanded().toLatin1().data(), &dskHandle );
     naif->CheckErrors();
   
     // Search to the first DLA segment
     SpiceBoolean found;
-    dlabfs_c( dskHandle, &dlaDescriptor, &found );
+    naif->dlabfs_c( dskHandle, &dlaDescriptor, &found );
     naif->CheckErrors();
     if ( !found ) {
       QString mess = "No segments found in DSK file [" + file.expanded() + "]"; 
       throw IException(IException::User, mess, _FILEINFO_);
     }
 
-    dskgd_c( dskHandle, &dlaDescriptor, &dskDescriptor );
+    naif->dskgd_c( dskHandle, &dlaDescriptor, &dskDescriptor );
     naif->CheckErrors();
 
     // Get The number of polygons and vertices
@@ -352,7 +352,7 @@ namespace Isis {
 
     // Read the vertices from the dsk file
     SpiceInt numRead = 0;
-    dskv02_c(dskHandle, &dlaDescriptor, 1, numVertices,
+    naif->dskv02_c(dskHandle, &dlaDescriptor, 1, numVertices,
              &numRead, ( SpiceDouble(*)[3] )(verticesArray) );
     naif->CheckErrors();
     if ( numRead != numVertices ) {
@@ -364,7 +364,7 @@ namespace Isis {
 
     // Read the polygons from the DSK
     numRead = 0;
-    dskp02_c(dskHandle, &dlaDescriptor, 1, numPlates,
+    naif->dskp02_c(dskHandle, &dlaDescriptor, 1, numPlates,
              &numRead, ( SpiceInt(*)[3] )(polygonsArray) );
     naif->CheckErrors();
     if ( numRead != numPlates ) {

@@ -40,7 +40,7 @@ namespace Isis {
    * @param dskfile The DSK file to load into a Bullet target shape.
    */
   BulletDskShape::BulletDskShape(const QString &dskfile) : m_mesh()  {
-    loadFromDsk(dskfile);
+    loadFromDsk(dskfile, NaifContext::acquire());
     setMaximumDistance();
   }
 
@@ -159,7 +159,7 @@ namespace Isis {
  *
  * @param dskfile The DSK file to load.
  */
-  void BulletDskShape::loadFromDsk(const QString &dskfile) {
+  void BulletDskShape::loadFromDsk(const QString &dskfile, NaifContextPtr naif) {
 
     /** NAIF DSK parameter setup   */
     SpiceInt                   handle;   //!< The DAS file handle of the DSK file.
@@ -172,13 +172,13 @@ namespace Isis {
     }
 
     // Open the NAIF Digital Shape Kernel (DSK)
-    dasopr_c( dskFile.expanded().toLatin1().data(), &handle );
+    naif->dasopr_c( dskFile.expanded().toLatin1().data(), &handle );
     naif->CheckErrors();
 
     // Search to the first DLA segment
     SpiceBoolean  found;
     SpiceDLADescr segment;
-    dlabfs_c( handle, &segment, &found );
+    naif->dlabfs_c( handle, &segment, &found );
     naif->CheckErrors();
     if ( !found ) {
       QString mess = "No segments found in DSK file " + dskfile ;
@@ -190,7 +190,7 @@ namespace Isis {
 
     // Iterate until you find no more segments.
     while(found) {
-      dlafns_c(handle, &segments.back(), &segment, &found);
+      naif->dlafns_c(handle, &segments.back(), &segment, &found);
       naif->CheckErrors();
       if (found)
         segments.push_back(segment);
@@ -209,7 +209,7 @@ namespace Isis {
       btIndexedMesh i_mesh;
 
       // Get size/counts
-      dskz02_c( handle, &segments[i], &nvertices, &nplates);
+      naif->dskz02_c( handle, &segments[i], &nvertices, &nplates);
       naif->CheckErrors();
 
       m_mesh->addIndexedMesh(i_mesh, PHY_INTEGER);
@@ -229,12 +229,12 @@ namespace Isis {
       v_mesh.m_vertexStride = (sizeof(double) * 3);
 
       SpiceInt n;
-      (void) dskv02_c(handle, &segments[i], 1, nvertices, &n,
+      (void) naif->dskv02_c(handle, &segments[i], 1, nvertices, &n,
                       ( SpiceDouble(*)[3] ) (v_mesh.m_vertexBase));
       naif->CheckErrors();
 
       // Read the indexes from the DSK
-      (void) dskp02_c(handle, &segments[i], 1, nplates, &n,
+      (void) naif->dskp02_c(handle, &segments[i], 1, nplates, &n,
                       ( SpiceInt(*)[3] ) (v_mesh.m_triangleIndexBase));
       naif->CheckErrors();
 
@@ -249,7 +249,7 @@ namespace Isis {
     }
 
     // Close DSK
-    dascls_c(handle);
+    naif->dascls_c(handle);
 
     bool useQuantizedAabbCompression = true;
     // bool useQuantizedAabbCompression = false;

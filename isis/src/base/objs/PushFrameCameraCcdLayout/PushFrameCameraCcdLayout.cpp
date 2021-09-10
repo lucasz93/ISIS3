@@ -51,13 +51,13 @@ namespace Isis {
    * 
    * @return @b bool If the kernel was successfully loaded.
    */
-  bool PushFrameCameraCcdLayout::addKernel(const QString &kernel) {
+  bool PushFrameCameraCcdLayout::addKernel(NaifContextPtr naif, const QString &kernel) {
     FileName kern(kernel);
     if ( kern.isVersioned()) {
       kern = kern.highestVersion();
     }
-    m_kernels.Add(kern.expanded());
-    int nloaded = m_kernels.Load();
+    m_kernels.Add(naif, kern.expanded());
+    int nloaded = m_kernels.Load(naif);
     return (nloaded > 0);
   }
 
@@ -68,9 +68,9 @@ namespace Isis {
    * 
    * @return @b int The number of samples in the CCD.
    */
-  int PushFrameCameraCcdLayout::ccdSamples() const {
+  int PushFrameCameraCcdLayout::ccdSamples(NaifContextPtr naif) const {
     QString var = "INS" + toString(m_ccdId) + "_FILTER_SAMPLES";
-    return (getSpiceInt(var));
+    return (getSpiceInt(naif, var));
   }
 
 
@@ -80,9 +80,9 @@ namespace Isis {
    * 
    * @return @b int The number of lines in the CCD.
    */
-  int PushFrameCameraCcdLayout::ccdLines() const {
+  int PushFrameCameraCcdLayout::ccdLines(NaifContextPtr naif) const {
     QString var = "INS" + toString(m_ccdId) + "_FILTER_LINES";
-    return (getSpiceInt(var));
+    return (getSpiceInt(naif, var));
   }
 
 
@@ -96,6 +96,7 @@ namespace Isis {
    * @return @b FrameletInfo The location and size of the framelet on the CCD.
    */
   PushFrameCameraCcdLayout::FrameletInfo PushFrameCameraCcdLayout::getFrameInfo(
+                                            NaifContextPtr naif,
                                             const int &frameId, 
                                              const QString &name) const {
     FrameletInfo finfo(frameId);
@@ -103,9 +104,9 @@ namespace Isis {
 
     QString base = "INS" + toString(frameId);
     try {
-      finfo.m_samples = getSpiceInt(base + "_FILTER_SAMPLES");
-      finfo.m_lines = getSpiceInt(base + "_FILTER_LINES");
-      finfo.m_startLine = getSpiceInt(base + "_FILTER_OFFSET");
+      finfo.m_samples = getSpiceInt(naif, base + "_FILTER_SAMPLES");
+      finfo.m_lines = getSpiceInt(naif, base + "_FILTER_LINES");
+      finfo.m_startLine = getSpiceInt(naif, base + "_FILTER_OFFSET");
     }
     catch (IException &e) {
       QString msg = "Could not find layout information for framelet ["
@@ -116,7 +117,7 @@ namespace Isis {
 
     if ( finfo.m_filterName.isEmpty()) {
       try {
-        finfo.m_filterName = getSpiceString(base + "_FILTER_NAME");
+        finfo.m_filterName = getSpiceString(naif, base + "_FILTER_NAME");
       } catch (IException &ie) {
         // noop - leave name empty
       }
@@ -136,12 +137,13 @@ namespace Isis {
    * 
    * @see gipool_c
    */
-  int PushFrameCameraCcdLayout::getSpiceInt(const QString &var, 
+  int PushFrameCameraCcdLayout::getSpiceInt(NaifContextPtr naif,
+                                          const QString &var, 
                                           const int index) const {
     SpiceBoolean found = false;
     SpiceInt numValuesRead;
     SpiceInt kernelValue;
-    gipool_c(var.toLatin1().data(), (SpiceInt) index, 1, &numValuesRead,
+    naif->gipool_c(var.toLatin1().data(), (SpiceInt) index, 1, &numValuesRead,
              &kernelValue, &found);
 
     // Gotta throw an error here if not found
@@ -165,13 +167,14 @@ namespace Isis {
    * 
    * @see gdpool_c
    */
-  double PushFrameCameraCcdLayout::getSpiceDouble(const QString &var, 
+  double PushFrameCameraCcdLayout::getSpiceDouble(NaifContextPtr naif,
+                                               const QString &var, 
                                                const int index) const {
     SpiceBoolean found = false;
     SpiceInt numValuesRead;
     SpiceDouble kernelValue;
-    gdpool_c(var.toLatin1().data(), (SpiceInt) index, 1, &numValuesRead,
-             &kernelValue, &found);
+    naif->gdpool_c(var.toLatin1().data(), (SpiceInt) index, 1, &numValuesRead,
+                   &kernelValue, &found);
 
     // Gotta throw an error here if not found
     if (!found) {
@@ -194,13 +197,14 @@ namespace Isis {
    * 
    * @see gcpool_c
    */
-  QString PushFrameCameraCcdLayout::getSpiceString(const QString &var, 
+  QString PushFrameCameraCcdLayout::getSpiceString(NaifContextPtr naif,
+                                                   const QString &var, 
                                                    const int index) const {
     SpiceBoolean found = false;
     SpiceInt numValuesRead;
     char kernelValue[512];
-    gcpool_c(var.toLatin1().data(), (SpiceInt) index, 1, sizeof(kernelValue),
-             &numValuesRead, kernelValue, &found);
+    naif->gcpool_c(var.toLatin1().data(), (SpiceInt) index, 1, sizeof(kernelValue),
+                   &numValuesRead, kernelValue, &found);
 
     // Gotta throw an error here if not found
     if (!found) {

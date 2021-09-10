@@ -52,7 +52,7 @@ namespace Isis {
   Kernels::Kernels(const Kernels &kernels) {
     _kernels = kernels._kernels;
     _camVersion = kernels._camVersion;
-    UpdateLoadStatus();
+    UpdateLoadStatus(NaifContext::acquire());
     UpdateManagedStatus();
   }
 
@@ -78,7 +78,7 @@ namespace Isis {
       Clear();
       _kernels = kernels._kernels;
       _camVersion = kernels._camVersion;
-      UpdateLoadStatus();
+      UpdateLoadStatus(NaifContext::acquire());
       UpdateManagedStatus();
     }
     return (*this);
@@ -91,7 +91,7 @@ namespace Isis {
    */
   Kernels::Kernels(const QString &filename) {
     Pvl pvl(filename);
-    Init(pvl);
+    Init(NaifContext::acquire(), pvl);
   }
 
   /**
@@ -100,7 +100,7 @@ namespace Isis {
    * @param cube    Cube object of ISIS file
    */
   Kernels::Kernels(Cube &cube) {
-    Init(*cube.label());
+    Init(NaifContext::acquire(), *cube.label());
   }
 
   /**
@@ -109,7 +109,7 @@ namespace Isis {
    * @param pvl  ISIS label to get kernel information from
    */
   Kernels::Kernels(Pvl &pvl) {
-    Init(pvl);
+    Init(NaifContext::acquire(), pvl);
   }
 
   /**
@@ -139,20 +139,20 @@ namespace Isis {
    * @param pvl Assumed to be a valid ISIS cube label containing the Kernels
    *            group
    */
-  void Kernels::Init(Pvl &pvl) {
-    UnLoad();
+  void Kernels::Init(NaifContextPtr naif, Pvl &pvl) {
+    UnLoad(naif);
     _kernels.clear();
-    addKernels(findKernels(pvl, "TargetPosition"));
-    addKernels(findKernels(pvl, "InstrumentPosition"));
-    addKernels(findKernels(pvl, "InstrumentPointing"));
-    addKernels(findKernels(pvl, "Frame"));
-    addKernels(findKernels(pvl, "TargetAttitudeShape"));
-    addKernels(findKernels(pvl, "Instrument"));
-    addKernels(findKernels(pvl, "InstrumentAddendum"));
-    addKernels(findKernels(pvl, "LeapSecond"));
-    addKernels(findKernels(pvl, "SpacecraftClock"));
-    addKernels(findKernels(pvl, "ShapeModel"));
-    addKernels(findKernels(pvl, "Extra"));
+    addKernels(findKernels(naif, pvl, "TargetPosition"));
+    addKernels(findKernels(naif, pvl, "InstrumentPosition"));
+    addKernels(findKernels(naif, pvl, "InstrumentPointing"));
+    addKernels(findKernels(naif, pvl, "Frame"));
+    addKernels(findKernels(naif, pvl, "TargetAttitudeShape"));
+    addKernels(findKernels(naif, pvl, "Instrument"));
+    addKernels(findKernels(naif, pvl, "InstrumentAddendum"));
+    addKernels(findKernels(naif, pvl, "LeapSecond"));
+    addKernels(findKernels(naif, pvl, "SpacecraftClock"));
+    addKernels(findKernels(naif, pvl, "ShapeModel"));
+    addKernels(findKernels(naif, pvl, "Extra"));
     _camVersion = getCameraVersion(pvl);
     return;
   }
@@ -175,9 +175,9 @@ namespace Isis {
    * @return bool True if the files was added to the list, false if it already
    *              exists
    */
-  bool Kernels::Add(const QString &kfile) {
+  bool Kernels::Add(NaifContextPtr naif, const QString &kfile) {
     if (!findByName(kfile)) {
-      _kernels.push_back(examine(kfile, true));
+      _kernels.push_back(examine(naif, kfile, true));
       return (true);
     }
     return (false);
@@ -232,11 +232,11 @@ namespace Isis {
    *
    * @return int Number of kernels discovered
    */
-  int Kernels::Discover() {
+  int Kernels::Discover(NaifContextPtr naif) {
     _kernels.clear();
     SpiceInt count;
     naif->CheckErrors();
-    ktotal_c("ALL", &count);
+    naif->ktotal_c("ALL", &count);
     int nfound(0);
     for (int i = 0 ; i < count ; i++) {
       SpiceChar file[128];
@@ -244,10 +244,10 @@ namespace Isis {
       SpiceChar source[128];
       SpiceInt  handle;
       SpiceBoolean found;
-      kdata_c(i, "ALL", sizeof(file), sizeof(ktype), sizeof(source),
-              file, ktype,source, &handle, &found);
+      naif->kdata_c(i, "ALL", sizeof(file), sizeof(ktype), sizeof(source),
+                    file, ktype,source, &handle, &found);
       if (found == SPICETRUE) {
-        _kernels.push_back(examine(file, false));
+        _kernels.push_back(examine(naif, file, false));
         nfound++;
       }
     }
@@ -330,9 +330,9 @@ namespace Isis {
    * instantiations.
    *
    */
-  void Kernels::InitializeNaifKernelPool() {
+  void Kernels::InitializeNaifKernelPool(NaifContextPtr naif) {
     naif->CheckErrors();
-    kclear_c();
+    naif->kclear_c();
     naif->CheckErrors();
     for (unsigned int i = 0 ; i < _kernels.size() ; i++) {
       _kernels[i].loaded = false;
@@ -361,12 +361,12 @@ namespace Isis {
    *
    * @return int Number of kernels loaded
    */
-  int Kernels::Load(const QString &ktypes) {
+  int Kernels::Load(NaifContextPtr naif, const QString &ktypes) {
     //  If no types specified, return them all
     int nLoaded(0);
     if (ktypes.isEmpty()) {
       for (unsigned int k = 0 ; k < _kernels.size() ; k++) {
-        if (Load(_kernels[k])) { nLoaded++; }
+        if (Load(naif, _kernels[k])) { nLoaded++; }
       }
     }
     else {
@@ -375,7 +375,7 @@ namespace Isis {
       for (int t = 0 ; t < tlist.size() ; t++) {
         for (unsigned int k = 0; k < _kernels.size() ; k++) {
           if (_kernels[k].ktype == tlist[t]) {
-            if (Load(_kernels[k])) { nLoaded++; }
+            if (Load(naif, _kernels[k])) { nLoaded++; }
           }
         }
       }
@@ -402,11 +402,11 @@ namespace Isis {
    *
    * @return int Number of kernels loaded
    */
-  int Kernels::Load() {
+  int Kernels::Load(NaifContextPtr naif) {
     //  If not types specified, return them all
     int nLoaded(0);
     for (unsigned int k = 0 ; k < _kernels.size() ; k++) {
-      if (Load(_kernels[k])) { nLoaded++; }
+      if (Load(naif, _kernels[k])) { nLoaded++; }
     }
     return (nLoaded);
   }
@@ -422,10 +422,10 @@ namespace Isis {
    *
    * @return int Number of kernels unloaded
    */
-  int Kernels::UnLoad() {
+  int Kernels::UnLoad(NaifContextPtr naif) {
     int nUnloaded(0);
     for (unsigned int i = 0 ; i < _kernels.size() ; i++) {
-      if (UnLoad(_kernels[i])) nUnloaded++;
+      if (UnLoad(naif, _kernels[i])) nUnloaded++;
     }
     return (nUnloaded);
   }
@@ -450,11 +450,11 @@ namespace Isis {
    *
    * @return int Number of kernels unloaded
    */
-  int Kernels::UnLoad(const QString &ktypes) {
+  int Kernels::UnLoad(NaifContextPtr naif, const QString &ktypes) {
     //  If not types specified, return them all
     int nUnloaded(0);
     if (ktypes.isEmpty()) {
-      nUnloaded = UnLoad();
+      nUnloaded = UnLoad(naif);
     }
     else {
       // Find types and return requested types
@@ -462,7 +462,7 @@ namespace Isis {
       for (int t = 0 ; t < tlist.size() ; t++) {
         for (unsigned int k = 0; k < _kernels.size() ; k++) {
           if (_kernels[k].ktype == tlist[t]) {
-            if (UnLoad(_kernels[k])) nUnloaded++;
+            if (UnLoad(naif, _kernels[k])) nUnloaded++;
           }
         }
       }
@@ -488,7 +488,7 @@ namespace Isis {
    * @return int Number of kernels whose states where changed/affected by this
    *             method
    */
-  int Kernels::UpdateLoadStatus() {
+  int Kernels::UpdateLoadStatus(NaifContextPtr naif) {
     int nchanged(0);
     for (unsigned int i = 0 ; i < _kernels.size() ; i++) {
       // Use NAIF to determine if it is loaded
@@ -499,7 +499,7 @@ namespace Isis {
         SpiceBoolean found;
 
         naif->CheckErrors();
-        kinfo_c(_kernels[i].fullpath.toLatin1().data(), sizeof(ktype), sizeof(source),
+        naif->kinfo_c(_kernels[i].fullpath.toLatin1().data(), sizeof(ktype), sizeof(source),
                  ktype,source, &handle, &found);
         naif->CheckErrors();
 
@@ -771,12 +771,12 @@ namespace Isis {
    *         not be loaded for various reasons: it is not a NAIF type kernel or
    *         it failed to load due to errors or non-existance.
    */
-  bool Kernels::Load(Kernels::KernelFile &kfile) {
+  bool Kernels::Load(NaifContextPtr naif, Kernels::KernelFile &kfile) {
     if (IsNaifType(kfile.ktype)) {
       if (!kfile.loaded) {
         naif->CheckErrors();
         try {
-          furnsh_c(kfile.fullpath.toLatin1().data());
+          naif->furnsh_c(kfile.fullpath.toLatin1().data());
           naif->CheckErrors();
           kfile.loaded = true;
           kfile.managed = true;
@@ -811,14 +811,14 @@ namespace Isis {
    *
    * @return bool
    */
-  bool Kernels::UnLoad(KernelFile &kfile) {
+  bool Kernels::UnLoad(NaifContextPtr naif, KernelFile &kfile) {
     //  If its loaded assume its a loaded NAIF kernel and unload it
     bool wasLoaded(false);
     if (kfile.loaded) {
       if (kfile.managed) {
          naif->CheckErrors();
          try {
-           unload_c(kfile.fullpath.toLatin1().data());
+           naif->unload_c(kfile.fullpath.toLatin1().data());
            naif->CheckErrors();
          }
          catch (IException &) {
@@ -900,7 +900,8 @@ namespace Isis {
    *
    * @return Kernels::KernelList List of scrutinized kernel file names
    */
-  Kernels::KernelList Kernels::findKernels(Pvl &pvl,
+  Kernels::KernelList Kernels::findKernels(NaifContextPtr naif,
+                                           Pvl &pvl,
                                            const QString &kname,
                                            const bool &manage) {
     KernelList klist;
@@ -912,7 +913,7 @@ namespace Isis {
       for (int i = 0 ; i < kkey.size() ; i++) {
         if (!kkey.isNull(i)) {
           if (kkey[i].toLower() != "table") {
-            klist.push_back(examine(kkey[i], manage));
+            klist.push_back(examine(naif, kkey[i], manage));
           }
         }
       }
@@ -1041,7 +1042,8 @@ namespace Isis {
    * @return Kernels::KernelFile An internal Kernels file structure describing
    *         the file.
    */
-  Kernels::KernelFile Kernels::examine(const QString &kfile,
+  Kernels::KernelFile Kernels::examine(NaifContextPtr naif,
+                                       const QString &kfile,
                                        const bool &manage) const {
 
     FileName kernfile(kfile);
@@ -1066,7 +1068,7 @@ namespace Isis {
         SpiceBoolean found;
 
         naif->CheckErrors();
-        kinfo_c(kf.fullpath.toLatin1().data(), sizeof(ktype), sizeof(source), ktype,
+        naif->kinfo_c(kf.fullpath.toLatin1().data(), sizeof(ktype), sizeof(source), ktype,
                 source, &handle, &found);
         naif->CheckErrors();
 

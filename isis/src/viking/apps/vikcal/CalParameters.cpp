@@ -77,7 +77,7 @@ namespace Isis {
       }
 
       QString startTime = instrument["STARTTIME"];
-      p_dist1 = CalcSunDist(startTime, icube);
+      p_dist1 = CalcSunDist(NaifContext::acquire(), startTime, icube);
       p_labexp = (double)instrument["EXPOSUREDURATION"] * 1000.0;  // convert to msec
       QString target = " ";
       PvlKeyword cs1 = instrument["FLOODMODEID"];
@@ -370,7 +370,7 @@ namespace Isis {
    *
    * @return Distance from the Sun to Mars in km
    */
-  double CalParameters::CalcSunDist(QString t, Cube *iCube) {
+  double CalParameters::CalcSunDist(NaifContextPtr naif, QString t, Cube *iCube) {
     try {
       Camera *cam;
       cam = iCube->camera();

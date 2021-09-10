@@ -130,8 +130,9 @@ namespace Isis {
    *
    * @return bool Returns true if an intercept was successful, false otherwise
    */
-  bool NaifDskShape::intersectSurface(std::vector<double> observerPos,
-                                           std::vector<double> lookDirection) {
+  bool NaifDskShape::intersectSurface(NaifContextPtr naif,
+                                      std::vector<double> observerPos,
+                                      std::vector<double> lookDirection) {
     NaifVertex obs(3, &observerPos[0]);
     NaifVector raydir(3, &lookDirection[0]);
     m_intercept.reset(m_model.intercept(obs, raydir));
@@ -228,7 +229,8 @@ namespace Isis {
    *
    * @param neighborPoints Input body-fixed points to compute normal for
    */
-  void NaifDskShape::calculateLocalNormal(QVector<double *> neighborPoints) {
+  void NaifDskShape::calculateLocalNormal(NaifContextPtr naif,
+                                          QVector<double *> neighborPoints) {
 
     // Sanity check
     if ( !hasIntersection() ) { // hasIntersection()  <==>  !m_intercept.isNull()
@@ -242,15 +244,15 @@ namespace Isis {
 
 
   /** Return the surface normal of the ellipsoid as the default */
-  void NaifDskShape::calculateDefaultNormal() {
+  void NaifDskShape::calculateDefaultNormal(NaifContextPtr naif) {
     // ShapeModel (parent class) throws error if no intersection
-     calculateSurfaceNormal();
+     calculateSurfaceNormal(naif);
   }
 
   /** Return the surface normal of the ellipsi=oud */
-  void NaifDskShape::calculateSurfaceNormal() {
+  void NaifDskShape::calculateSurfaceNormal(NaifContextPtr naif) {
     // ShapeModel (parent class) throws error if no intersection
-    setNormal(ellipsoidNormal().toStdVector());// this takes care of setHasNormal(true);
+    setNormal(ellipsoidNormal(naif).toStdVector());// this takes care of setHasNormal(true);
     return;
   }
 
@@ -268,7 +270,7 @@ namespace Isis {
    * @return QVector<double> Normal vector at the intercept point relative to
    *                             the ellipsoid (not the plate model)
    */
-  QVector<double> NaifDskShape::ellipsoidNormal()  {
+  QVector<double> NaifDskShape::ellipsoidNormal(NaifContextPtr naif)  {
 
     // Sanity check on state
     if ( !hasIntersection() ) {
@@ -293,7 +295,7 @@ namespace Isis {
     // need a case for target == NULL
     QVector<Distance> radii = QVector<Distance>::fromStdVector(targetRadii());
     naif->CheckErrors();
-    surfnm_c(radii[0].kilometers(), radii[1].kilometers(), radii[2].kilometers(),
+    naif->surfnm_c(radii[0].kilometers(), radii[1].kilometers(), radii[2].kilometers(),
              pB, &norm[0]);
     naif->CheckErrors();
 

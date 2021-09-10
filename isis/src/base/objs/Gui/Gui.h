@@ -30,6 +30,8 @@ find files of those names at the top level of this repository. **/
 #include "GuiParameterFactory.h"
 
 namespace Isis {
+  class NaifContextLifecycle;
+
   /**
    * @brief Gui for Isis Applications
    *
@@ -144,6 +146,8 @@ namespace Isis {
       int p_historyEntry;
 
       QLineEdit *p_commandLineEdit;
+
+      NaifContextLifecycle *p_naif_lifecycle;
 
     private slots:
       void StartProcess();

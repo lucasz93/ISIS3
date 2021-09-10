@@ -64,7 +64,8 @@ namespace Isis {
       using Isis::ShapeModel::intersectSurface;
 
       // Intersect the shape model
-      bool intersectSurface(std::vector<double> observerPos,
+      bool intersectSurface(NaifContextPtr naif,
+                            std::vector<double> observerPos,
                             std::vector<double> lookDirection);
 
       Distance localRadius(const Latitude &lat, const Longitude &lon);
@@ -73,7 +74,7 @@ namespace Isis {
       double demScale();
 
       // Calculate the default normal of the current intersection point
-      virtual void calculateDefaultNormal();
+      virtual void calculateDefaultNormal(NaifContextPtr naif);
 
       // implement pure virtual method from ShapeModel class
       bool isDEM() const;
@@ -85,8 +86,8 @@ namespace Isis {
       // example, or use its GetLocalNormal method.
 
       // Calculate the surface normal of the current intersection point
-     void calculateLocalNormal(QVector<double *> cornerNeighborPoints);
-     void calculateSurfaceNormal();
+     void calculateLocalNormal(NaifContextPtr naif, QVector<double *> cornerNeighborPoints);
+     void calculateSurfaceNormal(NaifContextPtr naif);
 
     protected:
      Cube *demCube();         //!< Returns the cube defining the shape model.

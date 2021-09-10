@@ -51,7 +51,7 @@ SpkSpiceSegment::SpkSpiceSegment() {
 
 /** Initialize with a cube extracting BLOB content */
 SpkSpiceSegment::SpkSpiceSegment(Cube &cube) {
-  init(cube);
+  init(cube, NaifContext::acquire());
 }
 
 /** Set the segment Id that will be written to the kernel */
@@ -105,7 +105,7 @@ int SpkSpiceSegment::UnloadKernelType(const QString &ktypes) const {
  *
  * @param cube ISIS cube file to accumulate information from
  */
-void SpkSpiceSegment::init(Cube &cube) {
+void SpkSpiceSegment::init(Cube &cube, NaifContextPtr naif) {
 
   _kernels.UnLoad();  // Unload all active, owned kernels
   init();            // Init local variables
@@ -139,8 +139,8 @@ void SpkSpiceSegment::init(Cube &cube) {
     if (!value.isEmpty()) { _target = value; }
 
     // Get default times for sorting purposes
-    setStartTime(camera->cacheStartTime().Et());
-    setEndTime(camera->cacheEndTime().Et());
+    setStartTime(camera->cacheStartTime().Et(), naif);
+    setEndTime(camera->cacheEndTime().Et(), naif);
 
   } catch ( IException &ie  ) {
     ostringstream mess;
@@ -204,17 +204,17 @@ void SpkSpiceSegment::init() {
  *
  * @return bool Always returns true
  */
-bool SpkSpiceSegment::getImageTimes(Pvl &lab, double &start, double &end) const {
+bool SpkSpiceSegment::getImageTimes(NaifContextPtr naif, Pvl &lab, double &start, double &end) const {
 
   _kernels.Load("LSK,SCLK");
   PvlObject &cube = lab.findObject("IsisCube");
   // Get the start and end time for the cube
-  start = UTCtoET((QString) cube.findGroup("Instrument")["StartTime"]);
+  start = UTCtoET((QString) cube.findGroup("Instrument")["StartTime"], naif);
   if(cube.findGroup("Instrument").hasKeyword("StopTime")) {
-    end = UTCtoET((QString) cube.findGroup("Instrument")["StopTime"]);
+    end = UTCtoET((QString) cube.findGroup("Instrument")["StopTime"], naif);
   }
   else {
-    end = UTCtoET (cube.findGroup("Instrument")["StartTime"]);
+    end = UTCtoET (cube.findGroup("Instrument")["StartTime"], naif);
   }
 
   return (true);
@@ -331,15 +331,15 @@ SpkSpiceSegment::SVector SpkSpiceSegment::expand(int ntop, int nbot,
 
 
 /** Sets start time  */
-void SpkSpiceSegment::setStartTime(double et) {
+void SpkSpiceSegment::setStartTime(double et, NaifContextPtr naif) {
   _startTime = et;
-  _utcStartTime = toUTC(_startTime);
+  _utcStartTime = toUTC(_startTime, naif);
 }
 
 /** Sets end time */
-void SpkSpiceSegment::setEndTime(double et) {
+void SpkSpiceSegment::setEndTime(double et, NaifContextPtr naif) {
   _endTime = et;
-  _utcEndTime = toUTC(_endTime);
+  _utcEndTime = toUTC(_endTime, naif);
 }
 
 /**
@@ -354,16 +354,16 @@ void SpkSpiceSegment::setEndTime(double et) {
  *
  * @return QString Returns the frame or body name.
  */
-QString SpkSpiceSegment::getNaifName(int naifid) const {
+QString SpkSpiceSegment::getNaifName(int naifid, NaifContextPtr naif) const {
   SpiceChar naifBuf[40];
 
   naif->CheckErrors();
-  frmnam_c ( (SpiceInt) naifid, sizeof(naifBuf), naifBuf);
+  naif->frmnam_c ( (SpiceInt) naifid, sizeof(naifBuf), naifBuf);
   string cframe(naifBuf);
 
   if ( cframe.empty() ) {
     SpiceBoolean found;
-    bodc2n_c((SpiceInt) naifid, sizeof(naifBuf), naifBuf, &found);
+    naif->bodc2n_c((SpiceInt) naifid, sizeof(naifBuf), naifBuf, &found);
     if ( found ) cframe = naifBuf;
   }
 
@@ -381,23 +381,23 @@ QString SpkSpiceSegment::getNaifName(int naifid) const {
 }
 
 /** Converts and ET time to UTC string */
-QString SpkSpiceSegment::toUTC(const double &et) const {
+QString SpkSpiceSegment::toUTC(const double &et, NaifContextPtr naif) const {
   const int UTCLEN = 80;
   char utcout[UTCLEN];
 
   naif->CheckErrors();
-  et2utc_c(et, "ISOC", 3, UTCLEN, utcout);
+  naif->et2utc_c(et, "ISOC", 3, UTCLEN, utcout);
   naif->CheckErrors();
 
   return (QString(utcout));
 }
 
 /** Converts a UTC time string to ET  */
-double SpkSpiceSegment::UTCtoET(const QString &utc) const {
+double SpkSpiceSegment::UTCtoET(const QString &utc, NaifContextPtr naif) const {
   SpiceDouble et;
 
   naif->CheckErrors();
-  utc2et_c(utc.toLatin1().data(), &et);
+  naif->utc2et_c(utc.toLatin1().data(), &et);
   naif->CheckErrors();
 
   return (et);

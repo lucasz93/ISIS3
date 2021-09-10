@@ -24,6 +24,8 @@ namespace Isis {
   }
 
   void shadow(Cube *demCube, UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
+    
     ProcessByBrick p;
     p.SetInputCube(demCube);
     p.SetBrickSize(demCube->sampleCount(), 128, 1);
@@ -50,7 +52,7 @@ namespace Isis {
 
       foreach (QString kernelFile, allKernelFiles) {
         kernelsUsed += kernelFile;
-        furnsh_c(FileName(kernelFile).expanded().toLatin1().data());
+        naif->furnsh_c(FileName(kernelFile).expanded().toLatin1().data());
       }
 
       // Find the NAIF target code for the DEM's target
@@ -63,13 +65,13 @@ namespace Isis {
 
       // Get actual sun position, relative to target
       QString bodyFixedFrame = QString("IAU_%1").arg(name.toUpper());
-      spkpos_c("SUN", time.Et(), bodyFixedFrame.toLatin1().data(), "NONE",
+      naif->spkpos_c("SUN", time.Et(), bodyFixedFrame.toLatin1().data(), "NONE",
                name.toUpper().toLatin1().data(), sunPosition, &lightTime);
 
       naif->CheckErrors();
 
       // Adjusted for light time
-      spkpos_c("SUN", time.Et() - lightTime, bodyFixedFrame.toLatin1().data(), "NONE",
+      naif->spkpos_c("SUN", time.Et() - lightTime, bodyFixedFrame.toLatin1().data(), "NONE",
                name.toUpper().toLatin1().data(), sunPosition, &lightTime);
 
       naif->CheckErrors();
@@ -81,7 +83,7 @@ namespace Isis {
       sunPosition[2] *= 1000;
 
       foreach (QString kernelFile, allKernelFiles) {
-        unload_c(FileName(kernelFile).expanded().toLatin1().data());
+        naif->unload_c(FileName(kernelFile).expanded().toLatin1().data());
       }
 
       naif->CheckErrors();

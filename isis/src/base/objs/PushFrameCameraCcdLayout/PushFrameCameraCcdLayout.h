@@ -66,12 +66,13 @@ namespace Isis {
 
       virtual ~PushFrameCameraCcdLayout();
 
-      bool addKernel(const QString &kernel);
+      bool addKernel(NaifContextPtr naif, const QString &kernel);
 
-      int ccdSamples() const;
-      int ccdLines() const;
+      int ccdSamples(NaifContextPtr naif) const;
+      int ccdLines(NaifContextPtr naif) const;
 
-      FrameletInfo getFrameInfo(const int &frameId, 
+      FrameletInfo getFrameInfo(NaifContextPtr naif,
+                                const int &frameId, 
                                 const QString &name = "") const;
 
 
@@ -79,9 +80,9 @@ namespace Isis {
       int      m_ccdId;     //!< NAIF ID of the CCD
       Kernels  m_kernels;   //!< NAIF kernel manager
 
-      int      getSpiceInt(const QString &var, const int index = 0) const;
-      double   getSpiceDouble(const QString &var, const int index = 0) const;
-      QString  getSpiceString(const QString &var, const int index = 0) const;
+      int      getSpiceInt(NaifContextPtr naif, const QString &var, const int index = 0) const;
+      double   getSpiceDouble(NaifContextPtr naif, const QString &var, const int index = 0) const;
+      QString  getSpiceString(NaifContextPtr naif, const QString &var, const int index = 0) const;
 
   };
 };

@@ -22,6 +22,8 @@ find files of those names at the top level of this repository. **/
 #include "ShapeModel.h"
 #include "SurfacePoint.h"
 
+#include "NaifContextCast.h"
+
 namespace Isis {
   /**
    * Initialize the PlaneShape.
@@ -74,7 +76,8 @@ namespace Isis {
    * @param lookDirection: observer (likely a spacecraft) look vector in Body-
    * Fixed coordinates.
    */
-  bool PlaneShape::intersectSurface (std::vector<double> observerPos,
+  bool PlaneShape::intersectSurface (NaifContextPtr naif,
+                                     std::vector<double> observerPos,
                                      std::vector<double> lookDirection) {
     naif->CheckErrors();
     SpiceDouble zvec[3];
@@ -96,7 +99,7 @@ namespace Isis {
 
     // NAIF routine to "Make a CSPICE plane from a normal vector and a constant"
     // see http://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/nvc2pl_c.html
-    nvc2pl_c(zvec, 0.0, &plane);
+    naif->nvc2pl_c(zvec, 0.0, &plane);
 
     SpiceDouble position[3];
     SpiceDouble lookvector[3];
@@ -111,7 +114,7 @@ namespace Isis {
 
     // NAIF routine to "find the intersection of a ray and a plane"
     // see http://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/inrypl_c.html
-    inrypl_c(&position, &lookvector, &plane, &nxpts, xpt);
+    naif->inrypl_c(&position, &lookvector, &plane, &nxpts, xpt);
 
     if (nxpts != 1 ) {
       setHasIntersection(false);
@@ -142,21 +145,21 @@ namespace Isis {
   /**
    * There is no implementation for this method.
    */
-  void PlaneShape::calculateSurfaceNormal() {
+  void PlaneShape::calculateSurfaceNormal(NaifContextPtr naif) {
   }
 
 
   /**
    * There is no implementation for this method.
    */
-  void PlaneShape::calculateDefaultNormal() {
+  void PlaneShape::calculateDefaultNormal(NaifContextPtr naif) {
   }
 
 
   /**
    * There is no implementation for this method.
    */
-  void PlaneShape::calculateLocalNormal(QVector<double *> cornerNeighborPoints) {
+  void PlaneShape::calculateLocalNormal(NaifContextPtr naif, QVector<double *> cornerNeighborPoints) {
   }
 
 
@@ -175,7 +178,7 @@ namespace Isis {
    * @return Emmision angle in decimal degrees
    *
    */
-  double PlaneShape::emissionAngle(const std::vector<double> & sB) {
+  double PlaneShape::emissionAngle(NaifContextPtr naif, const std::vector<double> & sB) {
 
     SpiceDouble pB[3];   // surface intersection in body-fixed coordinates
     SpiceDouble psB[3];  // vector from spacecraft to surface intersection
@@ -188,8 +191,8 @@ namespace Isis {
     pB[2] = surfaceIntersection()->GetZ().kilometers();
 
     // Get vector from surface intersect point to observer and normalize it
-    vsub_c((ConstSpiceDouble *) &sB[0], pB, psB);
-    unorm_c(psB, upsB, &dist);
+    naif->vsub_c((ConstSpiceDouble *) &sB[0], pB, psB);
+    naif->unorm_c(psB, upsB, &dist);
 
     // temporary normal vector
     SpiceDouble n[3];
@@ -203,7 +206,7 @@ namespace Isis {
       n[2] = -n[2];
 
     // dot product of surface normal and observer-surface intersection vector
-    double angle = vdot_c(n, upsB);
+    double angle = naif->vdot_c(n, upsB);
 
     if (angle > 1.0)
       return 0.0;
@@ -232,7 +235,7 @@ namespace Isis {
    * @return Incidence angle in decimal degrees
    *
    */
-  double PlaneShape::incidenceAngle(const std::vector<double> &uB) {
+  double PlaneShape::incidenceAngle(NaifContextPtr naif, const std::vector<double> &uB) {
 
     SpiceDouble pB[3];   // surface intersection in body-fixed coordinates
     SpiceDouble puB[3];  // vector from sun to surface intersection
@@ -245,8 +248,8 @@ namespace Isis {
     pB[2] = surfaceIntersection()->GetZ().kilometers();
 
     // Get vector from surface intersect point to sun and normalize it
-    vsub_c((SpiceDouble *) &uB[0], pB, puB);
-    unorm_c(puB, upuB, &dist);
+    naif->vsub_c((SpiceDouble *) &uB[0], pB, puB);
+    naif->unorm_c(puB, upuB, &dist);
 
     // temporary normal vector
     SpiceDouble n[3];
@@ -259,7 +262,7 @@ namespace Isis {
     if (uB[2] < 0.0)
       n[2] = -n[2];
 
-    double angle = vdot_c((SpiceDouble *) &n[0], upuB);
+    double angle = naif->vdot_c((SpiceDouble *) &n[0], upuB);
 
     if (angle > 1.0)
       return 0.0;

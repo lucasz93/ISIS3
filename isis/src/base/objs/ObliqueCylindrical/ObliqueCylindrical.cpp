@@ -110,8 +110,9 @@ namespace Isis {
         double longitudeAngle = (360.0 - m_poleLongitude) * (PI / 180.0);
         double pvec[3][3];
 
+        auto naif = NaifContext::acquire();
         naif->CheckErrors();
-        eul2m_c(rotationAngle, latitudeAngle, longitudeAngle, 3, 2, 3, pvec);
+        naif->eul2m_c(rotationAngle, latitudeAngle, longitudeAngle, 3, 2, 3, pvec);
         naif->CheckErrors();
 
         // Reset the vector keywords

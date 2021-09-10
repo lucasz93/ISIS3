@@ -33,6 +33,8 @@ namespace Isis {
   void translateLabels(Pvl &fitsLabel, Cube *ocube);
 
   void mvic2isis(UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
+    
     ProcessImportFits importFits;
     importFits.setFitsFile(FileName(ui.GetFileName("FROM")));
 
@@ -240,13 +242,13 @@ namespace Isis {
     QString lsk = "$ISISDATA/base/kernels/lsk/naif????.tls";
     FileName lskName(lsk);
     lskName = lskName.highestVersion();
-    furnsh_c(lskName.expanded().toLatin1().data());
+    naif->furnsh_c(lskName.expanded().toLatin1().data());
 
     // Spacecraft clock kernel
     QString sclk = "$ISISDATA/newhorizons/kernels/sclk/new_horizons_???.tsc";
     FileName sclkName(sclk);
     sclkName = sclkName.highestVersion();
-    furnsh_c(sclkName.expanded().toLatin1().data());
+    naif->furnsh_c(sclkName.expanded().toLatin1().data());
 
     SpiceInt sclkCode;
     if (fitslabel.hasKeyword("SPCSCID", Pvl::Traverse)) {
@@ -259,9 +261,9 @@ namespace Isis {
 
     QString scTime = inst["SpacecraftClockStartCount"];
     double et;
-    scs2e_c(sclkCode, scTime.toLatin1().data(), &et);
+    naif->scs2e_c(sclkCode, scTime.toLatin1().data(), &et);
     SpiceChar utc[30];
-    et2utc_c(et, "ISOC", 3, 30, utc);
+    naif->et2utc_c(et, "ISOC", 3, 30, utc);
     inst.addKeyword(PvlKeyword("StartTime", QString(utc)));
 
     // Create a Band Bin group

@@ -32,7 +32,7 @@ namespace Isis {
    * @return conversion was successful
    */
   bool CameraSkyMap::SetFocalPlane(const double ux, const double uy,
-                                   double uz) {
+                                   double uz, NaifContextPtr naif) {
     naif->CheckErrors();
 
     SpiceDouble lookC[3];
@@ -41,8 +41,8 @@ namespace Isis {
     lookC[2] = uz;
 
     SpiceDouble unitLookC[3];
-    vhat_c(lookC, unitLookC);
-    p_camera->SetLookDirection(unitLookC);
+    naif->vhat_c(lookC, unitLookC);
+    p_camera->SetLookDirection(unitLookC, naif);
 
     naif->CheckErrors();
 
@@ -62,10 +62,10 @@ namespace Isis {
    * @todo can this all be solved by restricting the physical size of
    * the focal plane?
    */
-  bool CameraSkyMap::SetSky(const double ra, const double dec) {
-    p_camera->Sensor::SetRightAscensionDeclination(ra, dec);
+  bool CameraSkyMap::SetSky(const double ra, const double dec, NaifContextPtr naif) {
+    p_camera->Sensor::SetRightAscensionDeclination(ra, dec, naif);
     double lookC[3];
-    p_camera->Sensor::LookDirection(lookC);
+    p_camera->Sensor::LookDirection(lookC, naif);
     double scale = p_camera->FocalLength() / lookC[2];
     p_focalPlaneX = lookC[0] * scale;
     p_focalPlaneY = lookC[1] * scale;
