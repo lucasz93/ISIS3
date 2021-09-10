@@ -235,7 +235,7 @@ namespace Isis {
   int Kernels::Discover() {
     _kernels.clear();
     SpiceInt count;
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     ktotal_c("ALL", &count);
     int nfound(0);
     for (int i = 0 ; i < count ; i++) {
@@ -251,7 +251,7 @@ namespace Isis {
         nfound++;
       }
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return (nfound);
   }
 
@@ -331,9 +331,9 @@ namespace Isis {
    *
    */
   void Kernels::InitializeNaifKernelPool() {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     kclear_c();
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     for (unsigned int i = 0 ; i < _kernels.size() ; i++) {
       _kernels[i].loaded = false;
     }
@@ -498,10 +498,10 @@ namespace Isis {
         SpiceInt  handle;
         SpiceBoolean found;
 
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         kinfo_c(_kernels[i].fullpath.toLatin1().data(), sizeof(ktype), sizeof(source),
                  ktype,source, &handle, &found);
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
 
         if (found == SPICETRUE) {
           if (!_kernels[i].loaded) nchanged++;
@@ -774,10 +774,10 @@ namespace Isis {
   bool Kernels::Load(Kernels::KernelFile &kfile) {
     if (IsNaifType(kfile.ktype)) {
       if (!kfile.loaded) {
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         try {
           furnsh_c(kfile.fullpath.toLatin1().data());
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
           kfile.loaded = true;
           kfile.managed = true;
         }
@@ -816,10 +816,10 @@ namespace Isis {
     bool wasLoaded(false);
     if (kfile.loaded) {
       if (kfile.managed) {
-         NaifStatus::CheckErrors();
+         naif->CheckErrors();
          try {
            unload_c(kfile.fullpath.toLatin1().data());
-           NaifStatus::CheckErrors();
+           naif->CheckErrors();
          }
          catch (IException &) {
            // Errors are trapped and ignored.  It may be unloaded by other source
@@ -1065,10 +1065,10 @@ namespace Isis {
         SpiceInt  handle;
         SpiceBoolean found;
 
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         kinfo_c(kf.fullpath.toLatin1().data(), sizeof(ktype), sizeof(source), ktype,
                 source, &handle, &found);
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
 
         if (found == SPICETRUE) {
           kf.loaded = true;

@@ -34,6 +34,8 @@ namespace Isis {
    * @param frameCode Valid naif frame code.
    */
   LineScanCameraRotation::LineScanCameraRotation(int frameCode, Isis::Cube &cube, std::vector<double> timeCache, double tol) : SpiceRotation(frameCode) {
+    auto naif = NaifContext::acquire();
+
     // Initialize optional paramters;
     p_pitchRate = 0.;
     p_yaw = 0.;
@@ -57,7 +59,7 @@ namespace Isis {
 //    std::cout<<std::setprecision(24);
 //    std::cout<<timeCache.at(0)<<"-"<<timeCache.at(50000)<<std::endl;
 
-    InitConstantRotation(p_cacheTime[0]);
+    InitConstantRotation(p_cacheTime[0], naif);
 
     p_cachesLoaded = false;
     p_spi->instrumentRotation()->SetFrame(frameCode);
@@ -66,8 +68,8 @@ namespace Isis {
     p_spos = p_spi->instrumentPosition();
     // Load the line scan specific rotation matrix caches before loading the regular Spice caches because
     // the CreateCache method will unload all the kernels after the caches are created
-    LoadCache();
-    p_spi->createCache(timeCache[0], timeCache[timeCache.size()-1], timeCache.size(), tol);
+    LoadCache(naif);
+    p_spi->createCache(timeCache[0], timeCache[timeCache.size()-1], timeCache.size(), tol, naif);
   }
 
 
@@ -93,8 +95,8 @@ namespace Isis {
    * @history 2010-12-23  Debbie A. Cook Added set of full cache time
    *                       parameters
    */
-  void LineScanCameraRotation::LoadCache() {
-    NaifStatus::CheckErrors();
+  void LineScanCameraRotation::LoadCache(NaifContextPtr naif) {
+    naif->CheckErrors();
 
     double startTime = p_cacheTime[0];
     int size = p_cacheTime.size();
@@ -112,7 +114,7 @@ namespace Isis {
     // Loop and load the cache
     double state[6];
     double lt;
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     double R[3];  // Direction of radial axis of line scan camera
     double C[3];  // Direction of cross-track axis
@@ -127,37 +129,37 @@ namespace Isis {
     for(std::vector<double>::iterator i = p_cacheTime.begin(); i < p_cacheTime.end(); i++) {
       double et = *i;
 
-      prot->SetEphemerisTime(et);
-      crot->SetEphemerisTime(et);
+      prot->SetEphemerisTime(et, naif);
+      crot->SetEphemerisTime(et, naif);
 
       // The following code will be put into method LoadIBcache()
-      spkezr_c("MRO", et, "IAU_MARS", "NONE", "MARS", state, &lt);
-      NaifStatus::CheckErrors();
+      naif->spkezr_c("MRO", et, "IAU_MARS", "NONE", "MARS", state, &lt);
+      naif->CheckErrors();
 
       // Compute the direction of the radial axis (3) of the line scan camera
-      vscl_c(1. / vnorm_c(state), state, R); // vscl and vnorm only operate on first 3 members of state
+      naif->vscl_c(1. / naif->vnorm_c(state), state, R); // vscl and vnorm only operate on first 3 members of state
 
       // Compute the direction of the cross-track axis (2) of the line scan camera
       velocity  =  state + 3;
-      vscl_c(1. / vnorm_c(velocity), velocity, C);
-      vcrss_c(R, C, C);
+      naif->vscl_c(1. / naif->vnorm_c(velocity), velocity, C);
+      naif->vcrss_c(R, C, C);
 
       // Compute the direction of the in-track axis (1) of the line scan camera
-      vcrss_c(C, R, I);
+      naif->vcrss_c(C, R, I);
 
       // Load the matrix IB and enter it into the cache
-      vequ_c(I, (SpiceDouble( *)) &IB[0]);
-      vequ_c(C, (SpiceDouble( *)) &IB[3]);
-      vequ_c(R, (SpiceDouble( *)) &IB[6]);
+      naif->vequ_c(I, (SpiceDouble( *)) &IB[0]);
+      naif->vequ_c(C, (SpiceDouble( *)) &IB[3]);
+      naif->vequ_c(R, (SpiceDouble( *)) &IB[6]);
       p_cacheIB.push_back(IB);
       // end IB code
 
       // Compute the CIcr matrix - in-track, cross-track, radial frame to constant frame
-      mxmt_c((SpiceDouble( *)[3]) & (crot->TimeBasedMatrix())[0], (SpiceDouble( *)[3]) & (prot->Matrix())[0],
-             (SpiceDouble( *)[3]) &CI[0]);
+      naif->mxmt_c((SpiceDouble( *)[3]) & (crot->TimeBasedMatrix())[0], (SpiceDouble( *)[3]) & (prot->Matrix(naif))[0],
+                   (SpiceDouble( *)[3]) &CI[0]);
 
       // Put CI into parent cache to use the parent class methods on it
-      mxmt_c((SpiceDouble( *)[3]) &CI[0], (SpiceDouble( *)[3]) &IB[0], (SpiceDouble( *)[3]) &CI[0]);
+      naif->mxmt_c((SpiceDouble( *)[3]) &CI[0], (SpiceDouble( *)[3]) &IB[0], (SpiceDouble( *)[3]) &CI[0]);
       rotationCache.push_back(ale::Rotation(CI));
     }
 
@@ -178,7 +180,7 @@ namespace Isis {
     p_cachesLoaded = true;
     SetSource(Memcache);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
   /** Cache J2000 rotation over existing cached time range using polynomials
@@ -194,8 +196,8 @@ namespace Isis {
    * @param function3   The third polynomial function used to
    *                    find the rotation angles
    */
-  void LineScanCameraRotation::ReloadCache() {
-    NaifStatus::CheckErrors();
+  void LineScanCameraRotation::ReloadCache(NaifContextPtr naif) {
+    naif->CheckErrors();
 
     // Make sure caches are already loaded
     if(!p_cachesLoaded) {
@@ -242,21 +244,21 @@ namespace Isis {
       double angle3 = function3.Evaluate(rtime);
 
 // Get the first angle back into the range Naif expects [180.,180.]
-      if(angle1 < -1 * pi_c()) {
-        angle1 += twopi_c();
+      if(angle1 < -1 * naif->pi_c()) {
+        angle1 += naif->twopi_c();
       }
-      else if(angle1 > pi_c()) {
-        angle1 -= twopi_c();
+      else if(angle1 > naif->pi_c()) {
+        angle1 -= naif->twopi_c();
       }
 
-      eul2m_c((SpiceDouble) angle3, (SpiceDouble) angle2, (SpiceDouble) angle1,
-              p_axis3,                    p_axis2,                    p_axis1,
-              CI);
-      mxm_c((SpiceDouble( *)[3]) & (p_jitter->SetEphemerisTimeHPF(et))[0], CI, CI);
+      naif->eul2m_c((SpiceDouble) angle3, (SpiceDouble) angle2, (SpiceDouble) angle1,
+                    p_axis3,                    p_axis2,                    p_axis1,
+                    CI);
+      naif->mxm_c((SpiceDouble( *)[3]) & (p_jitter->SetEphemerisTimeHPF(et, naif))[0], CI, CI);
 
-      prot->SetEphemerisTime(et);
-      mxm_c((SpiceDouble( *)[3]) & (p_cacheIB.at(pos))[0], (SpiceDouble( *)[3]) & (prot->Matrix())[0], IJ);
-      mxm_c(CI, IJ, (SpiceDouble( *)[3]) &CJ[0]);
+      prot->SetEphemerisTime(et, naif);
+      naif->mxm_c((SpiceDouble( *)[3]) & (p_cacheIB.at(pos))[0], (SpiceDouble( *)[3]) & (prot->Matrix(naif))[0], IJ);
+      naif->mxm_c(CI, IJ, (SpiceDouble( *)[3]) &CJ[0]);
 
       rotationCache.push_back(ale::Rotation(CJ));
     }
@@ -280,11 +282,11 @@ namespace Isis {
 
     // Make sure SetEphemerisTime updates the matrix by resetting it twice (in case the first one
     // matches the current et.  p_et is private and not available from the child class
-    NaifStatus::CheckErrors();
-    SetEphemerisTime(p_cacheTime[0]);
-    SetEphemerisTime(p_cacheTime[1]);
+    naif->CheckErrors();
+    SetEphemerisTime(p_cacheTime[0], naif);
+    SetEphemerisTime(p_cacheTime[1], naif);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 }

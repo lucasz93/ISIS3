@@ -325,23 +325,23 @@ namespace Isis {
   
     // Open the NAIF Digital Shape Kernel (DSK)
     dasopr_c( file.expanded().toLatin1().data(), &dskHandle );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
     // Search to the first DLA segment
     SpiceBoolean found;
     dlabfs_c( dskHandle, &dlaDescriptor, &found );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if ( !found ) {
       QString mess = "No segments found in DSK file [" + file.expanded() + "]"; 
       throw IException(IException::User, mess, _FILEINFO_);
     }
 
     dskgd_c( dskHandle, &dlaDescriptor, &dskDescriptor );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Get The number of polygons and vertices
     dskz02_c( dskHandle, &dlaDescriptor, &numVertices, &numPlates );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Allocate polygon and vertices arrays
     //   These arrays are actually numVertices x 3 and numPlates x 3,
@@ -354,7 +354,7 @@ namespace Isis {
     SpiceInt numRead = 0;
     dskv02_c(dskHandle, &dlaDescriptor, 1, numVertices,
              &numRead, ( SpiceDouble(*)[3] )(verticesArray) );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if ( numRead != numVertices ) {
       QString msg = "Failed reading all vertices from the DSK file, ["
                     + toString(numRead) + "] out of ["
@@ -366,7 +366,7 @@ namespace Isis {
     numRead = 0;
     dskp02_c(dskHandle, &dlaDescriptor, 1, numPlates,
              &numRead, ( SpiceInt(*)[3] )(polygonsArray) );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if ( numRead != numPlates ) {
       QString msg = "Failed reading all polygons from the DSK file, ["
                     + toString(numRead) + "] out of ["

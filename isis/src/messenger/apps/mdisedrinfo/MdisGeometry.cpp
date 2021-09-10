@@ -842,7 +842,7 @@ namespace Isis {
 
     //  Compute the norm and azimuth angle
     smear_magnitude = vnormg_c(smear, 2);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     if (smear_magnitude == 0.0) {
       smear_azimuth = 0.0;
@@ -964,7 +964,7 @@ namespace Isis {
     SpiceDouble stateJ[6];  // Position and velocity vector in J2000
     SpiceDouble lt;
     spkez_c(sc , rotate->EphemerisTime(), "J2000", "LT+S", sun, stateJ, &lt);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Stage result and negate as it needs to be relative to Messenger
     vector<double> scvel;

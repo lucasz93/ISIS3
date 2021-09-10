@@ -146,7 +146,7 @@ namespace Isis {
 
     // Gotta throw an error here if not found
     if (!found) {
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       QString msg = "Can not find [" + var + "] in text kernels";
       throw IException(IException::Io, msg, _FILEINFO_);
      }
@@ -175,7 +175,7 @@ namespace Isis {
 
     // Gotta throw an error here if not found
     if (!found) {
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       QString msg = "Can not find [" + var + "] in text kernels";
       throw IException(IException::Io, msg, _FILEINFO_);
      }
@@ -204,7 +204,7 @@ namespace Isis {
 
     // Gotta throw an error here if not found
     if (!found) {
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       QString msg = "Can not find [" + var + "] in text kernels";
       throw IException(IException::Io, msg, _FILEINFO_);
      }

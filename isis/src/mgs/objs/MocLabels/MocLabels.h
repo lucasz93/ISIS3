@@ -15,7 +15,7 @@ find files of those names at the top level of this repository. **/
 #include <QString>
 
 #include "FileName.h"
-
+#include "NaifContext.h"
 
 namespace Isis {
   class Cube;
@@ -49,8 +49,8 @@ namespace Isis {
    */
   class MocLabels {
     public:
-      MocLabels(Cube &cube);
-      MocLabels(const QString &file);
+      MocLabels(Cube &cube, NaifContextPtr naif);
+      MocLabels(const QString &file, NaifContextPtr naif);
       //! Empty destructor.
       ~MocLabels() {};
 
@@ -153,10 +153,10 @@ namespace Isis {
       double Offset(int line = 1);
 
     private:
-      void Init(Cube &cube);
+      void Init(Cube &cube, NaifContextPtr naif);
       void ReadLabels(Cube &cube);
       void ValidateLabels();
-      void Compute();
+      void Compute(NaifContextPtr naif);
 
       int p_crosstrackSumming;
       int p_downtrackSumming;
@@ -203,7 +203,7 @@ namespace Isis {
         };
       };
       std::vector<WAGO> p_wagos;
-      void InitWago();
+      void InitWago(NaifContextPtr naif);
 
       FileName p_lsk;
       FileName p_sclk;

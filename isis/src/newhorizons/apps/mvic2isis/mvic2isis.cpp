@@ -235,7 +235,7 @@ namespace Isis {
 
     //  Create StartTime (UTC) from the SpacecraftClockStartCount.  Need to load the leapsecond
     //  and spacecraft clock kernels to calculate time.
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Leapsecond kernel
     QString lsk = "$ISISDATA/base/kernels/lsk/naif????.tls";
     FileName lskName(lsk);

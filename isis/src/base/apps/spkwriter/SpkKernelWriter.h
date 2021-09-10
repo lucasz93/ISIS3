@@ -100,9 +100,9 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
       }
       SpiceInt  myHandle;
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       spkopn_c(kf.expanded().toLatin1().data(), "USGS_SPK_FILE", comsize, &myHandle);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       return (myHandle);
     }
 
@@ -123,9 +123,9 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
     void  k_close(SpiceInt &handle) {
       if ( handle != 0 ) {
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         spkcls_c(handle);
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
       }
       handle = 0;
     }
@@ -152,12 +152,12 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
         int nrecs = segment.size();
         segment.LoadKernelType("FK");
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
 
         spkw09_c(_handle, body, center, frame.toLatin1().data(), epochs[0], epochs[nrecs-1],
                  segId.toLatin1().data(), degree, nrecs, states[0], &epochs[0]);
 
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         segment.UnloadKernelType("FK");
         return;
       }
@@ -187,10 +187,10 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
         // Ensure the FK is loaded
         segment.LoadKernelType("FK");
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         spkw13_c(_handle, body, center, frame.toLatin1().data(), epochs[0], epochs[nrecs-1],
                  segId.toLatin1().data(), degree, nrecs, states[0], &epochs[0]);
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         segment.UnloadKernelType("FK");
         return;
       }

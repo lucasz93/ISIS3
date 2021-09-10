@@ -114,14 +114,14 @@ void IsisMain() {
           NaifVertex observer(3);
           point.ToNaifArray(&observer[0]);
 
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
           vscl_c(1.5, &observer[0], &observer[0]);
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
 
           // Get look vector
           NaifVector raydir(3);
           vminus_c(&observer[0], &raydir[0]);
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
   
           // Check for valid intercept
           NaifVertex xpt;

@@ -152,12 +152,12 @@ class KernelWriter {
       // Calling environments can decide how to handle it.
       try {
         QString commOut;
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         for ( int i = 0 ; i < comment.size() ; i++ ) {
            if ( comment[i] == '\n' ) {
              while ( commOut.size() < 2 ) { commOut.append(" "); }
              dafac_c(handle, 1, commOut.size(), commOut.toLatin1().data());
-             NaifStatus::CheckErrors();
+             naif->CheckErrors();
              commOut.clear();
            }
            else {
@@ -169,7 +169,7 @@ class KernelWriter {
         if ( commOut.size() > 0 ) {
           while ( commOut.size() < 2 ) { commOut.append(" "); }
           dafac_c(handle, 1, commOut.size(), commOut.toLatin1().data());
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
         }
       }
       catch (IException &) {

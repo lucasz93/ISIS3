@@ -295,23 +295,23 @@ namespace Isis {
    *
    * @return double Distance in AU between Sun and observed body
    */
-  double HiCalConf::sunDistanceAU(Cube *cube) {
+  double HiCalConf::sunDistanceAU(Cube *cube, NaifContextPtr naif) {
     double sunkm = 0.0;
     try {
       Camera *cam;
       cam = cube->camera();
-      cam->SetImage(0.5, 0.5);
-      sunkm = cam->sunToBodyDist();
-      NaifStatus::CheckErrors();
+      cam->SetImage(0.5, 0.5, naif);
+      sunkm = cam->sunToBodyDist(naif);
+      naif->CheckErrors();
     }
     catch (IException &e) {
       try {
-        loadNaifTiming();
+        loadNaifTiming(naif);
 
         QString scStartTime = getKey("SpacecraftClockStartCount", "Instrument");
         double obsStartTime;
-        NaifStatus::CheckErrors();
-        scs2e_c (-74999,scStartTime.toLatin1().data(),&obsStartTime);
+        naif->CheckErrors();
+        naif->scs2e_c (-74999,scStartTime.toLatin1().data(),&obsStartTime);
 
         QString targetName = getKey("TargetName", "Instrument");
         if (targetName.toLower() == "sky" ||
@@ -322,11 +322,11 @@ namespace Isis {
         }
         double sunv[3];
         double lt;
-        (void) spkpos_c(targetName.toLatin1().data(), obsStartTime, "J2000", "LT+S", "sun",
+        (void) naif->spkpos_c(targetName.toLatin1().data(), obsStartTime, "J2000", "LT+S", "sun",
                         sunv, &lt);
-        sunkm = vnorm_c(sunv);
+        sunkm = naif->vnorm_c(sunv);
 
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
       }
       catch(IException &e) {
         QString msg = "Unable to determine the distance from the target to the sun";
@@ -408,10 +408,8 @@ namespace Isis {
  * This method maintains the loading of kernels for HiRISE timing and planetary
  * body ephemerides to support time and relative positions of planet bodies.
  */
-void HiCalConf::loadNaifTiming( ) {
-  NaifStatus::CheckErrors();
-  auto naifState = NaifContext::get()->top();
-  if (!naifState->hiCalTimingLoaded()) {
+void HiCalConf::loadNaifTiming(NaifContextPtr naif) {
+  if (!naif->hiCalTimingLoaded()) {
 //  Load the NAIF kernels to determine timing data
     Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
     leapseconds = leapseconds.highestVersion();
@@ -430,14 +428,14 @@ void HiCalConf::loadNaifTiming( ) {
     QString sClock = sclk.expanded();
     QString pConstants = pck.expanded();
     QString satConstants = sat.expanded();
-    furnsh_c(lsk.toLatin1().data());
-    furnsh_c(sClock.toLatin1().data());
-    furnsh_c(pConstants.toLatin1().data());
-    furnsh_c(satConstants.toLatin1().data());
-    NaifStatus::CheckErrors();
+    naif->furnsh_c(lsk.toLatin1().data());
+    naif->furnsh_c(sClock.toLatin1().data());
+    naif->furnsh_c(pConstants.toLatin1().data());
+    naif->furnsh_c(satConstants.toLatin1().data());
+    naif->CheckErrors();
 
 //  Ensure it is loaded only once
-    naifState->set_hiCalTimingLoaded(true);
+    naif->set_hiCalTimingLoaded(true);
   }
   return;
 }

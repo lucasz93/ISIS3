@@ -31,6 +31,8 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   LroNarrowAngleCamera::LroNarrowAngleCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_spacecraftNameLong = "Lunar Reconnaissance Orbiter";
     m_spacecraftNameShort = "LRO";
     // NACL instrument kernel code = -85600
@@ -49,11 +51,11 @@ namespace Isis {
       msg += " is not a supported instrument kernel code for Lunar Reconnaissance Orbiter.";
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Set up the camera info from ik/iak kernels
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     double constantTimeOffset = 0.0,
            additionalPreroll = 0.0,
@@ -61,16 +63,16 @@ namespace Isis {
            multiplicativeLineTimeError = 0.0;
 
     QString ikernKey = "INS" + toString(naifIkCode()) + "_CONSTANT_TIME_OFFSET";
-    constantTimeOffset = getDouble(ikernKey);
+    constantTimeOffset = getDouble(naif, ikernKey);
 
     ikernKey = "INS" + toString(naifIkCode()) + "_ADDITIONAL_PREROLL";
-    additionalPreroll = getDouble(ikernKey);
+    additionalPreroll = getDouble(naif, ikernKey);
 
     ikernKey = "INS" + toString(naifIkCode()) + "_ADDITIVE_LINE_ERROR";
-    additiveLineTimeError = getDouble(ikernKey);
+    additiveLineTimeError = getDouble(naif, ikernKey);
 
     ikernKey = "INS" + toString(naifIkCode()) + "_MULTIPLI_LINE_ERROR";
-    multiplicativeLineTimeError = getDouble(ikernKey);
+    multiplicativeLineTimeError = getDouble(naif, ikernKey);
 
     // Get the start time from labels
     Pvl &lab = *cube.label();
@@ -79,7 +81,7 @@ namespace Isis {
     SpiceDouble etStart;
 
     if(stime != "NULL") {
-      etStart = getClockTime(stime).Et();
+      etStart = getClockTime(naif, stime).Et();
     }
     else {
       etStart = iTime((QString)inst["PrerollTime"]).Et();
@@ -96,7 +98,7 @@ namespace Isis {
     etStart += additionalPreroll * lineRate;
     etStart += constantTimeOffset;
 
-    setTime(etStart);
+    setTime(etStart, naif);
 
     // Setup detector map
     LineScanCameraDetectorMap *detectorMap = new LineScanCameraDetectorMap(this, etStart, lineRate);
@@ -108,10 +110,10 @@ namespace Isis {
 
     //  Retrieve boresight location from instrument kernel (IK) (addendum?)
     ikernKey = "INS" + toString(naifIkCode()) + "_BORESIGHT_SAMPLE";
-    double sampleBoreSight = getDouble(ikernKey);
+    double sampleBoreSight = getDouble(naif, ikernKey);
 
     ikernKey = "INS" + toString(naifIkCode()) + "_BORESIGHT_LINE";
-    double lineBoreSight = getDouble(ikernKey);
+    double lineBoreSight = getDouble(naif, ikernKey);
 
     focalMap->SetDetectorOrigin(sampleBoreSight, lineBoreSight);
     focalMap->SetDetectorOffset(0.0, 0.0);
@@ -124,8 +126,8 @@ namespace Isis {
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 }
 

@@ -144,10 +144,10 @@ bool SpiceKernel::validate() const {
 
    //  Create the output file.
    try {
-     NaifStatus::CheckErrors();
+     naif->CheckErrors();
      CkKernelWriter ckwriter(kname, comChars+512, cktype);
      ckwriter.addComment(comment);
-     NaifStatus::CheckErrors();
+     naif->CheckErrors();
 
    // Write sorted segments
      for ( unsigned int i = 0 ; i < seglist.size() ; i++ ) {
@@ -155,7 +155,7 @@ bool SpiceKernel::validate() const {
          ckwriter.write(*seglist[i]);
          comment = seglist[i]->getComment();
          ckwriter.addComment(comment);
-         NaifStatus::CheckErrors();
+         naif->CheckErrors();
        } catch ( IException &ie ) {
          ostringstream mess;
          mess << "Failed to write segment, ID = " << seglist[i]->Id();

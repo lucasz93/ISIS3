@@ -120,7 +120,7 @@ namespace Isis {
    *
    * @returns @b bool If the image coordinate was set successfully
    */
-  bool CSMCamera::SetImage(const double sample, const double line) {
+  bool CSMCamera::SetImage(const double sample, const double line, NaifContextPtr naif) {
     // Save off the line & sample
     p_childSample = sample;
     p_childLine = line;
@@ -190,7 +190,7 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude) {
+  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, NaifContextPtr naif) {
     return SetGround(
         Latitude(latitude, Angle::Degrees),
         Longitude(longitude, Angle::Degrees));
@@ -207,7 +207,7 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, double radius) {
+  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, double radius, NaifContextPtr naif) {
     return SetGround(SurfacePoint(
         Latitude(latitude, Angle::Degrees),
         Longitude(longitude, Angle::Degrees),
@@ -225,7 +225,7 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetGround(Latitude latitude, Longitude longitude) {
+  bool CSMCamera::SetGround(Latitude latitude, Longitude longitude, NaifContextPtr naif) {
     ShapeModel *shape = target()->shape();
     Distance localRadius;
 
@@ -254,7 +254,7 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetGround(const SurfacePoint & surfacePt) {
+  bool CSMCamera::SetGround(const SurfacePoint & surfacePt, NaifContextPtr naif) {
     ShapeModel *shape = target()->shape();
     if (!surfacePt.Valid()) {
       shape->clearSurfacePoint();
@@ -334,7 +334,7 @@ namespace Isis {
    *
    * @returns @b double The line resolution in meters per pixel
    */
-  double CSMCamera::LineResolution() {
+  double CSMCamera::LineResolution(NaifContextPtr naif) {
     vector<double> imagePartials = ImagePartials();
     return sqrt(imagePartials[0]*imagePartials[0] +
                 imagePartials[2]*imagePartials[2] +
@@ -351,7 +351,7 @@ namespace Isis {
    *
    * @returns @b double The sample resolution in meters per pixel
    */
-  double CSMCamera::SampleResolution() {
+  double CSMCamera::SampleResolution(NaifContextPtr naif) {
     vector<double> imagePartials = ImagePartials();
     return sqrt(imagePartials[1]*imagePartials[1] +
                 imagePartials[3]*imagePartials[3] +
@@ -368,7 +368,7 @@ namespace Isis {
    *
    * @returns @b double The detector resolution in meters per pixel
    */
-  double CSMCamera::DetectorResolution() {
+  double CSMCamera::DetectorResolution(NaifContextPtr naif) {
     // Redo the line and sample resolution calculations because it avoids
     // a call to ImagePartials which could be a costly call
     vector<double> imagePartials = ImagePartials();
@@ -391,7 +391,7 @@ namespace Isis {
    *
    * @returns @b double The oblique line resolution in meters per pixel
    */
-  double CSMCamera::ObliqueLineResolution() {
+  double CSMCamera::ObliqueLineResolution(NaifContextPtr naif) {
     // CSM resolution is always the oblique resolution so just return it
     return LineResolution();
   }
@@ -406,7 +406,7 @@ namespace Isis {
    *
    * @returns @b double The oblique sample resolution in meters per pixel
    */
-  double CSMCamera::ObliqueSampleResolution() {
+  double CSMCamera::ObliqueSampleResolution(NaifContextPtr naif) {
     // CSM resolution is always the oblique resolution so just return it
     return SampleResolution();
   }
@@ -421,7 +421,7 @@ namespace Isis {
    *
    * @returns @b double The oblique detector resolution in meters per pixel
    */
-  double CSMCamera::ObliqueDetectorResolution() {
+  double CSMCamera::ObliqueDetectorResolution(NaifContextPtr naif) {
     // CSM resolution is always the oblique resolution so just return it
     return DetectorResolution();
   }
@@ -458,7 +458,7 @@ namespace Isis {
    * @param[out] p A double array that will be filled with the (X, Y, Z)
    *               position in kilometers.
    */
-  void CSMCamera::instrumentBodyFixedPosition(double p[3]) const {
+  void CSMCamera::instrumentBodyFixedPosition(double p[3], NaifContextPtr naif) const {
     std::vector<double> position = sensorPositionBodyFixed();
     p[0] = position[0];
     p[1] = position[1];
@@ -507,7 +507,7 @@ namespace Isis {
    * @param[out] lon Will be filled with the longitude in positive East,
    *                 360 domain degrees
    */
-  void CSMCamera::subSpacecraftPoint(double &lat, double &lon) {
+  void CSMCamera::subSpacecraftPoint(double &lat, double &lon, NaifContextPtr naif) {
     subSpacecraftPoint(lat, lon, parentLine(), parentSample());
   }
 
@@ -522,7 +522,7 @@ namespace Isis {
    * @param line The line of the image coordinate
    * @param sample the sample of the image coordinate
    */
-  void CSMCamera::subSpacecraftPoint(double &lat, double &lon, double line, double sample) {
+  void CSMCamera::subSpacecraftPoint(double &lat, double &lon, double line, double sample, NaifContextPtr naif) {
     // Get s/c position from CSM because it is vector from center of body to that
     vector<double> sensorPosition = sensorPositionBodyFixed(line, sample);
     SurfacePoint surfacePoint(
@@ -746,7 +746,7 @@ namespace Isis {
    *
    * @returns @b double The phase angle in degrees
    */
-  double CSMCamera::PhaseAngle() const {
+  double CSMCamera::PhaseAngle(NaifContextPtr naif) const {
     csm::EcefCoord groundPt = isisToCsmGround(GetSurfacePoint());
     csm::EcefVector sunEcefVec = m_model->getIlluminationDirection(groundPt);
     // ISIS wants the position of the sun, not just the vector from the ground
@@ -765,7 +765,7 @@ namespace Isis {
    *
    * @returns @b double The emission angle in degrees
    */
-  double CSMCamera::EmissionAngle() const {
+  double CSMCamera::EmissionAngle(NaifContextPtr naif) const {
     return target()->shape()->emissionAngle(sensorPositionBodyFixed());
   }
 
@@ -795,7 +795,7 @@ namespace Isis {
    *
    * @returns @b double The distance from the sensor to the ground point in kilometers
    */
-  double CSMCamera::SlantDistance() const {
+  double CSMCamera::SlantDistance(NaifContextPtr naif) const {
     std::vector<double> sensorPosition = sensorPositionBodyFixed();
     SurfacePoint groundPoint = GetSurfacePoint();
 
@@ -817,7 +817,7 @@ namespace Isis {
    *
    * @returns @b double Distance to the center of the target from the spacecraft in kilometers.
    */
-  double CSMCamera::targetCenterDistance() const {
+  double CSMCamera::targetCenterDistance(NaifContextPtr naif) const {
     std::vector<double> sensorPosition = sensorPositionBodyFixed();
     return sqrt(
         sensorPosition[0] * sensorPosition[0] +
@@ -979,7 +979,7 @@ namespace Isis {
    *
    * @param time The time to set
    */
-  void CSMCamera::setTime(const iTime &time) {
+  void CSMCamera::setTime(const iTime &time, NaifContextPtr naif) {
     QString msg = "Setting the image time is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }
@@ -995,7 +995,7 @@ namespace Isis {
    * @param lat Sub-solar latitude
    * @param lon Sub-solar longitude
    */
-  void CSMCamera::subSolarPoint(double &lat, double &lon) {
+  void CSMCamera::subSolarPoint(double &lat, double &lon, NaifContextPtr naif) {
     QString msg = "Sub solar point is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }
@@ -1022,7 +1022,7 @@ namespace Isis {
    *
    * @param[out] p The position of the sun
    */
-  void CSMCamera::sunPosition(double p[3]) const {
+  void CSMCamera::sunPosition(double p[3], NaifContextPtr naif) const {
     QString msg = "Sun position is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }
@@ -1095,7 +1095,7 @@ namespace Isis {
    *
    * @param et Ephemeris time
    */
-  void CSMCamera::computeSolarLongitude(iTime et) {
+  void CSMCamera::computeSolarLongitude(iTime et, NaifContextPtr naif) {
     QString msg = "Solar longitude is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }
@@ -1122,7 +1122,7 @@ namespace Isis {
    *
    * @returns @b double The Right Ascension
    */
-  double CSMCamera::RightAscension() {
+  double CSMCamera::RightAscension(NaifContextPtr naif) {
     QString msg = "Right Ascension is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }
@@ -1136,7 +1136,7 @@ namespace Isis {
    *
    * @returns @b double The Declination
    */
-  double CSMCamera::Declination() {
+  double CSMCamera::Declination(NaifContextPtr naif) {
     QString msg = "Declination is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }

@@ -113,7 +113,7 @@ void SpkSpiceSegment::init(Cube &cube) {
   _fname = cube.fileName();
 
   //  Extract ISIS CK blob and transform to CK 3 content
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   try {
 
     // Order is somewhat important here.  The call to initialize Kernels
@@ -357,7 +357,7 @@ void SpkSpiceSegment::setEndTime(double et) {
 QString SpkSpiceSegment::getNaifName(int naifid) const {
   SpiceChar naifBuf[40];
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   frmnam_c ( (SpiceInt) naifid, sizeof(naifBuf), naifBuf);
   string cframe(naifBuf);
 
@@ -376,7 +376,7 @@ QString SpkSpiceSegment::getNaifName(int naifid) const {
   //  throw iException::Message(iException::User, mess.c_str(), _FILEINFO_);
   }
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   return (cframe.c_str());
 }
 
@@ -385,9 +385,9 @@ QString SpkSpiceSegment::toUTC(const double &et) const {
   const int UTCLEN = 80;
   char utcout[UTCLEN];
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   et2utc_c(et, "ISOC", 3, UTCLEN, utcout);
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   return (QString(utcout));
 }
@@ -396,9 +396,9 @@ QString SpkSpiceSegment::toUTC(const double &et) const {
 double SpkSpiceSegment::UTCtoET(const QString &utc) const {
   SpiceDouble et;
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   utc2et_c(utc.toLatin1().data(), &et);
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   return (et);
 }

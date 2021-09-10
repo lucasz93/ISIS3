@@ -143,7 +143,7 @@ namespace Isis {
     llgrid_pl02( m_dsk->m_handle, &m_dsk->m_dladsc, npoints, 
                  (ConstSpiceDouble (*)[2]) lonlat, 
                  (SpiceDouble (*)[3]) &spoint[0], &plateId);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
   #if 0
     if ( !isPlateIdValid(plateId) ) {
@@ -260,11 +260,11 @@ namespace Isis {
     QMutexLocker lock(&m_dsk->m_mutex);  // Thread locking for NAIF I/O
   #endif
     // Find the plate of intersection and intercept point
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     dskx02_c( m_dsk->m_handle, &m_dsk->m_dladsc, &vertex[0], &raydir[0],
               &plateid, &xpt[0], &found);
     // Check status
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if ( !found ) return (0);
   
     // Return succesful results
@@ -306,10 +306,10 @@ namespace Isis {
     QMutexLocker lock(&m_dsk->m_mutex);  // Thread locking for NAIF I/O
   #endif
   
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     dskp02_c(m_dsk->m_handle, &m_dsk->m_dladsc, plateid, 1, &nplates, 
              ( SpiceInt(*)[3] )(iplate));
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
     // Get the verticies of the plates
     NaifTriangle plate(3, 3);
@@ -318,7 +318,7 @@ namespace Isis {
     dskv02_c(m_dsk->m_handle, &m_dsk->m_dladsc, iplate[i], 1, &n, 
              ( SpiceDouble(*)[3] )(plate[i]));
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
     return (plate);
   }
@@ -354,26 +354,26 @@ namespace Isis {
     // Open the NAIF Digital Shape Kernel (DSK)
     QScopedPointer<NaifDskDescriptor> dsk(new NaifDskDescriptor());
     dsk->m_dskfile = dskfile;
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     dasopr_c( dskFile.expanded().toLatin1().data(), &dsk->m_handle );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
     // Search to the first DLA segment
     SpiceBoolean found;
     dlabfs_c( dsk->m_handle, &dsk->m_dladsc, &found );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if ( !found ) {
       QString mess = "No segments found in DSK file " + dskfile ; 
       throw IException(IException::User, mess, _FILEINFO_);
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     dskgd_c( dsk->m_handle, &dsk->m_dladsc, &dsk->m_dskdsc );
   
     // Get size/counts
     dskz02_c( dsk->m_handle, &dsk->m_dladsc, &dsk->m_vertices, 
                      &dsk->m_plates );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
     // return pointer
     return ( dsk.take() );
@@ -413,9 +413,9 @@ namespace Isis {
 
   NaifDskPlateModel::NaifDskDescriptor::~NaifDskDescriptor() {
     if ( -1 != m_handle ) { 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       dascls_c ( m_handle ); 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
     }
   }
   

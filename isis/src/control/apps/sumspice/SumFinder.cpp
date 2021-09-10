@@ -510,11 +510,11 @@ namespace Isis {
 
     // Compute start SCLK if present on labels
     if ( origStartClock.size() > 0 ) {
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       char newSCLK[256];
       sce2s_c(camera->naifSclkCode(), newStartClock.Et(),
               sizeof(newSCLK), newSCLK);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       sumtStartClock.addValue(origStartClock[0], origStartClock.unit());
       origStartClock.setValue(QString(newSCLK), origStartClock.unit());
@@ -526,11 +526,11 @@ namespace Isis {
 
     // Compute end SCLK if present on labels
     if ( origStopClock.size() > 0 ) {
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       char newSCLK[256];
       sce2s_c(camera->naifSclkCode(), newStopClock.Et(),
               sizeof(newSCLK), newSCLK);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       sumtStopClock.addValue(origStopClock[0], origStopClock.unit());
       origStopClock.setValue(QString(newSCLK), origStopClock.unit());

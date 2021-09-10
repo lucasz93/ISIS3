@@ -75,21 +75,21 @@ namespace Isis {
 
       virtual QList<QPointF> PixelIfovOffsets();
 
-      virtual bool SetImage(const double sample, const double line);
+      virtual bool SetImage(const double sample, const double line, NaifContextPtr naif) override;
 
-      virtual bool SetGround(Latitude latitude, Longitude longitude);
-      virtual bool SetGround(const SurfacePoint &surfacePt);
-      virtual bool SetUniversalGround(const double latitude, const double longitude);
-      virtual bool SetUniversalGround(const double latitude, const double longitude, double radius);
+      virtual bool SetGround(Latitude latitude, Longitude longitude, NaifContextPtr naif) override;
+      virtual bool SetGround(const SurfacePoint &surfacePt, NaifContextPtr naif) override;
+      virtual bool SetUniversalGround(const double latitude, const double longitude, NaifContextPtr naif) override;
+      virtual bool SetUniversalGround(const double latitude, const double longitude, double radius, NaifContextPtr naif) override;
 
       virtual void setTime(const iTime &time, NaifContextPtr naif) override;
 
-      virtual double LineResolution();
-      virtual double SampleResolution();
-      virtual double DetectorResolution();
-      virtual double ObliqueLineResolution();
-      virtual double ObliqueSampleResolution();
-      virtual double ObliqueDetectorResolution();
+      virtual double LineResolution(NaifContextPtr naif) override;
+      virtual double SampleResolution(NaifContextPtr naif) override;
+      virtual double DetectorResolution(NaifContextPtr naif) override;
+      virtual double ObliqueLineResolution(NaifContextPtr naif) override;
+      virtual double ObliqueSampleResolution(NaifContextPtr naif) override;
+      virtual double ObliqueDetectorResolution(NaifContextPtr naif) override;
 
       virtual double parentLine() const;
       virtual double parentSample() const;
@@ -98,8 +98,8 @@ namespace Isis {
       virtual void subSpacecraftPoint(double &lat, double &lon, double line, double sample);
       virtual void subSolarPoint(double &lat, double &lon, NaifContextPtr naif);
 
-      virtual double PhaseAngle() const;
-      virtual double EmissionAngle() const;
+      virtual double PhaseAngle(NaifContextPtr naif) const;
+      virtual double EmissionAngle(NaifContextPtr naif) const;
       virtual double IncidenceAngle() const;
 
       virtual SpicePosition *sunPosition() const;
@@ -111,11 +111,11 @@ namespace Isis {
       virtual void sunPosition(double p[3], NaifContextPtr naif) const override;
       virtual double SolarDistance() const;
 
-      virtual double SlantDistance() const;
+      virtual double SlantDistance(NaifContextPtr naif) const;
       virtual double targetCenterDistance(NaifContextPtr naif) const override;
 
-      virtual double RightAscension();
-      virtual double Declination();
+      virtual double RightAscension(NaifContextPtr naif);
+      virtual double Declination(NaifContextPtr naif);
 
       std::vector<int> getParameterIndices(csm::param::Set paramSet) const;
       std::vector<int> getParameterIndices(csm::param::Type paramType) const;

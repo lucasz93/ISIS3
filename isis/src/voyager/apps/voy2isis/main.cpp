@@ -355,7 +355,7 @@ void TranslateVoyagerLabels(Pvl &inputLab, Cube *ocube) {
   ********************************************************************/
 
   // We've already handled a couple of the steps mentioned above.
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   //* 3 *//
   // Leapsecond kernel
   QString lsk = "$base/kernels/lsk/naif????.tls";
@@ -416,7 +416,7 @@ void TranslateVoyagerLabels(Pvl &inputLab, Cube *ocube) {
   //* 4 *//
   char utcOut[25];
   et2utc_c(approxEphemeris, "ISOC", 3, 26, utcOut);
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   inst["StartTime"].setValue(QString(utcOut));
 
   // Set up the nominal reseaus group
@@ -447,7 +447,7 @@ void TranslateVoyagerLabels(Pvl &inputLab, Cube *ocube) {
                     + ".template.cub");
   res += PvlKeyword("Status", "Nominal");
   ocube->putGroup(res);
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 }
 
 

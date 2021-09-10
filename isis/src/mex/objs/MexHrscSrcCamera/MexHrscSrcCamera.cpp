@@ -38,7 +38,7 @@ namespace Isis {
     m_spacecraftNameLong = "Mars Express";
     m_spacecraftNameShort = "MEX";
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     SetFocalLength(Spice::getDouble("INS" + toString(naifIkCode()) + "_FOCAL_LENGTH"));
 
@@ -84,7 +84,7 @@ namespace Isis {
 
     // Internalize all the NAIF SPICE information into memory.
     LoadCache();
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
   /**

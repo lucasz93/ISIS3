@@ -76,7 +76,7 @@ namespace Isis {
    */
   bool PlaneShape::intersectSurface (std::vector<double> observerPos,
                                      std::vector<double> lookDirection) {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     SpiceDouble zvec[3];
     SpicePlane plane;
     SpiceInt nxpts;
@@ -121,7 +121,7 @@ namespace Isis {
     setHasIntersection(true);
     setNormal(0.0,0.0,1.0);
     surfaceIntersection()->FromNaifArray(xpt);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     return true;
   }

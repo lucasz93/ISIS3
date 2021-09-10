@@ -36,6 +36,8 @@ using json = nlohmann::json;
 #include "Target.h"
 #include "Blob.h"
 
+#include "NaifContextCast.h"
+
 using namespace std;
 
 namespace Isis {
@@ -97,7 +99,7 @@ namespace Isis {
   void Spice::csmInit(Cube &cube, Pvl label) {
     defaultInit();
     m_target = new Target;
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
 
@@ -402,9 +404,9 @@ namespace Isis {
       m_bodyRotation->LoadCache(isd["body_rotation"], naif);
       m_bodyRotation->MinimizeCache(SpiceRotation::DownsizeStatus::Yes);
       if (m_bodyRotation->cacheSize() > 5) {
-        m_bodyRotation->LoadTimeCache();
+        m_bodyRotation->LoadTimeCache(naif);
       }
-      solarLongitude();
+      solarLongitude(naif);
     }
     else if (kernels["TargetPosition"][0].toUpper() == "TABLE") {
       Table t("SunPosition", lab.fileName(), lab);
@@ -417,7 +419,7 @@ namespace Isis {
             Angle::Degrees);
       }
       else {
-        solarLongitude();
+        solarLongitude(naif);
       }
     }
 
@@ -444,10 +446,10 @@ namespace Isis {
       m_instrumentRotation = new SpiceRotation(*m_ikCode, *m_spkBodyCode);
     }
     else if (m_usingAle) {
-     m_instrumentRotation->LoadCache(isd["instrument_pointing"]);
+     m_instrumentRotation->LoadCache(isd["instrument_pointing"], naif);
      m_instrumentRotation->MinimizeCache(SpiceRotation::DownsizeStatus::Yes);
      if (m_instrumentRotation->cacheSize() > 5) {
-       m_instrumentRotation->LoadTimeCache();
+       m_instrumentRotation->LoadTimeCache(naif);
      }
     }
     else if (kernels["InstrumentPointing"][0].toUpper() == "TABLE") {
@@ -1517,7 +1519,7 @@ namespace Isis {
    *
    * @return @b double The Solar Longitude
    */
-  Longitude Spice::solarLongitude() {
+  Longitude Spice::solarLongitude(NaifContextPtr naif) {
     if (m_et) {
       computeSolarLongitude(*m_et, naif);
       return *m_solarLongitude;

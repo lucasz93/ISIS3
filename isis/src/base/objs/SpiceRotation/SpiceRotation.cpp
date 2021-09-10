@@ -30,6 +30,8 @@ find files of those names at the top level of this repository. **/
 #include "Table.h"
 #include "TableField.h"
 
+#include "NaifContextCast.h"
+
 using json = nlohmann::json;
 
 // Temporary declarations for bindings for Naif supportlib routines
@@ -456,7 +458,7 @@ namespace Isis {
    * @param isdRot The ALE ISD as a JSON object.
    *
    */
-  void SpiceRotation::LoadCache(json &isdRot){
+  void SpiceRotation::LoadCache(json &isdRot, NaifContextPtr naif){
     if (p_source != Spice) {
         throw IException(IException::Programmer, "SpiceRotation::LoadCache(json) only supports Spice source", _FILEINFO_);
     }
@@ -708,9 +710,9 @@ namespace Isis {
       double baseTime = (double)rec[0];
       double timeScale = (double)rec[1];
       double degree = (double)rec[2];
-      SetPolynomialDegree((int) degree);
+      SetPolynomialDegree(naif, (int) degree);
       SetOverrideBaseTime(baseTime, timeScale);
-      SetPolynomial(coeffAng1, coeffAng2, coeffAng3);
+      SetPolynomial(naif, coeffAng1, coeffAng2, coeffAng3);
       p_source = PolyFunction;
       if (degree > 0)  p_hasAngularVelocity = true;
       if (degree == 0  && m_orientation->getAngularVelocities().size() > 0) {
@@ -733,7 +735,7 @@ namespace Isis {
    *
    * @throws IException::Programmer "The SpiceRotation has not yet been fit to a function"
    */
-  void SpiceRotation::ReloadCache() {
+  void SpiceRotation::ReloadCache(NaifContextPtr naif) {
     // Save current et
     double et = p_et;
     p_et = -DBL_MAX;
@@ -824,17 +826,17 @@ namespace Isis {
    *
    * @return @b Table Table with given name that contains the cached pointing
    */
-  Table SpiceRotation::LineCache(const QString &tableName) {
+  Table SpiceRotation::LineCache(const QString &tableName, NaifContextPtr naif) {
 
     // Apply the function and fill the caches
-    if (p_source >= PolyFunction)  ReloadCache();
+    if (p_source >= PolyFunction)  ReloadCache(naif);
 
     if (p_source != Memcache) {
       QString msg = "Only cached rotations can be returned as a line cache of quaternions and time";
       throw IException(IException::Programmer, msg, _FILEINFO_);
     }
     // Load the table and return it to caller
-    return Cache(tableName);
+    return Cache(tableName, naif);
   }
 
 
@@ -860,11 +862,11 @@ namespace Isis {
    *
    * @return @b Table Table with given name that contains the cached pointing
    */
-  Table SpiceRotation::Cache(const QString &tableName) {
+  Table SpiceRotation::Cache(const QString &tableName, NaifContextPtr naif) {
    // First handle conversion of PolyFunctionOverSpiceConstant
     // by converting it to the full Memcache and try to downsize it
     if (p_source == PolyFunctionOverSpice) {
-      LineCache(tableName);
+      LineCache(tableName, naif);
 
       //std::cout << "Full cache size is " << p_cache.size() << endl;
       p_minimizeCache = Yes;
@@ -931,12 +933,12 @@ namespace Isis {
         table += record;
       }
 
-      CacheLabel(table);
+      CacheLabel(table, naif);
       return table;
     }
     // Just load the position for the single epoch
     else if (p_source == PolyFunction  &&  p_degree == 0  &&  p_fullCacheSize == 1) {
-      return LineCache(tableName);
+      return LineCache(tableName, naif);
     }
     // Load the coefficients for the curves fit to the 3 camera angles
     else if (p_source == PolyFunction) {
@@ -965,7 +967,7 @@ namespace Isis {
       record[2] = (double) p_degree;
 
       table += record;
-      CacheLabel(table);
+      CacheLabel(table, naif);
       return table;
     }
     else {
@@ -1174,7 +1176,7 @@ namespace Isis {
    *
    * @param Table    Table to receive labels
    */
-  void SpiceRotation::CacheLabel(Table &table) {
+  void SpiceRotation::CacheLabel(Table &table, NaifContextPtr naif) {
     naif->CheckErrors();
     // Load the constant and time-based frame traces and the constant rotation
     // into the table as labels
@@ -1732,7 +1734,7 @@ namespace Isis {
    *   @history 2012-05-01 Debbie A. Cook - Added type argument to allow other function types
    *                           beyond PolyFunction.
    */
-  void SpiceRotation::SetPolynomial(const Source type) {
+  void SpiceRotation::SetPolynomial(NaifContextPtr naif, const Source type) {
     naif->CheckErrors();
     std::vector<double> coeffAng1, coeffAng2, coeffAng3;
 
@@ -1758,7 +1760,7 @@ namespace Isis {
       coeffAng1.assign(p_degree + 1, 0.);
       coeffAng2.assign(p_degree + 1, 0.);
       coeffAng3.assign(p_degree + 1, 0.);
-      SetPolynomial(coeffAng1, coeffAng2, coeffAng3, type);
+      SetPolynomial(naif, coeffAng1, coeffAng2, coeffAng3, type);
       return;
     }
 
@@ -1863,7 +1865,7 @@ namespace Isis {
     }
 
     // Now that the coefficients have been calculated set the polynomial with them
-    SetPolynomial(coeffAng1, coeffAng2, coeffAng3);
+    SetPolynomial(naif, coeffAng1, coeffAng2, coeffAng3);
 
     naif->CheckErrors();
     return;
@@ -1884,7 +1886,8 @@ namespace Isis {
    * @internal
    *   @history 2012-05-01 Debbie A. Cook - Added type argument to allow other function types.
    */
-  void SpiceRotation::SetPolynomial(const std::vector<double> &coeffAng1,
+  void SpiceRotation::SetPolynomial(NaifContextPtr naif, 
+                                    const std::vector<double> &coeffAng1,
                                     const std::vector<double> &coeffAng2,
                                     const std::vector<double> &coeffAng3,
                                     const Source type) {
@@ -2021,7 +2024,8 @@ namespace Isis {
    * @internal
    *   @history 2012-05-01 Debbie A. Cook - Original version.
    */
-  void SpiceRotation::setPckPolynomial(const std::vector<Angle> &raCoeff,
+  void SpiceRotation::setPckPolynomial(NaifContextPtr naif, 
+                                       const std::vector<Angle> &raCoeff,
                                        const std::vector<Angle> &decCoeff,
                                        const std::vector<Angle> &pmCoeff) {
     // Just set the constants and let usePckPolynomial() do the rest
@@ -2337,7 +2341,7 @@ namespace Isis {
    *   @history 2011-03-22 Debbie A. Cook - Fixed bug in second branch where existing
    *                           degree is greater than new degree.
    */
-  void SpiceRotation::SetPolynomialDegree(int degree) {
+  void SpiceRotation::SetPolynomialDegree(NaifContextPtr naif, int degree) {
     // Adjust the degree for the data
     if (p_fullCacheSize == 1) {
       degree = 0;
@@ -2362,7 +2366,7 @@ namespace Isis {
         coefAngle3.push_back(0.);
       }
       p_degree = degree;
-      SetPolynomial(coefAngle1, coefAngle2, coefAngle3, p_source);
+      SetPolynomial(naif, coefAngle1, coefAngle2, coefAngle3, p_source);
     }
     // ... or reduced (decrease the number of terms)
     else if (p_degree > degree) {
@@ -2376,7 +2380,7 @@ namespace Isis {
         coefAngle3[icoef] = p_coefficients[2][icoef];
       }
       p_degree = degree;
-      SetPolynomial(coefAngle1, coefAngle2, coefAngle3, p_source);
+      SetPolynomial(naif, coefAngle1, coefAngle2, coefAngle3, p_source);
     }
   }
 
@@ -2626,7 +2630,7 @@ namespace Isis {
             int dovelocity = ic[3];
             int end = ic[5];
             double val[2];
-            dafgda_c(handle, end - 1, end, val);
+            naif->dafgda_c(handle, end - 1, end, val);
 //            int nints = (int) val[0];
             int ninstances = (int) val[1];
             int numvel  =  dovelocity * 3;
@@ -2640,7 +2644,7 @@ namespace Isis {
 
             // Now get the times
             std::vector<double> sclkdp(ninstances);
-            dafgda_c(handle, sclkdp1off, sclkdpnoff, (SpiceDouble *) &sclkdp[0]);
+            naif->dafgda_c(handle, sclkdp1off, sclkdpnoff, (SpiceDouble *) &sclkdp[0]);
 
             int instance = 0;
             naif->sct2e_c(sclkSpCode, sclkdp[0], &et);
@@ -2976,7 +2980,7 @@ namespace Isis {
    * @throws IException::Programmer "Planetary angular velocity must be fit computed with PCK
    *                                 polynomials"
    */
-  void SpiceRotation::ComputeAv() {
+  void SpiceRotation::ComputeAv(NaifContextPtr naif) {
     naif->CheckErrors();
 
     // Make sure the angles have been fit to polynomials so we can calculate the derivative
@@ -3007,7 +3011,7 @@ namespace Isis {
         break;
       }
     double omega[3][3];
-    mtxm_c((SpiceDouble( *)[3]) &dCJdt[0], (SpiceDouble( *)[3]) &p_CJ[0], omega);
+    naif->mtxm_c((SpiceDouble( *)[3]) &dCJdt[0], (SpiceDouble( *)[3]) &p_CJ[0], omega);
     p_av[0] = omega[2][1];
     p_av[1] = omega[0][2];
     p_av[2] = omega[1][0];
@@ -3463,7 +3467,7 @@ namespace Isis {
        p_av[2] = av.z;
      }
        else {
-       ComputeAv();
+       ComputeAv(naif);
      }
    }
    naif->CheckErrors();

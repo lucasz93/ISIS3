@@ -105,13 +105,13 @@ namespace Isis {
       }
 
       // furnish these kernels
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       furnsh_c(ckFileName.c_str());
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       furnsh_c(sclkFileName.c_str());
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       furnsh_c(lskFileName.c_str());
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       // get values from the labels needed to compute the line rate and the
       // actual start time of the input cube
@@ -376,11 +376,11 @@ namespace Isis {
       }
 
       // Unfurnishes kernel files to prevent file table overflow
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       unload_c(ckFileName.c_str());
       unload_c(sclkFileName.c_str());
       unload_c(lskFileName.c_str());
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
     }
     catch (IException &e) {
       IString msg = "Unable to crop the given cube [" + inputFileName
@@ -483,17 +483,17 @@ namespace Isis {
    */
   pair<double, double> ckBeginEndTimes(IString ckFileName) {
     //create a spice cell capable of containing all the objects in the kernel.
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     SPICEINT_CELL(currCell, 1000);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     //this resizing is done because otherwise a spice cell will append new data
     //to the last "currCell"
     ssize_c(0, &currCell);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     ssize_c(1000, &currCell);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     ckobj_c(ckFileName.c_str(), &currCell);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     int numberOfBodies = card_c(&currCell);
     if (numberOfBodies != 1) {
       IString msg = "Unable to find start and stop times using the given CK "
@@ -504,19 +504,19 @@ namespace Isis {
 
     //get the NAIF body code
     int body = SPICE_CELL_ELEM_I(&currCell, numberOfBodies-1);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     //  200,000 is the max coverage window size for a CK kernel
     SPICEDOUBLE_CELL(cover, 200000);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     ssize_c(0, &cover);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     ssize_c(200000, &cover);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     ckcov_c(ckFileName.c_str(), body, SPICEFALSE, "SEGMENT", 0.0, "TDB", &cover);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     //Get the number of intervals in the object.
     int numberOfIntervals = card_c(&cover) / 2;
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if (numberOfIntervals != 1) {
       IString msg = "Unable to find start and stop times using the given CK "
                     "file [" + ckFileName + "]. This application only works with "
@@ -527,7 +527,7 @@ namespace Isis {
     //Get the endpoints of the interval.
     double begin, end;
     wnfetd_c(&cover, numberOfIntervals-1, &begin, &end);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     QVariant startTime = begin;//??? why use variants? why not just use begin and end ???
     QVariant stopTime = end;   //??? why use variants? why not just use begin and end ???
     pair< double, double > coverage(startTime.toDouble(),  stopTime.toDouble());
@@ -596,9 +596,9 @@ namespace Isis {
     // char
     char stringOutput[19];
     double et = time.Et();
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     sce2s_c(-74999, et, 19, stringOutput);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return stringOutput;
   }
 
@@ -616,9 +616,9 @@ namespace Isis {
     SpiceDouble timeOutput;
     // The -74999 is the code to select the transformation from
     // high-precision MRO SCLK to ET
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     scs2e_c(-74999, spacecraftClockCount.toLatin1().data(), &timeOutput);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     QVariant clockTime = timeOutput;
     iTime time = clockTime.toDouble();
     return time;

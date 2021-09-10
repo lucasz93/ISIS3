@@ -19,6 +19,8 @@ find files of those names at the top level of this repository. **/
 #include "SpecialPixel.h"
 #include "Spice.h"
 
+#include "NaifContextCast.h"
+
 
 using namespace std;
 
@@ -210,7 +212,7 @@ namespace Isis {
       try {
         // Get body code from Isis Naif object if it exists or Naif data pool
         if (m_spice) {
-          code = m_spice->getInteger("BODY_CODE", 0);
+          code = m_spice->getInteger(naif, "BODY_CODE", 0);
           return code;
         }
         // getInteger automatically calls Spice::readValue which looks in the NaifKeywords

@@ -567,10 +567,10 @@ namespace Isis {
     QVector<double> norm(3);
     // need a case for target == NULL
     QVector<Distance> radii = QVector<Distance>::fromStdVector(targetRadii());
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     surfnm_c(radii[0].kilometers(), radii[1].kilometers(), radii[2].kilometers(),
              pB, &norm[0]);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     return (norm);
   }

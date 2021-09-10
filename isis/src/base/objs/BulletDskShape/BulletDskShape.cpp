@@ -173,13 +173,13 @@ namespace Isis {
 
     // Open the NAIF Digital Shape Kernel (DSK)
     dasopr_c( dskFile.expanded().toLatin1().data(), &handle );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Search to the first DLA segment
     SpiceBoolean  found;
     SpiceDLADescr segment;
     dlabfs_c( handle, &segment, &found );
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if ( !found ) {
       QString mess = "No segments found in DSK file " + dskfile ;
       throw IException(IException::User, mess, _FILEINFO_);
@@ -191,13 +191,13 @@ namespace Isis {
     // Iterate until you find no more segments.
     while(found) {
       dlafns_c(handle, &segments.back(), &segment, &found);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       if (found)
         segments.push_back(segment);
     }
 
     // dskgd_c( v_handle, &v_dladsc, &v_dskdsc );
-    // NaifStatus::CheckErrors();
+    // naif->CheckErrors();
 
     // Now allocate a new indexed mesh to contain all the DSK data
     m_mesh.reset( new btTriangleIndexVertexArray());
@@ -210,7 +210,7 @@ namespace Isis {
 
       // Get size/counts
       dskz02_c( handle, &segments[i], &nvertices, &nplates);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       m_mesh->addIndexedMesh(i_mesh, PHY_INTEGER);
 
@@ -231,12 +231,12 @@ namespace Isis {
       SpiceInt n;
       (void) dskv02_c(handle, &segments[i], 1, nvertices, &n,
                       ( SpiceDouble(*)[3] ) (v_mesh.m_vertexBase));
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       // Read the indexes from the DSK
       (void) dskp02_c(handle, &segments[i], 1, nplates, &n,
                       ( SpiceInt(*)[3] ) (v_mesh.m_triangleIndexBase));
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       // Got to reset the vertex indexes to 0-based
       int *pindex = static_cast<int *> ((void *) v_mesh.m_triangleIndexBase);

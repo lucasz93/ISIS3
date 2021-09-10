@@ -173,14 +173,16 @@ namespace Isis {
 
       virtual ~Sensor();
 
-      void setTime(const iTime &time);
-      bool SetLookDirection(const double v[3]);
-      bool SetRightAscensionDeclination(const double ra, const double dec);
-      bool SetUniversalGround(const double latitude, const double longitude,
+      void setTime(const iTime &time, NaifContextPtr naif);
+      bool SetLookDirection(const double v[3], NaifContextPtr naif);
+      bool SetRightAscensionDeclination(const double ra, const double dec, NaifContextPtr naif);
+      bool SetUniversalGround(NaifContextPtr naif,
+                              const double latitude, const double longitude,
                               bool backCheck = true);
-      bool SetUniversalGround(const double latitude, const double longitude,
+      bool SetUniversalGround(NaifContextPtr naif,
+                              const double latitude, const double longitude,
                               const double radius, bool backCheck = true);
-      bool SetGround(const SurfacePoint &surfacePt, bool backCheck = true);
+      bool SetGround(NaifContextPtr naif, const SurfacePoint &surfacePt, bool backCheck = true);
       bool HasSurfaceIntersection() const;
       void Coordinate(double p[3]) const;
 
@@ -194,23 +196,23 @@ namespace Isis {
       Distance LocalRadius(Latitude lat, Longitude lon);
       Distance LocalRadius(double lat, double lon);
 
-      virtual double PhaseAngle() const;
-      virtual double EmissionAngle() const;
+      virtual double PhaseAngle(NaifContextPtr naif) const;
+      virtual double EmissionAngle(NaifContextPtr naif) const;
       virtual double IncidenceAngle() const;
 
-      void LookDirection(double v[3]) const;
-      std::vector<double> lookDirectionJ2000() const;
+      void LookDirection(double v[3], NaifContextPtr naif) const;
+      std::vector<double> lookDirectionJ2000(NaifContextPtr naif) const;
       std::vector<double> lookDirectionBodyFixed() const;
 
-      virtual double RightAscension();
-      virtual double Declination();
+      virtual double RightAscension(NaifContextPtr naif);
+      virtual double Declination(NaifContextPtr naif);
 
       // Return vector between spacecraft and surface point in body-fixed
       void SpacecraftSurfaceVector(double scSurfaceVector[3]) const;
-      virtual double SlantDistance() const;
-      double LocalSolarTime();
+      virtual double SlantDistance(NaifContextPtr naif) const;
+      double LocalSolarTime(NaifContextPtr naif);
       virtual double SolarDistance() const;
-      double SpacecraftAltitude();
+      double SpacecraftAltitude(NaifContextPtr naif);
 
       // Return local radius from dem
 //      Distance DemRadius(const SurfacePoint &pt);
@@ -248,8 +250,8 @@ namespace Isis {
 
       SpiceDouble m_ra;     //!< Right ascension (sky longitude)
       SpiceDouble m_dec;    //!< Decliation (sky latitude)
-      void computeRaDec();  //!< Computes the ra/dec from the look direction
-      bool SetGroundLocal(bool backCheck);   //!< Computes look vector
+      void computeRaDec(NaifContextPtr naif);  //!< Computes the ra/dec from the look direction
+      bool SetGroundLocal(bool backCheck, NaifContextPtr naif);   //!< Computes look vector
   };
 };
 

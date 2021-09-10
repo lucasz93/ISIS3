@@ -394,10 +394,10 @@ namespace Isis {
       SpiceDouble intersectionPoint[3];
       SpiceBoolean found;
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       surfpt_c(&observerBodyFixedPos[0], &observerLookVectorToTarget[0], plen, plen, plen,
                intersectionPoint, &found);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       surfaceIntersection()->FromNaifArray(intersectionPoint);
 

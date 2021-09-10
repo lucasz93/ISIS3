@@ -46,7 +46,7 @@ namespace Isis {
       allKernelFiles.append(kernels("PCK", &KernelDb::targetAttitudeShape, *demCube->label(), ui));
       allKernelFiles.append(kernels("SPK", &KernelDb::targetPosition, *demCube->label(), ui));
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       foreach (QString kernelFile, allKernelFiles) {
         kernelsUsed += kernelFile;
@@ -58,7 +58,7 @@ namespace Isis {
       SpiceDouble sunPosition[3];
       SpiceDouble lightTime;
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       iTime time(ui.GetString("TIME"));
 
       // Get actual sun position, relative to target
@@ -66,13 +66,13 @@ namespace Isis {
       spkpos_c("SUN", time.Et(), bodyFixedFrame.toLatin1().data(), "NONE",
                name.toUpper().toLatin1().data(), sunPosition, &lightTime);
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       // Adjusted for light time
       spkpos_c("SUN", time.Et() - lightTime, bodyFixedFrame.toLatin1().data(), "NONE",
                name.toUpper().toLatin1().data(), sunPosition, &lightTime);
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
 
       // Convert sun position units: KM -> M
@@ -84,7 +84,7 @@ namespace Isis {
         unload_c(FileName(kernelFile).expanded().toLatin1().data());
       }
 
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
       functor.setSunPosition(sunPosition);
     }
 

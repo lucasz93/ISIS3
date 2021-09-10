@@ -48,7 +48,7 @@ namespace Isis {
    * @return @b bool If conversion was successful
    */
   bool CameraGroundMap::SetFocalPlane(const double ux, const double uy, const double uz) {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     SpiceDouble lookC[3];
     lookC[0] = ux;
@@ -58,7 +58,7 @@ namespace Isis {
     SpiceDouble unitLookC[3];
     vhat_c(lookC, unitLookC);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     bool result = p_camera->SetLookDirection(unitLookC);
     return result;

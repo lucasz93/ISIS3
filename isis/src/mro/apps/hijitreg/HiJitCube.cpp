@@ -47,17 +47,17 @@ namespace Isis {
   /**
    *  @brief Constructor with file to open
    */
-  HiJitCube::HiJitCube(const QString &filename) {
+  HiJitCube::HiJitCube(const QString &filename, NaifContextPtr naif) {
     initLocal();
-    OpenCube(filename);
+    OpenCube(filename, naif);
   }
 
   /**
    *  @brief Constructor with file to open and potential shift applied
    */
-  HiJitCube::HiJitCube(const QString &filename, PvlObject &shift) {
+  HiJitCube::HiJitCube(const QString &filename, PvlObject &shift, NaifContextPtr naif) {
     initLocal();
-    OpenCube(filename, shift);
+    OpenCube(filename, shift, naif);
   }
 
 
@@ -82,14 +82,14 @@ namespace Isis {
   }
 
 
-  void HiJitCube::OpenCube(const QString &filename) {
+  void HiJitCube::OpenCube(const QString &filename, NaifContextPtr naif) {
     open(filename);
-    Init();
+    Init(naif);
     return;
   }
 
-  void HiJitCube::OpenCube(const QString &filename, PvlObject &shift) {
-    OpenCube(filename);
+  void HiJitCube::OpenCube(const QString &filename, PvlObject &shift, NaifContextPtr naif) {
+    OpenCube(filename, naif);
 
     //  Determine if a shift of the CCD exists in the definitions file
     if(shift.hasGroup(jdata.ccdName)) {
@@ -137,9 +137,8 @@ namespace Isis {
   }
 
 
-  void HiJitCube::loadNaifTiming() {
-    auto naifState = NaifContext::get()->top();
-    if(!naifState->hiJitCubeLoaded()) {
+  void HiJitCube::loadNaifTiming(NaifContextPtr naif) {
+    if(!naif->hiJitCubeLoaded()) {
 //  Load the NAIF kernels to determine timing data
       Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
       leapseconds = leapseconds.highestVersion();
@@ -150,19 +149,19 @@ namespace Isis {
 //  Load the kernels
       QString lsk = leapseconds.expanded();
       QString sClock = sclk.expanded();
-      NaifStatus::CheckErrors();
-      furnsh_c(lsk.toLatin1().data());
-      NaifStatus::CheckErrors();
-      furnsh_c(sClock.toLatin1().data());
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
+      naif->furnsh_c(lsk.toLatin1().data());
+      naif->CheckErrors();
+      naif->furnsh_c(sClock.toLatin1().data());
+      naif->CheckErrors();
 
 //  Ensure it is loaded only once
-      naifState->set_hiJitCubeLoaded(true);
+      naif->set_hiJitCubeLoaded(true);
     }
     return;
   }
 
-  void HiJitCube::computeStartTime() {
+  void HiJitCube::computeStartTime(NaifContextPtr naif) {
 
 //  Compute the unbinned and binned linerates in seconds
     jdata.unBinnedRate = ((Instrument::LINE_TIME_PRE_OFFSET +
@@ -177,15 +176,15 @@ namespace Isis {
         cam = camera();
         // This SetImage at (1,1) is used to match the non-camera code below. (0.5, 0.5) should match the start
         // clock count of the image, but instead (1, 1) matches. This suggests something odd in the Camera
-        cam->SetImage (1.0, 1.0);
+        cam->SetImage (1.0, 1.0, naif);
         jdata.obsStartTime = cam->time().Et();
       } catch (IException &e) {
         try {
-          loadNaifTiming();
+          loadNaifTiming(naif);
           QString scStartTimeString = jdata.scStartTime;
-          NaifStatus::CheckErrors();
-          scs2e_c(-74999, scStartTimeString.toLatin1().data(), &jdata.obsStartTime);
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
+          naif->scs2e_c(-74999, scStartTimeString.toLatin1().data(), &jdata.obsStartTime);
+          naif->CheckErrors();
         } catch (IException &e) {
             QString message = "Start time of the image can not be determined.";
             throw IException(e, IException::User, message, _FILEINFO_);
@@ -230,7 +229,7 @@ namespace Isis {
     fpGeom = 0;
   }
 
-  void HiJitCube::Init() {
+  void HiJitCube::Init(NaifContextPtr naif) {
     // Get required keywords from instrument group
     Pvl *labelPvl(label());
     Isis::PvlGroup inst;
@@ -318,7 +317,7 @@ namespace Isis {
     }
 
 // Determine starting time of image and compute the binning rates
-    computeStartTime();
+    computeStartTime(naif);
 
 //  Compute the focal plane polygon for this image
     computePoly();

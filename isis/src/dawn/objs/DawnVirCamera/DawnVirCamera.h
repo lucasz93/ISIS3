@@ -91,7 +91,7 @@ namespace Isis {
       virtual int SpkReferenceId() const;
 
     private:
-      void readHouseKeeping(const QString &filename, double lineRate);
+      void readHouseKeeping(const QString &filename, double lineRate, NaifContextPtr naif);
       QString scrub(const QString &text) const;
       double exposureTime() const;
       double scanLineTime() const;
@@ -105,10 +105,12 @@ namespace Isis {
       double endTime() const;
 
       Table getPointingTable(const QString &channelId,
-                             const int zeroFrame);
+                             const int zeroFrame,
+                             NaifContextPtr naif);
       SMatrix getStateRotation(const QString &frame1,
                                const QString &frame2,
-                               const double &et) const;
+                               const double &et,
+                               NaifContextPtr naif) const;
 
       bool hasArticulationKernel(Pvl &label) const;
 

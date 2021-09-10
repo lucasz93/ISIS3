@@ -42,7 +42,7 @@ namespace Isis {
        throw IException(IException::User, msg, _FILEINFO_);
      }
 
-     NaifStatus::CheckErrors();
+     naif->CheckErrors();
 
      SetFocalLength();
      SetPixelPitch();
@@ -73,7 +73,7 @@ namespace Isis {
      setTime(etStart.Et());
 
      LoadCache();
-     NaifStatus::CheckErrors();
+     naif->CheckErrors();
    }
 
 

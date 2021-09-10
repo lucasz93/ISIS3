@@ -224,7 +224,7 @@ void SpiceDbGen::setCoverageLevel(QString level) {
   * @throws Isis::iException::Message
   */
 PvlGroup SpiceDbGen::AddSelection(FileName fileIn, double startOffset, double endOffset) {
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   //finalize the filename so that it may be used in spice routines
   QString tmp = fileIn.expanded();
@@ -267,7 +267,7 @@ PvlGroup SpiceDbGen::AddSelection(FileName fileIn, double startOffset, double en
     //(Positive codes indicate planetary bodies, negatives indicate
     // spacecraft and instruments)
     if (body < 0) {
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
 
       //find the correct coverage window
       if (currFile == "SPK") {
@@ -276,7 +276,7 @@ PvlGroup SpiceDbGen::AddSelection(FileName fileIn, double startOffset, double en
         ssize_c(200000, &cover);
         spkcov_c(tmp.toLatin1().data(), body, &cover);
 
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
 
         result = FormatIntervals(cover, currFile, startOffset, endOffset);
       }
@@ -294,7 +294,7 @@ PvlGroup SpiceDbGen::AddSelection(FileName fileIn, double startOffset, double en
           ckcov_c(tmp.toLatin1().data(), body, SPICEFALSE, "INTERVAL", 0.0, "TDB", &cover);
         }
 
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         result = FormatIntervals(cover, currFile, startOffset, endOffset);
       }
     }
@@ -303,7 +303,7 @@ PvlGroup SpiceDbGen::AddSelection(FileName fileIn, double startOffset, double en
   QString outFile = fileIn.originalPath();
   result += PvlKeyword("File", outFile + "/" + fileIn.name());
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   // Unfurnishes tmp file to prevent file table overflow
   unload_c(tmp.toLatin1().data());
@@ -314,7 +314,7 @@ PvlGroup SpiceDbGen::AddSelection(FileName fileIn, double startOffset, double en
 
 PvlGroup SpiceDbGen::FormatIntervals(SpiceCell &coverage, QString type,
                                      double startOffset, double endOffset) {
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   PvlGroup result(type);
   SpiceChar begStr[35], endStr[35];
@@ -335,7 +335,7 @@ PvlGroup SpiceDbGen::FormatIntervals(SpiceCell &coverage, QString type,
                          "\", \"" + (QString)endStr + "\")");
   }
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   return result;
 }
@@ -343,7 +343,7 @@ PvlGroup SpiceDbGen::FormatIntervals(SpiceCell &coverage, QString type,
 
 void SpiceDbGen::FurnishDependencies(QList<FileName> sclks, QList<FileName> lsks,
                                      QList<FileName> extras) {
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
   // furnish the lsk files
   foreach (FileName lsk, lsks) {
@@ -360,5 +360,5 @@ void SpiceDbGen::FurnishDependencies(QList<FileName> sclks, QList<FileName> lsks
     furnsh_c(extra.expanded().toLatin1().data());
   }
 
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 }

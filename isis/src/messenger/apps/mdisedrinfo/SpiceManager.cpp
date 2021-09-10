@@ -171,7 +171,7 @@ namespace Isis {
    * @brief Unloads all kernels if they were loaded when found
    */
   void SpiceManager::Unload() {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     if(_furnish) {
       for(unsigned int i = 0 ; i < _kernlist.size() ; i++) {
         /**
@@ -185,7 +185,7 @@ namespace Isis {
       }
     }
     _kernlist.clear();
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return;
   }
 
@@ -204,7 +204,7 @@ namespace Isis {
    * @see  loadKernelFromTable()
    */
   void SpiceManager::loadKernel(PvlKeyword &key) {
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     for(int i = 0; i < key.size(); i++) {
       if(key[i] == "") continue;
       if(IString(key[i]).UpCase() == "NULL") continue;
@@ -219,7 +219,7 @@ namespace Isis {
       if(_furnish) furnsh_c(fileName.toLatin1().data());
       addKernelName((QString)key[i]);
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
   /**

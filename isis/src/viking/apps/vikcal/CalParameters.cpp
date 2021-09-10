@@ -381,7 +381,7 @@ namespace Isis {
     catch(IException &e) {
       // Failed to instantiate a camera, try furnishing kernels directly
       try {
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
         double sunv[3];
         SpiceDouble lt, et;
         FileName fname1 = (FileName)"$base/kernels/lsk/naif0007.tls";
@@ -393,7 +393,7 @@ namespace Isis {
         utc2et_c(t.toLatin1().data(), &et);
         spkezp_c(10, et, "J2000", "LT+S", 499, sunv, &lt);
         return sqrt(sunv[0] * sunv[0] + sunv[1] * sunv[1] + sunv[2] * sunv[2]);
-        NaifStatus::CheckErrors();
+        naif->CheckErrors();
       }
       catch(IException &e) {
         QString msg = "Unable to determine the distance from Mars to the Sun";

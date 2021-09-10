@@ -31,15 +31,17 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   HiriseCamera::HiriseCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "High Resolution Imaging Science Experiment";
     m_instrumentNameShort = "HiRISE";
     m_spacecraftNameLong = "Mars Reconnaissance Orbiter";
     m_spacecraftNameShort = "MRO";
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Setup camera characteristics from instrument and frame kernel
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
     //LoadFrameMounting("MRO_SPACECRAFT", "MRO_HIRISE_OPTICAL_AXIS");
     instrumentRotation()->SetFrame(-74690);
 
@@ -66,7 +68,7 @@ namespace Isis {
     SpiceDouble et;
     // The -74999 is the code to select the transformation from
     // high-precision MRO SCLK to ET
-    et = getClockTime(stime, -74999).Et();
+    et = getClockTime(naif, stime, -74999).Et();
 
     // Adjust the start time so that it is the effective time for
     // the first line in the image file.  Note that on 2006-03-29, this
@@ -117,8 +119,8 @@ namespace Isis {
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   //! Destroys the HiriseCamera object

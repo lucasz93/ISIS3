@@ -183,7 +183,7 @@ namespace Isis {
 
     //  Retrieve list of loaded SPKs from Kernel object
     QStringList spks = kernels.getKernelList("SPK");
-    NaifStatus::CheckErrors(); 
+    naif->CheckErrors(); 
     for ( int k = 0 ; k < spks.size() ; k++ ) {
       QString spkFile = spks[k];
       SpiceChar ktype[32];
@@ -218,7 +218,7 @@ namespace Isis {
         if ( !abcorr.isEmpty() )  break;
       }
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   
     // Set internal state only if it was found in the kernels, otherwise the 
     // existing state is preserved.

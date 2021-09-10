@@ -339,14 +339,14 @@ namespace Isis {
 
       void LoadCache(Table &table, NaifContextPtr naif);
 
-      void LoadCache(nlohmann::json &isd);
+      void LoadCache(nlohmann::json &isd, NaifContextPtr naif);
 
-      Table LineCache(const QString &tableName);
+      Table LineCache(const QString &tableName, NaifContextPtr naif);
 
-      void ReloadCache();
+      void ReloadCache(NaifContextPtr naif);
 
-      Table Cache(const QString &tableName);
-      void CacheLabel(Table &table);
+      Table Cache(const QString &tableName, NaifContextPtr naif);
+      void CacheLabel(Table &table, NaifContextPtr naif);
 
       void LoadTimeCache(NaifContextPtr naif);
 
@@ -355,15 +355,17 @@ namespace Isis {
 
       bool IsCached() const;
 
-      void SetPolynomial(const Source type=PolyFunction);
+      void SetPolynomial(NaifContextPtr naif, const Source type=PolyFunction);
 
-      void SetPolynomial(const std::vector<double> &abcAng1,
+      void SetPolynomial(NaifContextPtr naif,
+                         const std::vector<double> &abcAng1,
                          const std::vector<double> &abcAng2,
                          const std::vector<double> &abcAng3,
                          const Source type = PolyFunction);
 
       void usePckPolynomial();
-      void setPckPolynomial(const std::vector<Angle> &raCoeff,
+      void setPckPolynomial(NaifContextPtr naif,
+                            const std::vector<Angle> &raCoeff,
                             const std::vector<Angle> &decCoeff,
                             const std::vector<Angle> &pmCoeff);
 
@@ -376,7 +378,7 @@ namespace Isis {
                             std::vector<Angle> &pmCoeff);
 
       // Set the polynomial degree
-      void SetPolynomialDegree(int degree);
+      void SetPolynomialDegree(NaifContextPtr naif, int degree);
       Source GetSource();
       void SetSource(Source source);
       void ComputeBaseTime();
@@ -410,7 +412,7 @@ namespace Isis {
       void InitConstantRotation(double et, NaifContextPtr naif);
       bool HasAngularVelocity();
 
-      void ComputeAv();
+      void ComputeAv(NaifContextPtr naif);
       std::vector<double> Extrapolate(double timeEt, NaifContextPtr naif);
 
       void checkForBinaryPck(NaifContextPtr naif);

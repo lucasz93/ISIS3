@@ -171,7 +171,7 @@ namespace Isis {
 
     double tol2 = tol * tol;
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     while (!done) {
 
       if (it > maxit) {
@@ -245,7 +245,7 @@ namespace Isis {
 
       it ++;
     } // end of while loop
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     return hasIntersection();
   }
@@ -321,9 +321,9 @@ namespace Isis {
 
     vector<double> normal(3,0.);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     surfnm_c(a, b, c, pB, (SpiceDouble *) &normal[0]);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     setNormal(normal);
     setHasNormal(true);
