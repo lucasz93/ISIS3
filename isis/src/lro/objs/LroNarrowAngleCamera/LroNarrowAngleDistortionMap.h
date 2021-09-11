@@ -46,7 +46,7 @@ namespace Isis {
       //! Destroys the LroNarrowAngleDistortionMap object.
       virtual ~LroNarrowAngleDistortionMap() {};
 
-      void SetDistortion(const int naifIkCode);
+      void SetDistortion(NaifContextPtr naif, const int naifIkCode);
 
       virtual bool SetFocalPlane(const double dx, const double dy);
 

@@ -77,10 +77,10 @@ namespace Isis {
 
       virtual bool SetImage(const double sample, const double line, NaifContextPtr naif) override;
 
-      virtual bool SetGround(Latitude latitude, Longitude longitude, NaifContextPtr naif) override;
-      virtual bool SetGround(const SurfacePoint &surfacePt, NaifContextPtr naif) override;
-      virtual bool SetUniversalGround(const double latitude, const double longitude, NaifContextPtr naif) override;
-      virtual bool SetUniversalGround(const double latitude, const double longitude, double radius, NaifContextPtr naif) override;
+      virtual bool SetGround(NaifContextPtr naif, Latitude latitude, Longitude longitude) override;
+      virtual bool SetGround(NaifContextPtr naif, const SurfacePoint &surfacePt) override;
+      virtual bool SetUniversalGround(NaifContextPtr naif, const double latitude, const double longitude) override;
+      virtual bool SetUniversalGround(NaifContextPtr naif, const double latitude, const double longitude, double radius) override;
 
       virtual void setTime(const iTime &time, NaifContextPtr naif) override;
 

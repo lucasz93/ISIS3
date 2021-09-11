@@ -22,8 +22,8 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
-void TestLineSamp(Camera *cam, double samp, double line);
-int TestCamera(Camera *cam, Cube c, double lines, double knownLat, double knownLon);
+void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif);
+int TestCamera(NaifContextPtr naif, Camera *cam, Cube c, double lines, double knownLat, double knownLon);
 
 /**
  *
@@ -39,6 +39,8 @@ int TestCamera(Camera *cam, Cube c, double lines, double knownLat, double knownL
  */
 int main(void) {
   Preference::Preferences(true);
+  NaifContextLifecycle naif_lifecycle;
+  auto naif = NaifContext::acquire();
 
   cout << "Unit Test for RosettaVirtisCamera..." << endl;
   try {
@@ -52,7 +54,7 @@ int main(void) {
     Cube visCube("$ISISTESTDATA/isis/src/rosetta/unitTestData/V1_00388238556.cub", "r");
     double lines = 100.0;
     RosettaVirtisCamera *cam = (RosettaVirtisCamera *) CameraFactory::Create(visCube);
-    TestCamera(cam, visCube, lines, knownLat, knownLon);
+    TestCamera(naif, cam, visCube, lines, knownLat, knownLon);
 
     cout << endl << "Teting Level 3 (Calibrated) VIRTIS-M-IR Cube ..." << endl;
     knownLat = 29.1974649731145028;
@@ -60,14 +62,14 @@ int main(void) {
     lines = 67;
     Cube irCube("$ISISTESTDATA/isis/src/rosetta/unitTestData/I1_00382172310.cub", "r");
     RosettaVirtisCamera *cam2 = (RosettaVirtisCamera *) CameraFactory::Create(irCube);
-    TestCamera(cam2, irCube, lines, knownLat, knownLon);
+    TestCamera(naif, cam2, irCube, lines, knownLat, knownLon);
   }
   catch(IException &e) {
     e.print();
   }
 }
 
-int TestCamera(Camera *cam, Cube c, double lines, double knownLat, double knownLon) {
+int TestCamera(NaifContextPtr naif, Camera *cam, Cube c, double lines, double knownLat, double knownLon) {
   cout << "FileName: " << FileName(c.fileName()).name() << endl;
   cout << "CK Frame: " << cam->instrumentRotation()->Frame() << endl << endl;
   cout.setf(std::ios::fixed);
@@ -87,7 +89,7 @@ int TestCamera(Camera *cam, Cube c, double lines, double knownLat, double knownL
   cout << "Instrument Name Short: " << cam->instrumentNameShort() << endl << endl;
 
   // Test Shutter Open/Close
-  std::pair< double, double > imgTimes = cam->StartEndEphemerisTimes();
+  std::pair< double, double > imgTimes = cam->StartEndEphemerisTimes(naif);
   cout << "Start Time: " << imgTimes.first << "\n";
   cout << "End Time:   " << imgTimes.second << "\n";
 
@@ -98,23 +100,23 @@ int TestCamera(Camera *cam, Cube c, double lines, double knownLat, double knownL
 
   // good.
   cout << "For upper left corner ..." << endl;
-  TestLineSamp(cam, 138.0, 10.0);
+  TestLineSamp(cam, 138.0, 10.0, naif);
 
   cout << "For upper right corner ..." << endl;
-  TestLineSamp(cam, 165.0, 19.0);
+  TestLineSamp(cam, 165.0, 19.0, naif);
 
   // fixme?
   cout << "For lower left corner ..." << endl;
-  TestLineSamp(cam, 138.0, 55.0);
+  TestLineSamp(cam, 138.0, 55.0, naif);
 
   cout << "For lower right corner ..." << endl;
-  TestLineSamp(cam, 130.0, 55.0);
+  TestLineSamp(cam, 130.0, 55.0, naif);
 
   double samp = 128.0;
   double line = lines/2.0;
   cout << "For center pixel position ..." << endl;
 
-  if(!cam->SetImage(samp, line)) {
+  if(!cam->SetImage(samp, line, naif)) {
     cout << "ERROR" << endl;
     return 0;
   }
@@ -135,11 +137,11 @@ int TestCamera(Camera *cam, Cube c, double lines, double knownLat, double knownL
   return 0;
 }
 
-void TestLineSamp(Camera *cam, double samp, double line) {
-  bool success = cam->SetImage(samp, line);
+void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif) {
+  bool success = cam->SetImage(samp, line, naif);
 
-  if(success) {
-    success = cam->SetUniversalGround(cam->UniversalLatitude(), cam->UniversalLongitude());
+  if (success) {
+    success = cam->SetUniversalGround(naif, cam->UniversalLatitude(), cam->UniversalLongitude());
   }
 
   if(success) {

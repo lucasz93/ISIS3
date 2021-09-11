@@ -15,7 +15,10 @@ find files of those names at the top level of this repository. **/
 using namespace Isis;
 
 int main(int argc, char *argv[]) {
-  Isis::Preference::Preferences(true);
+  Preference::Preferences(true);
+  NaifContextLifecycle naif_lifecycle;
+  auto naif = NaifContext::acquire();
+  
   Isis::CubeCalculator c;
   Isis::ProcessByLine p;
 
@@ -38,7 +41,7 @@ int main(int argc, char *argv[]) {
   cubeData.push_back(&mgr);
 
   while(!mgr.end()) {
-    QVector<double> res = c.runCalculations(cubeData, mgr.Line(), mgr.Band());
+    QVector<double> res = c.runCalculations(naif, cubeData, mgr.Line(), mgr.Band());
 
     std::cout << "Line " << mgr.Line() << " Band " << mgr.Band() << std::endl;
     for(int i = 0; i < (int)res.size(); i++) std::cout << res[i] << std::endl;

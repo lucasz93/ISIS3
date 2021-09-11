@@ -37,7 +37,8 @@ namespace Isis {
    * @param width The width of the grid; often cube samples
    * @param height The height of the grid; often cube samples
    */
-  GroundGrid::GroundGrid(UniversalGroundMap *gmap, 
+  GroundGrid::GroundGrid(NaifContextPtr naif,
+                         UniversalGroundMap *gmap, 
                          bool splitLatLon,
                          bool extendGrid,
                          unsigned int width, 
@@ -85,7 +86,7 @@ namespace Isis {
 
     if (p_groundMap->Camera()) {
       Pvl tmp;
-      p_groundMap->Camera()->BasicMapping(tmp);
+      p_groundMap->Camera()->BasicMapping(tmp, naif);
       *p_mapping = tmp.findGroup("Mapping");
     }
     else {
@@ -148,7 +149,7 @@ namespace Isis {
 
     if (p_groundMap->HasCamera()) {
       p_defaultResolution =
-        (p_groundMap->Camera()->HighestImageResolution() /
+        (p_groundMap->Camera()->HighestImageResolution(naif) /
          largerRadius.meters()) * 10;
     }
     else {

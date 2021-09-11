@@ -91,11 +91,11 @@ namespace Isis {
    * @return @b PvlGroup* The pertinent data from the Camera class on the point.
    *                      Ownership is passed to caller.
    */
-  PvlGroup *CameraPointInfo::SetImage(const double sample, const double line,
+  PvlGroup *CameraPointInfo::SetImage(NaifContextPtr naif, const double sample, const double line,
                                       const bool allowOutside, const bool allowErrors) {
     if (CheckCube()) {
-      bool passed = m_camera->SetImage(sample, line);
-      return GetPointInfo(passed, allowOutside, allowErrors);
+      bool passed = m_camera->SetImage(sample, line, naif);
+      return GetPointInfo(naif, passed, allowOutside, allowErrors);
     }
     // Should never get here, error will be thrown in CheckCube()
     return NULL;
@@ -112,11 +112,12 @@ namespace Isis {
    * @return @b PvlGroup* The pertinent data from the Camera class on the point.
    *                      Ownership is passed to caller.
    */
-  PvlGroup *CameraPointInfo::SetCenter(const bool allowOutside, const bool allowErrors) {
+  PvlGroup *CameraPointInfo::SetCenter(NaifContextPtr naif, const bool allowOutside, const bool allowErrors) {
     if (CheckCube()) {
       bool passed = m_camera->SetImage(m_currentCube->sampleCount() / 2.0,
-                                       m_currentCube->lineCount() / 2.0);
-      return GetPointInfo(passed, allowOutside, allowErrors);
+                                       m_currentCube->lineCount() / 2.0,
+                                       naif);
+      return GetPointInfo(naif, passed, allowOutside, allowErrors);
     }
     // Should never get here, error will be thrown in CheckCube()
     return NULL;
@@ -135,12 +136,13 @@ namespace Isis {
    * @return @b PvlGroup* The pertinent data from the Camera class on the point.
    *                      Ownership is passed to caller.
    */
-  PvlGroup *CameraPointInfo::SetSample(const double sample,
+  PvlGroup *CameraPointInfo::SetSample(NaifContextPtr naif,
+                                       const double sample,
                                        const bool allowOutside,
                                        const bool allowErrors) {
     if (CheckCube()) {
-      bool passed = m_camera->SetImage(sample, m_currentCube->lineCount() / 2.0);
-      return GetPointInfo(passed, allowOutside, allowErrors);
+      bool passed = m_camera->SetImage(sample, m_currentCube->lineCount() / 2.0, naif);
+      return GetPointInfo(naif, passed, allowOutside, allowErrors);
     }
     // Should never get here, error will be thrown in CheckCube()
     return NULL;
@@ -159,12 +161,13 @@ namespace Isis {
    * @return @b PvlGroup* The pertinent data from the Camera class on the point.
    *                      Ownership is passed to caller.
    */
-  PvlGroup *CameraPointInfo::SetLine(const double line,
+  PvlGroup *CameraPointInfo::SetLine(NaifContextPtr naif,
+                                     const double line,
                                      const bool allowOutside,
                                      const bool allowErrors) {
     if (CheckCube()) {
-      bool passed = m_camera->SetImage(m_currentCube->sampleCount() / 2.0, line);
-      return GetPointInfo(passed, allowOutside, allowErrors);
+      bool passed = m_camera->SetImage(m_currentCube->sampleCount() / 2.0, line, naif);
+      return GetPointInfo(naif, passed, allowOutside, allowErrors);
     }
     // Should never get here, error will be thrown in CheckCube()
     return NULL;
@@ -184,11 +187,11 @@ namespace Isis {
    * @return @b PvlGroup* The pertinent data from the Camera class on the point.
    *                      Ownership is passed to caller.
    */
-  PvlGroup *CameraPointInfo::SetGround(const double latitude, const double longitude,
+  PvlGroup *CameraPointInfo::SetGround(NaifContextPtr naif, const double latitude, const double longitude,
                                        const bool allowOutside, const bool allowErrors) {
     if (CheckCube()) {
-      bool passed = m_camera->SetUniversalGround(latitude, longitude);
-      return GetPointInfo(passed, allowOutside, allowErrors);
+      bool passed = m_camera->SetUniversalGround(naif, latitude, longitude);
+      return GetPointInfo(naif, passed, allowOutside, allowErrors);
     }
     // Should never get here, error will be thrown in CheckCube()
     return NULL;
@@ -224,7 +227,7 @@ namespace Isis {
    *                      derived from Camera information.
    *                      Ownership is passed to caller.
    */
-  PvlGroup *CameraPointInfo::GetPointInfo(bool passed, bool allowOutside, bool allowErrors) {
+  PvlGroup *CameraPointInfo::GetPointInfo(NaifContextPtr naif, bool passed, bool allowOutside, bool allowErrors) {
     PvlGroup *gp = new PvlGroup("GroundPoint");
 
     //Outputting in PVL format
@@ -396,14 +399,14 @@ namespace Isis {
         gp->findKeyword("PixelValue").setValue(PixelToString(b[0]));
         try {
           gp->findKeyword("RightAscension").setValue(toString(
-                          m_camera->RightAscension()), "DEGREE");
+                          m_camera->RightAscension(naif)), "DEGREE");
         }
         catch (IException &e) {
           gp->findKeyword("RightAscension").setValue("Null");
         }
         try {
           gp->findKeyword("Declination").setValue(toString(
-                          m_camera->Declination()), "DEGREE");
+                          m_camera->Declination(naif)), "DEGREE");
         }
         catch (IException &e) {
           gp->findKeyword("Declination").setValue("Null");
@@ -442,28 +445,28 @@ namespace Isis {
         gp->findKeyword("LocalRadius").setValue(toString(
                         m_camera->LocalRadius().meters()), "meters");
         gp->findKeyword("SampleResolution").setValue(toString(
-                        m_camera->SampleResolution()), "meters/pixel");
+                        m_camera->SampleResolution(naif)), "meters/pixel");
         gp->findKeyword("LineResolution").setValue(toString(
-                        m_camera->LineResolution()), "meters/pixel");
+                        m_camera->LineResolution(naif)), "meters/pixel");
 
         gp->findKeyword("ObliqueDetectorResolution").setValue(
-                    toString(m_camera->ObliqueDetectorResolution()),"meters");
+                    toString(m_camera->ObliqueDetectorResolution(naif)),"meters");
         gp->findKeyword("ObliqueLineResolution").setValue(
-                    toString(m_camera->ObliqueLineResolution()),"meters");
+                    toString(m_camera->ObliqueLineResolution(naif)),"meters");
         gp->findKeyword("ObliqueSampleResolution").setValue(
-                    toString(m_camera->ObliqueSampleResolution()),"meters");
+                    toString(m_camera->ObliqueSampleResolution(naif)),"meters");
         gp->findKeyword("ObliquePixelResolution").setValue(
-                    toString(m_camera->ObliquePixelResolution()), "meters/pix");
+                    toString(m_camera->ObliquePixelResolution(naif)), "meters/pix");
 
 
         //body fixed
-        m_camera->instrumentPosition(spB);
+        m_camera->instrumentPosition(spB, naif);
         gp->findKeyword("SpacecraftPosition").addValue(toString(spB[0]), "km");
         gp->findKeyword("SpacecraftPosition").addValue(toString(spB[1]), "km");
         gp->findKeyword("SpacecraftPosition").addValue(toString(spB[2]), "km");
         gp->findKeyword("SpacecraftPosition").addComment("Spacecraft Information");
 
-        double spacecraftAzi = m_camera->SpacecraftAzimuth();
+        double spacecraftAzi = m_camera->SpacecraftAzimuth(naif);
         if (Isis::IsValidPixel(spacecraftAzi)) {
           gp->findKeyword("SpacecraftAzimuth").setValue(toString(spacecraftAzi), "DEGREE");
         }
@@ -472,16 +475,16 @@ namespace Isis {
         }
 
         gp->findKeyword("SlantDistance").setValue(toString(
-                        m_camera->SlantDistance()), "km");
+                        m_camera->SlantDistance(naif)), "km");
         gp->findKeyword("TargetCenterDistance").setValue(toString(
-                        m_camera->targetCenterDistance()), "km");
-        m_camera->subSpacecraftPoint(ssplat, ssplon);
+                        m_camera->targetCenterDistance(naif)), "km");
+        m_camera->subSpacecraftPoint(ssplat, ssplon, naif);
         gp->findKeyword("SubSpacecraftLatitude").setValue(toString(ssplat), "DEGREE");
         gp->findKeyword("SubSpacecraftLongitude").setValue(toString(ssplon), "DEGREE");
         gp->findKeyword("SpacecraftAltitude").setValue(toString(
-                        m_camera->SpacecraftAltitude()), "km");
+                        m_camera->SpacecraftAltitude(naif)), "km");
         gp->findKeyword("OffNadirAngle").setValue(toString(
-                        m_camera->OffNadirAngle()), "DEGREE");
+                        m_camera->OffNadirAngle(naif)), "DEGREE");
         double subspcgrdaz = m_camera->GroundAzimuth(m_camera->UniversalLatitude(),
                                               m_camera->UniversalLongitude(),
                                               ssplat, ssplon);
@@ -503,7 +506,7 @@ namespace Isis {
         }
 
         try {
-          double sunAzi = m_camera->SunAzimuth();
+          double sunAzi = m_camera->SunAzimuth(naif);
           if (Isis::IsValidPixel(sunAzi)) {
             gp->findKeyword("SubSolarAzimuth").setValue(toString(sunAzi), "DEGREE");
           }
@@ -524,7 +527,7 @@ namespace Isis {
         }
         try {
           double sslat, sslon;
-          m_camera->subSolarPoint(sslat, sslon);
+          m_camera->subSolarPoint(sslat, sslon, naif);
           gp->findKeyword("SubSolarLatitude").setValue(toString(sslat), "DEGREE");
           gp->findKeyword("SubSolarLongitude").setValue(toString(sslon), "DEGREE");
 
@@ -544,14 +547,14 @@ namespace Isis {
           gp->findKeyword("SubSolarGroundAzimuth").setValue("NULL");
         }
 
-        gp->findKeyword("Phase").setValue(toString(m_camera->PhaseAngle()), "DEGREE");
+        gp->findKeyword("Phase").setValue(toString(m_camera->PhaseAngle(naif)), "DEGREE");
         gp->findKeyword("Phase").addComment("Illumination and Other");
         gp->findKeyword("Incidence").setValue(toString(
                         m_camera->IncidenceAngle()), "DEGREE");
         gp->findKeyword("Emission").setValue(toString(
-                        m_camera->EmissionAngle()), "DEGREE");
+                        m_camera->EmissionAngle(naif)), "DEGREE");
 
-        double northAzi = m_camera->NorthAzimuth();
+        double northAzi = m_camera->NorthAzimuth(naif);
         if (Isis::IsValidPixel(northAzi)) {
           gp->findKeyword("NorthAzimuth").setValue(toString(northAzi), "DEGREE");
         }
@@ -566,14 +569,14 @@ namespace Isis {
         gp->findKeyword("UTC").setValue(utc);
         try {
           gp->findKeyword("LocalSolarTime").setValue(toString(
-                          m_camera->LocalSolarTime()), "hour");
+                          m_camera->LocalSolarTime(naif)), "hour");
         }
         catch (IException &e) {
           gp->findKeyword("LocalSolarTime").setValue("Null");
         }
         try {
           gp->findKeyword("SolarLongitude").setValue(toString(
-                          m_camera->solarLongitude().degrees()), "DEGREE");
+                          m_camera->solarLongitude(naif).degrees()), "DEGREE");
         }
         catch (IException &e) {
           gp->findKeyword("SolarLongitude").setValue("Null");
@@ -586,7 +589,7 @@ namespace Isis {
         gp->findKeyword("LookDirectionBodyFixed").addComment("Look Direction Unit Vectors in Body Fixed, J2000, and Camera Coordinate Systems.");
 
         try {
-          std::vector<double>lookJ = m_camera->lookDirectionJ2000();
+          std::vector<double>lookJ = m_camera->lookDirectionJ2000(naif);
           gp->findKeyword("LookDirectionJ2000").addValue(toString(lookJ[0]), "DEGREE");
           gp->findKeyword("LookDirectionJ2000").addValue(toString(lookJ[1]), "DEGREE");
           gp->findKeyword("LookDirectionJ2000").addValue(toString(lookJ[2]), "DEGREE");

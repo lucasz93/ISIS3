@@ -1,11 +1,22 @@
-/** This is free and unencumbered software released into the public domain.
-
-The authors of ISIS do not claim copyright on the contents of this file.
-For more details about the LICENSE terms and the AUTHORS, you will
-find files of those names at the top level of this repository. **/
-
-/* SPDX-License-Identifier: CC0-1.0 */
-
+/**
+ * @file
+ *
+ *   Unless noted otherwise, the portions of Isis written by the USGS are public
+ *   domain. See individual third-party library and package descriptions for
+ *   intellectual property information,user agreements, and related information.
+ *
+ *   Although Isis has been used by the USGS, no warranty, expressed or implied,
+ *   is made by the USGS as to the accuracy and functioning of such software
+ *   and related material nor shall the fact of distribution constitute any such
+ *   warranty, and no responsibility is assumed by the USGS in connection
+ *   therewith.
+ *
+ *   For additional information, launch
+ *   $ISISROOT/doc//documents/Disclaimers/Disclaimers.html in a browser or see
+ *   the Privacy &amp; Disclaimers page on the Isis website,
+ *   http://isis.astrogeology.usgs.gov, and the USGS privacy and disclaimers on
+ *   http://www.usgs.gov/privacy.html.
+ */
 #include <QDebug>
 
 #include <iomanip>
@@ -16,10 +27,10 @@ find files of those names at the top level of this repository. **/
 #include "FileName.h"
 #include "IException.h"
 #include "iTime.h"
+#include "ClipperWacFcCamera.h"
 #include "Preference.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
-#include "TgoCassisCamera.h"
 
 using namespace std;
 using namespace Isis;
@@ -27,29 +38,36 @@ using namespace Isis;
 void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif);
 
 /**
- * Unit test for TGO CaSSIS camera.
+ * Unit test for Clipper Wac Framing Camera
  *
  * @internal
- *   @history 2018-08-15 Jeannie Backer - Updated lat/lon changes due to
- *                           changes in focal length.
+ *   @history 2020-01-24 Kristin Berry - Original version. At the time this was written, many values
+ *                       were preliminary or set to arbitrary numbers for testing reasons. These
+ *                       will need to be updated in the future.
  */
+
+// IMPORTANT NOTE: This test is believed to be failing because the test data has an arbitrary date
+// for the StartTime, which means that the spice probably shows the spacecraft as not being near and 
+// pointed at Europa. If the spacecraft isn't near and pointed at Europa, there will be no intersection
+// and SetImage will fail. 
 int main(void) {
   Preference::Preferences(true);
   NaifContextLifecycle naif_lifecycle;
   auto naif = NaifContext::acquire();
 
-  qDebug() << "Unit Test for TgoCassisCamera...";
+  qDebug() << "Unit Test for ClipperWacFcCamera...";
   try {
     // These should be lat/lon at center of image. To obtain these numbers for a new cube/camera,
     // set both the known lat and known lon to zero and copy the unit test output
     // "Latitude off by: " and "Longitude off by: " values directly into these variables.
-    double knownLat = 4.14667346682538351; // 4.14700320539339717;
-    double knownLon = 322.757314935797012; // 322.7582512383878;
+    double knownLat = 0;
+    double knownLon = 0;
 
-    Cube c("$ISISTESTDATA/isis/src/tgo/unitTestData/CAS-MCO-2016-11-22T16.38.39.354-NIR-02036-00.cub", "r");
-    TgoCassisCamera *cam = (TgoCassisCamera *) CameraFactory::Create(c);
+    qDebug() << "Testing with test image...";
+    Cube c("$clipper/testData/simulated_clipper_eis_wac_rolling_shutter.cub", "r");
+    ClipperWacFcCamera *cam = (ClipperWacFcCamera *) CameraFactory::Create(c);
     qDebug() << "FileName: " << FileName(c.fileName()).name();
-    qDebug() << "Instrument Rotation Frame: " << cam->instrumentRotation()->Frame();
+    qDebug() << "CK Frame: " << cam->instrumentRotation()->Frame();
     qDebug() << "";
 
     // Test kernel IDs
@@ -60,30 +78,22 @@ int main(void) {
     qDebug() << "SPK Reference ID = " << cam->SpkReferenceId();
     qDebug() << "";
 
-    // Test Shutter Open/Close
-    const PvlGroup &inst = c.label()->findGroup("Instrument", Pvl::Traverse);
-    double exposureDuration = toDouble( inst["ExposureDuration"][0] );
-    QString stime = inst["StartTime"];
-    double et;
-    naif->str2et_c(stime.toLatin1().data(), &et);
-    pair <iTime, iTime> shuttertimes = cam->ShutterOpenCloseTimes(et, exposureDuration);
-    qDebug() << qSetRealNumberPrecision(18) << "Shutter open = " << shuttertimes.first.Et();
-    qDebug() << qSetRealNumberPrecision(18) << "Shutter close = " << shuttertimes.second.Et();
     qDebug() << qSetRealNumberPrecision(18) << "Focal Length = " << cam->FocalLength();
     qDebug() << "";
 
     // Test all four corners to make sure the conversions are right
+    // The actual four corners are not on the body, so shifting a little
     qDebug() << "For upper left corner ...";
-    TestLineSamp(cam, 1.0, 1.0, naif);
+    TestLineSamp(cam, 145.0, 161.0, naif);
 
     qDebug() << "For upper right corner ...";
-    TestLineSamp(cam, cam->Samples(), 1.0, naif);
+    TestLineSamp(cam, 3655.0, 157.0, naif);
 
     qDebug() << "For lower left corner ...";
-    TestLineSamp(cam, 1.0, cam->Lines(), naif);
+    TestLineSamp(cam, 289, 1767, naif);
 
     qDebug() << "For lower right corner ...";
-    TestLineSamp(cam, cam->Samples(), cam->Lines(), naif);
+    TestLineSamp(cam, 3767, 1579, naif);
 
     double samp = cam->Samples() / 2;
     double line = cam->Lines() / 2;

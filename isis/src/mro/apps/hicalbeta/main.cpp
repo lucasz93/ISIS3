@@ -121,6 +121,7 @@ void IsisMain(){
   const QString hical_runtime = Application::DateTime();
 
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
 
   QString procStep("prepping phase");
   try {
@@ -369,7 +370,7 @@ void IsisMain(){
     HiHistory GucHist;
     GucHist.add("Profile["+ hiprof.Name()+"]");
     if ( !SkipModule(hiprof) ) {
-      GainUnitConversion guc(hiconf, units, hifrom);
+      GainUnitConversion guc(naif, hiconf, units, hifrom);
       calVars->add(hiconf.getProfileName(), guc.ref());
       GucHist = guc.History();
       if ( hiprof.exists("DumpModuleFile") ) {

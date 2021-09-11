@@ -10,6 +10,7 @@ find files of those names at the top level of this repository. **/
 /* SPDX-License-Identifier: CC0-1.0 */
 
 #include "PvlGroup.h"
+#include "NaifContext.h"
 
 namespace Isis {
   /**
@@ -43,13 +44,13 @@ namespace Isis {
    */
   class LoCameraFiducialMap  {
     public:
-      LoCameraFiducialMap(PvlGroup &inst, const int naifIkCode);
+      LoCameraFiducialMap(NaifContextPtr naif, PvlGroup &inst, const int naifIkCode);
       //! Destroys LoCameraFiducialMap object.
       ~LoCameraFiducialMap() {};
 
     private:
       void ReadFiducials(PvlGroup &inst);
-      void CreateTrans(int xdir);
+      void CreateTrans(NaifContextPtr naif, int xdir);
       std::vector<double> p_fidSamples; //!< Image sample positions of fiducial map
       std::vector<double> p_fidLines;   //!< Image line positions of fiducial map
       std::vector<double> p_fidXCoords; //!< Focal plane X positions of fiducial map

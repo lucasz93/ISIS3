@@ -60,9 +60,10 @@ namespace Isis {
    *  
    * @return conversion successful
    */
-  bool CameraDetectorMap::SetParent(const double sample, 
+  bool CameraDetectorMap::SetParent(NaifContextPtr naif, 
+                                    const double sample, 
                                     const double line) {
-    return CameraDetectorMap::SetParent(sample, line, 0.0);
+    return CameraDetectorMap::SetParent(naif, sample, line, 0.0);
   }
 
 
@@ -79,7 +80,8 @@ namespace Isis {
    *  
    * @return conversion successful
    */
-  bool CameraDetectorMap::SetParent(const double sample, 
+  bool CameraDetectorMap::SetParent(NaifContextPtr naif,
+                                    const double sample, 
                                     const double line, 
                                     const double deltaT) {
     p_parentSample = sample;
@@ -87,7 +89,7 @@ namespace Isis {
     p_detectorSample = (p_parentSample - 1.0) * p_detectorSampleSumming + p_ss;
     p_detectorLine   = (p_parentLine   - 1.0) * p_detectorLineSumming + p_sl;
     if (p_camera->isTimeSet()) { 
-      p_camera->setTime(p_camera->time().Et() + deltaT); 
+      p_camera->setTime(p_camera->time().Et() + deltaT, naif); 
     }
     return true;
   }

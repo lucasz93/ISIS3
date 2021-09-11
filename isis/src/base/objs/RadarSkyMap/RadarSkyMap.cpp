@@ -26,7 +26,7 @@ namespace Isis {
    *
    * @return conversion was successful
    */
-  bool RadarSkyMap::SetFocalPlane(const double ux, const double uy,
+  bool RadarSkyMap::SetFocalPlane(NaifContextPtr naif, const double ux, const double uy,
                                   double uz) {
     return false;
   }
@@ -40,7 +40,7 @@ namespace Isis {
    * @param dec The declination
    *
    */
-  bool RadarSkyMap::SetSky(const double ra, const double dec) {
+  bool RadarSkyMap::SetSky(NaifContextPtr naif, const double ra, const double dec) {
     return false;
   }
 }

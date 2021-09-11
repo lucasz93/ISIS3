@@ -37,7 +37,7 @@ using json = nlohmann::json;
 // Temporary declarations for bindings for Naif supportlib routines
 
 // These three declarations should be removed once supportlib is in Isis3
-extern int ck3sdn(double sdntol, bool avflag, int *nrec,
+extern int ck3sdn(NaifContextPtr naif, double sdntol, bool avflag, int *nrec,
                   double *sclkdp, double *quats, double *avvs,
                   int nints, double *starts, double *dparr,
                   int *intarr);
@@ -484,8 +484,8 @@ namespace Isis {
     std::vector<ale::Rotation> rotationCache;
     for (auto it = isdRot["quaternions"].begin(); it != isdRot["quaternions"].end(); it++) {
       std::vector<double> quat = {it->at(0).get<double>(), it->at(1).get<double>(), it->at(2).get<double>(), it->at(3).get<double>()};
-      Quaternion q(quat);
-      std::vector<double> CJ = q.ToMatrix();
+      Quaternion q(quat, naif);
+      std::vector<double> CJ = q.ToMatrix(naif);
       rotationCache.push_back(ale::Rotation(CJ));
     }
 
@@ -633,8 +633,8 @@ namespace Isis {
         j2000Quat.push_back((double)rec[2]);
         j2000Quat.push_back((double)rec[3]);
 
-        Quaternion q(j2000Quat);
-        std::vector<double> CJ = q.ToMatrix();
+        Quaternion q(j2000Quat, naif);
+        std::vector<double> CJ = q.ToMatrix(naif);
         rotationCache.push_back(ale::Rotation(CJ));
 
         p_cacheTime.push_back((double)rec[4]);
@@ -666,8 +666,8 @@ namespace Isis {
         j2000Quat.push_back((double)rec[3]);
 
 
-        Quaternion q(j2000Quat);
-        std::vector<double> CJ = q.ToMatrix();
+        Quaternion q(j2000Quat, naif);
+        std::vector<double> CJ = q.ToMatrix(naif);
         rotationCache.push_back(ale::Rotation(CJ));
 
         std::vector<double> av;
@@ -2525,7 +2525,7 @@ namespace Isis {
       SpiceInt intarr[p_fullCacheSize]; // Integer work array
       SpiceInt sizOut = p_fullCacheSize; // Size of downsized cache
 
-      ck3sdn(radTol, avflag, (int *) &sizOut, timeSclkdp, (doublereal *) quats,
+      ck3sdn(naif, radTol, avflag, (int *) &sizOut, timeSclkdp, (doublereal *) quats,
              (SpiceDouble *) avvs, nints, &cubeStarts, dparr, (int *) intarr);
 
       // Clear full cache and load with downsized version

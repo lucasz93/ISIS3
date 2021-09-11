@@ -17,6 +17,7 @@ find files of those names at the top level of this repository. **/
 #include "Pvl.h"
 #include "DbAccess.h"
 #include "IException.h"
+#include "NaifContext.h"
 
 namespace Isis {
 

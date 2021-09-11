@@ -71,6 +71,7 @@ Buffer *g_darkCube1, *g_darkCube2, *g_flatCube, *g_specpixCube;
 void IsisMain () {
   ResetGlobals();
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
 
   ProcessByBrick p;
   Cube *icube = p.SetInputCube("FROM");
@@ -213,8 +214,8 @@ void IsisMain () {
         Camera *cam;
         cam = icube->camera();
         iTime startTime((QString) inst["StartTime"]);
-        cam->setTime(startTime);
-        g_solarDistance = cam->sunToBodyDist() / KM_PER_AU;
+        cam->setTime(startTime, naif);
+        g_solarDistance = cam->sunToBodyDist(naif) / KM_PER_AU;
       }
       catch(IException &e) {
         try {
@@ -225,28 +226,28 @@ void IsisMain () {
           QString bspKernel1 = p.MissionData("lro", "/kernels/tspk/moon_pa_de421_1900-2050.bpc", false);
           QString bspKernel2 = p.MissionData("lro", "/kernels/tspk/de421.bsp", false);
           naif->CheckErrors();
-          furnsh_c(bspKernel1.toLatin1().data());
+          naif->furnsh_c(bspKernel1.toLatin1().data());
           naif->CheckErrors();
-          furnsh_c(bspKernel2.toLatin1().data());
+          naif->furnsh_c(bspKernel2.toLatin1().data());
           naif->CheckErrors();
           QString pckKernel1 = p.MissionData("base", "/kernels/pck/pck?????.tpc", true);
           QString pckKernel2 = p.MissionData("lro", "/kernels/pck/moon_080317.tf", false);
           QString pckKernel3 = p.MissionData("lro", "/kernels/pck/moon_assoc_me.tf", false);
           naif->CheckErrors();
-          furnsh_c(pckKernel1.toLatin1().data());
+          naif->furnsh_c(pckKernel1.toLatin1().data());
           naif->CheckErrors();
-          furnsh_c(pckKernel2.toLatin1().data());
+          naif->furnsh_c(pckKernel2.toLatin1().data());
           naif->CheckErrors();
-          furnsh_c(pckKernel3.toLatin1().data());
+          naif->furnsh_c(pckKernel3.toLatin1().data());
           naif->CheckErrors();
           double sunpos[6], lt;
-          spkezr_c("sun", etStart, "MOON_ME", "LT+S", "MOON", sunpos, &lt);
+          naif->spkezr_c("sun", etStart, "MOON_ME", "LT+S", "MOON", sunpos, &lt);
           g_solarDistance = vnorm_c(sunpos) / KM_PER_AU;
-          unload_c(bspKernel1.toLatin1().data());
-          unload_c(bspKernel2.toLatin1().data());
-          unload_c(pckKernel1.toLatin1().data());
-          unload_c(pckKernel2.toLatin1().data());
-          unload_c(pckKernel3.toLatin1().data());
+          naif->unload_c(bspKernel1.toLatin1().data());
+          naif->unload_c(bspKernel2.toLatin1().data());
+          naif->unload_c(pckKernel1.toLatin1().data());
+          naif->unload_c(pckKernel2.toLatin1().data());
+          naif->unload_c(pckKernel3.toLatin1().data());
         }
         catch (IException &e) {
           QString msg = "Can not find necessary SPICE kernels for converting to IOF";

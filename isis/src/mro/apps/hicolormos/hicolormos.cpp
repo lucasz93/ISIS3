@@ -42,6 +42,8 @@ void hicolormos(UserInterface &ui) {
 
 
 void hicolormos(Cube *from1, Cube* from2, UserInterface &ui) {
+  auto naif = NaifContext::acquire();
+  
   // Make a temporary list file for automos
   FileName tempFile = FileName::createTempFile("$TEMPORARY/hicolormos.temp.lis");
   TextFile tf;
@@ -123,26 +125,26 @@ void hicolormos(Cube *from1, Cube* from2, UserInterface &ui) {
   // image,  this was in 10/07 because pole images would not find an
   // intersect in projection lat. lon. space.
   Camera *cam = from1->camera();
-  if(cam->SetUniversalGround(avgLat, avgLon)) {
-    Cemiss = cam->EmissionAngle();
-    Cphase = cam->PhaseAngle();
+  if(cam->SetUniversalGround(naif, avgLat, avgLon)) {
+    Cemiss = cam->EmissionAngle(naif);
+    Cphase = cam->PhaseAngle(naif);
     Cincid = cam->IncidenceAngle();
-    ClocalSolTime = cam->LocalSolarTime();
-    CsolarLong = cam->solarLongitude().degrees();
-    CnorthAzimuth = cam->NorthAzimuth();
-    CsunAzimuth = cam->SunAzimuth();
+    ClocalSolTime = cam->LocalSolarTime(naif);
+    CsolarLong = cam->solarLongitude(naif).degrees();
+    CnorthAzimuth = cam->NorthAzimuth(naif);
+    CsunAzimuth = cam->SunAzimuth(naif);
     runXY = false;
   }
   else if(from2) {
     Camera *cam = from2->camera();
-    if(cam->SetUniversalGround(avgLat, avgLon)) {
-      Cemiss = cam->EmissionAngle();
-      Cphase = cam->PhaseAngle();
+    if(cam->SetUniversalGround(naif, avgLat, avgLon)) {
+      Cemiss = cam->EmissionAngle(naif);
+      Cphase = cam->PhaseAngle(naif);
       Cincid = cam->IncidenceAngle();
-      ClocalSolTime = cam->LocalSolarTime();
-      CsolarLong = cam->solarLongitude().degrees();
-      CnorthAzimuth = cam->NorthAzimuth();
-      CsunAzimuth = cam->SunAzimuth();
+      ClocalSolTime = cam->LocalSolarTime(naif);
+      CsolarLong = cam->solarLongitude(naif).degrees();
+      CnorthAzimuth = cam->NorthAzimuth(naif);
+      CsunAzimuth = cam->SunAzimuth(naif);
       runXY = false;
     }
   }
@@ -179,26 +181,26 @@ void hicolormos(Cube *from1, Cube* from2, UserInterface &ui) {
     double sample = proj->ToWorldX(avgX);
     double line = proj->ToWorldY(avgY);
     Camera *cam = from1->camera();
-    if(cam->SetImage(sample, line)) {
-      Cemiss = cam->EmissionAngle();
-      Cphase = cam->PhaseAngle();
+    if(cam->SetImage(sample, line, naif)) {
+      Cemiss = cam->EmissionAngle(naif);
+      Cphase = cam->PhaseAngle(naif);
       Cincid = cam->IncidenceAngle();
-      ClocalSolTime = cam->LocalSolarTime();
-      CsolarLong = cam->solarLongitude().degrees();
-      CnorthAzimuth = cam->NorthAzimuth();
-      CsunAzimuth = cam->SunAzimuth();
+      ClocalSolTime = cam->LocalSolarTime(naif);
+      CsolarLong = cam->solarLongitude(naif).degrees();
+      CnorthAzimuth = cam->NorthAzimuth(naif);
+      CsunAzimuth = cam->SunAzimuth(naif);
       runXY = false;
     }
     else if(from2) {
       Camera *cam = from2->camera();
-      if(cam->SetImage(sample, line)) {
-        Cemiss = cam->EmissionAngle();
-        Cphase = cam->PhaseAngle();
+      if(cam->SetImage(sample, line, naif)) {
+        Cemiss = cam->EmissionAngle(naif);
+        Cphase = cam->PhaseAngle(naif);
         Cincid = cam->IncidenceAngle();
-        ClocalSolTime = cam->LocalSolarTime();
-        CsolarLong = cam->solarLongitude().degrees();
-        CnorthAzimuth = cam->NorthAzimuth();
-        CsunAzimuth = cam->SunAzimuth();
+        ClocalSolTime = cam->LocalSolarTime(naif);
+        CsolarLong = cam->solarLongitude(naif).degrees();
+        CnorthAzimuth = cam->NorthAzimuth(naif);
+        CsunAzimuth = cam->SunAzimuth(naif);
         runXY = false;
       }
     }

@@ -190,8 +190,8 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, NaifContextPtr naif) {
-    return SetGround(
+  bool CSMCamera::SetUniversalGround(NaifContextPtr naif, const double latitude, const double longitude) {
+    return SetGround(naif,
         Latitude(latitude, Angle::Degrees),
         Longitude(longitude, Angle::Degrees));
   }
@@ -207,8 +207,8 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, double radius, NaifContextPtr naif) {
-    return SetGround(SurfacePoint(
+  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, double radius) {
+    return SetGround(naif, SurfacePoint(
         Latitude(latitude, Angle::Degrees),
         Longitude(longitude, Angle::Degrees),
         Distance(radius, Distance::Meters)));
@@ -225,7 +225,7 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetGround(Latitude latitude, Longitude longitude, NaifContextPtr naif) {
+  bool CSMCamera::SetGround(NaifContextPtr naif, Latitude latitude, Longitude longitude) {
     ShapeModel *shape = target()->shape();
     Distance localRadius;
 
@@ -242,7 +242,7 @@ namespace Isis {
       return false;
     }
 
-    return SetGround(SurfacePoint(latitude, longitude, localRadius));
+    return SetGround(naif, SurfacePoint(latitude, longitude, localRadius));
   }
 
 
@@ -254,7 +254,7 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetGround(const SurfacePoint & surfacePt, NaifContextPtr naif) {
+  bool CSMCamera::SetGround(NaifContextPtr naif, const SurfacePoint & surfacePt) {
     ShapeModel *shape = target()->shape();
     if (!surfacePt.Valid()) {
       shape->clearSurfacePoint();

@@ -47,7 +47,7 @@ namespace Isis {
       SurfacePoint location() const;
   
       NaifVector normal() const;
-      Angle emission() const;
+      Angle emission(NaifContextPtr naif) const;
   
       Angle separationAngle(const NaifVector &raydir) const;
   

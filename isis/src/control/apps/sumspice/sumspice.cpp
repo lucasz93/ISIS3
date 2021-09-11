@@ -56,6 +56,8 @@ namespace Isis {
     //  typedef SumFinder::Options Options;
     typedef SumFinder::TimeStamp TimeStamp;
 
+    auto naif = NaifContext::acquire();
+    
     //  Program constants
     const QString sumspice_program = "sumspice";
     const QString sumspice_version = "2.0";
@@ -98,8 +100,8 @@ namespace Isis {
     Kernels meta;
     if ( ui.WasEntered("METAKERNEL") ) {
       QString metafile = ui.GetFileName("METAKERNEL");
-      meta.Add(metafile);
-      meta.Load();
+      meta.Add(naif, metafile);
+      meta.Load(naif);
     }
 
     // Load sumfiles
@@ -159,7 +161,7 @@ namespace Isis {
 
       // Find the proper SUMFILE for the cube
       QString filename(cubeNameList[cubeIndex].expanded());
-      SharedFinder cubesum( new SumFinder(filename, sumFiles, tolerance, tstamp) );
+      SharedFinder cubesum( new SumFinder(naif, filename, sumFiles, tolerance, tstamp) );
 
       // Format a warning and save it off for later
       if ( !cubesum->isFound() ) {
@@ -170,7 +172,7 @@ namespace Isis {
         warnings <<  mess;
       }
       else {
-        if ( !cubesum->update(options) ) {
+        if ( !cubesum->update(naif, options) ) {
           QString msg = "Failed to apply SUMFILE updates on cube " + filename;
           throw IException(IException::User, msg, _FILEINFO_);
         }
@@ -251,6 +253,6 @@ namespace Isis {
     }
 
     // Unload meta kernels - automatic, but done for completeness
-    meta.UnLoad();
+    meta.UnLoad(naif);
   }
 }

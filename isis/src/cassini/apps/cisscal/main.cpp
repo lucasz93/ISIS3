@@ -59,7 +59,7 @@ namespace gbl {
   void DNtoElectrons();
   void FindShutterOffset();
   void DivideByAreaPixel();
-  void FindEfficiencyFactor(QString fluxunits);
+  void FindEfficiencyFactor(NaifContextPtr naif, QString fluxunits);
   QString GetCalibrationDirectory(QString calibrationType);
 
   //global variables
@@ -95,6 +95,7 @@ namespace gbl {
 void IsisMain() {
   // Initialize Globals
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
   gbl::cissLab = new CissLabels(ui.GetFileName("FROM"));
   gbl::incube = NULL;
   gbl::stretch.ClearPairs();
@@ -232,7 +233,7 @@ void IsisMain() {
   gbl::DNtoElectrons();
   gbl::FindShutterOffset();
   gbl::DivideByAreaPixel();
-  gbl::FindEfficiencyFactor(ui.GetString("UNITS"));
+  gbl::FindEfficiencyFactor(naif, ui.GetString("UNITS"));
 
   //Correction Factor
   // Set the remaining necessary input cube files for second pass
@@ -1406,7 +1407,7 @@ void gbl::DivideByAreaPixel() {
  *            ShutterStateId. Matches cisscal version 3.9.1.
  */
 
-void gbl::FindEfficiencyFactor(QString fluxunits) {
+void gbl::FindEfficiencyFactor(NaifContextPtr naif, QString fluxunits) {
   // Disable flat field correction if ShutterStateId is Disabled
   if(gbl::cissLab->ShutterStateId() == "Disabled") {
     gbl::calgrp += PvlKeyword("DividedByEfficiency", "No: ShutterStateId is Disabled.");
@@ -1585,13 +1586,13 @@ void gbl::FindEfficiencyFactor(QString fluxunits) {
     double distFromSun = 0;
     try {
       Camera *cam = gbl::incube->camera();
-      bool camSuccess = cam->SetImage(gbl::incube->sampleCount() / 2, gbl::incube->lineCount() / 2);
+      bool camSuccess = cam->SetImage(gbl::incube->sampleCount() / 2, gbl::incube->lineCount() / 2, naif);
       if(!camSuccess) {// the camera was unable to find the planet at the center of the image
         double lat, lon;
         // find values for lat/lon directly below spacecraft
-        cam->subSpacecraftPoint(lat, lon);
+        cam->subSpacecraftPoint(lat, lon, naif);
         // use these values to set the ground coordinates
-        cam->SetUniversalGround(lat, lon);
+        cam->SetUniversalGround(naif, lat, lon);
       }
       distFromSun = cam->SolarDistance();
     }

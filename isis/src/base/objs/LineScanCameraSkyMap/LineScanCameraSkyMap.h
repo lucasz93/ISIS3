@@ -39,7 +39,7 @@ namespace Isis {
       //! Destructor
       virtual ~LineScanCameraSkyMap() {};
 
-      virtual bool SetSky(const double ra, const double dec);
+      virtual bool SetSky(NaifContextPtr naif, const double ra, const double dec) override;
   };
 };
 #endif

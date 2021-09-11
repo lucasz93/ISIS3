@@ -44,6 +44,7 @@ namespace Isis {
 
 
   void spkwriter(UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
     Process p;
 
     // Get the list of names of input CCD cubes to stitch together
@@ -104,7 +105,7 @@ namespace Isis {
 
     // Write the output file if requested
     if (ui.WasEntered("TO")) {
-      kwriter.write(kernel, ui.GetFileName("TO"), comfile);
+      kwriter.write(naif, kernel, ui.GetFileName("TO"), comfile);
     }
 
     // Write a summary of the documentation
@@ -116,7 +117,7 @@ namespace Isis {
         QString mess = "Cannot create SPK SUMMARY output file " + fFile;
         throw IException(IException::User, mess, _FILEINFO_);
       }
-      os << kwriter.getComment(kernel, comfile) << endl;
+      os << kwriter.getComment(naif, kernel, comfile) << endl;
       os.close();
     }
     p.EndProcess();

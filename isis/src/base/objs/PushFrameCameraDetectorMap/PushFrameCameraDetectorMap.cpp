@@ -114,8 +114,8 @@ namespace Isis {
    *
    * @return @b bool conversion successful
    */
-  bool PushFrameCameraDetectorMap::SetParent(const double sample, const double line) {
-    return SetParent(sample, line, 0.0);
+  bool PushFrameCameraDetectorMap::SetParent(NaifContextPtr naif, const double sample, const double line) {
+    return SetParent(naif, sample, line, 0.0);
   }
 
 
@@ -131,7 +131,8 @@ namespace Isis {
    *
    * @return @b bool conversion successful
    */
-  bool PushFrameCameraDetectorMap::SetParent(const double sample,
+  bool PushFrameCameraDetectorMap::SetParent(NaifContextPtr naif, 
+                                             const double sample,
                                              const double line, 
                                              const double deltaT) {
     // Compute the height of a framelet taking into account the summing mode
@@ -142,14 +143,14 @@ namespace Isis {
     // changes the time for the observation. Line starts at 0.5 (top of first framelet)
     // and framelet needs to start at 1.
     int framelet             = (int)((line - 0.5) / actualFrameletHeight) + 1;
-    SetFramelet(framelet, deltaT);
+    SetFramelet(naif, framelet, deltaT);
 
     // Convert the parent line/sample to a framelet line/sample
     p_frameletLine = line - actualFrameletHeight * (framelet - 1);
     p_frameletSample = sample;
 
     // Convert the framelet line/sample to an unsummed framelet line/sample
-    if (!CameraDetectorMap::SetParent(p_frameletSample, p_frameletLine, deltaT)) return false;
+    if (!CameraDetectorMap::SetParent(naif, p_frameletSample, p_frameletLine, deltaT)) return false;
     double unsummedFrameletLine = p_detectorLine;
 
     // Sometime folks want to write the framelets flipped in the EDR so
@@ -179,7 +180,7 @@ namespace Isis {
    * @param framelet Current Framelet
    * @param deltaT offset from center time in seconds
    */
-  void PushFrameCameraDetectorMap::SetFramelet(int framelet, const double deltaT) {
+  void PushFrameCameraDetectorMap::SetFramelet(NaifContextPtr naif, int framelet, const double deltaT) {
     p_framelet = framelet;
 
     // We can add framelet padding to each band.  Compute the adjusted framelet
@@ -196,7 +197,7 @@ namespace Isis {
     }
 
     etTime += p_exposureDuration / 2.0;
-    p_camera->setTime(etTime + deltaT);
+    p_camera->setTime(etTime + deltaT, naif);
   }
 
 

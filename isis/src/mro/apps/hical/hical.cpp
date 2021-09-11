@@ -55,6 +55,8 @@ namespace Isis {
     const QString hical_revision = "$Revision: 6715 $";
     const QString hical_runtime = Application::DateTime();
 
+    auto naif = NaifContext::acquire();
+    
     QString procStep("prepping phase");
     MatrixList *calVars = nullptr;
     try {
@@ -340,7 +342,7 @@ namespace Isis {
       HiHistory GucHist;
       GucHist.add("Profile["+ hiprof.Name()+"]");
       if ( !SkipModule(hiprof) ) {
-        GainUnitConversion guc(hiconf, units, hifrom);
+        GainUnitConversion guc(naif, hiconf, units, hifrom);
         calVars->add(hiconf.getProfileName(), guc.ref());
         GucHist = guc.History();
         if ( hiprof.exists("DumpModuleFile") ) {

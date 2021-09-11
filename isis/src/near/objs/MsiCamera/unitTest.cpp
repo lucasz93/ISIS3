@@ -22,7 +22,7 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
-void TestLineSamp(Camera *cam, double samp, double line);
+void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif);
 
 int main(void) {
   Preference::Preferences(true);
@@ -108,11 +108,11 @@ int main(void) {
   }
 }
 
-void TestLineSamp(Camera *cam, double samp, double line) {
-  bool success = cam->SetImage(samp, line);
+void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif) {
+  bool success = cam->SetImage(samp, line, naif);
 
-  if(success) {
-    success = cam->SetUniversalGround(cam->UniversalLatitude(), cam->UniversalLongitude());
+  if (success) {
+    success = cam->SetUniversalGround(naif, cam->UniversalLatitude(), cam->UniversalLongitude());
   }
 
   if(success) {

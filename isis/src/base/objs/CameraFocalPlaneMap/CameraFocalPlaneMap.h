@@ -9,6 +9,8 @@ find files of those names at the top level of this repository. **/
 
 template<class T> class QVector;
 
+#include "NaifContext.h"
+
 namespace Isis {
  
   class Affine;
@@ -84,8 +86,8 @@ namespace Isis {
    */
   class CameraFocalPlaneMap {
     public:
-      CameraFocalPlaneMap(Camera *parent, const int naifIkCode);
-      CameraFocalPlaneMap(const int naifIkCode);
+      CameraFocalPlaneMap(NaifContextPtr naif, Camera *parent, const int naifIkCode);
+      CameraFocalPlaneMap(NaifContextPtr naif, const int naifIkCode);
       CameraFocalPlaneMap(Camera *parent, Affine &affine);
       virtual ~CameraFocalPlaneMap();
 
@@ -155,7 +157,7 @@ namespace Isis {
       double p_itransl[3];              //!< The y transition from distorted to detector
 
     private:
-      void Init(Camera *parent, const int naifIkCode);
+      void Init(NaifContextPtr naif, Camera *parent, const int naifIkCode);
   };
 };
 #endif

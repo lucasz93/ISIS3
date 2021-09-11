@@ -1456,7 +1456,7 @@ namespace Isis {
   }
 
 
-  void Cube::attachSpiceFromIsd(nlohmann::json isd) {
+  void Cube::attachSpiceFromIsd(NaifContextPtr naif, nlohmann::json isd) {
     PvlKeyword lkKeyword("LeapSecond");
     PvlKeyword pckKeyword("TargetAttitudeShape");
     PvlKeyword targetSpkKeyword("TargetPosition");
@@ -1469,7 +1469,7 @@ namespace Isis {
     PvlKeyword exkKeyword("Extra");
 
     Spice spice(*this->label(), isd);
-    Table ckTable = spice.instrumentRotation()->Cache("InstrumentPointing");
+    Table ckTable = spice.instrumentRotation()->Cache("InstrumentPointing", naif);
     ckTable.Label() += PvlKeyword("Kernels");
 
     for (int i = 0; i < ckKeyword.size(); i++)
@@ -1477,14 +1477,14 @@ namespace Isis {
 
     this->write(ckTable);
 
-    Table spkTable = spice.instrumentPosition()->Cache("InstrumentPosition");
+    Table spkTable = spice.instrumentPosition()->Cache("InstrumentPosition", naif);
     spkTable.Label() += PvlKeyword("Kernels");
     for (int i = 0; i < spkKeyword.size(); i++)
       spkTable.Label()["Kernels"].addValue(spkKeyword[i]);
 
     this->write(spkTable);
 
-    Table bodyTable = spice.bodyRotation()->Cache("BodyRotation");
+    Table bodyTable = spice.bodyRotation()->Cache("BodyRotation", naif);
     bodyTable.Label() += PvlKeyword("Kernels");
     for (int i = 0; i < targetSpkKeyword.size(); i++)
       bodyTable.Label()["Kernels"].addValue(targetSpkKeyword[i]);
@@ -1493,10 +1493,10 @@ namespace Isis {
       bodyTable.Label()["Kernels"].addValue(pckKeyword[i]);
 
     bodyTable.Label() += PvlKeyword("SolarLongitude",
-        toString(spice.solarLongitude().degrees()));
+        toString(spice.solarLongitude(naif).degrees()));
     this->write(bodyTable);
 
-    Table sunTable = spice.sunPosition()->Cache("SunPosition");
+    Table sunTable = spice.sunPosition()->Cache("SunPosition", naif);
     sunTable.Label() += PvlKeyword("Kernels");
     for (int i = 0; i < targetSpkKeyword.size(); i++)
       sunTable.Label()["Kernels"].addValue(targetSpkKeyword[i]);
@@ -2511,7 +2511,7 @@ namespace Isis {
  * @param[out] minLongitude minimum longitude present in the cube
  * @param[out] maxLongitude maximum longitude present in the cube
  */
-  void Cube::latLonRange(double &minLatitude, double &maxLatitude, double &minLongitude, double &
+  void Cube::latLonRange(NaifContextPtr naif, double &minLatitude, double &maxLatitude, double &minLongitude, double &
                          maxLongitude) {
     Camera *cam;
     TProjection *proj;
@@ -2556,7 +2556,7 @@ namespace Isis {
           isGood = proj->SetWorld(sample, line);
         }
         else {
-          isGood = cam->SetImage(sample, line);
+          isGood = cam->SetImage(sample, line, naif);
         }
 
         double lat, lon;

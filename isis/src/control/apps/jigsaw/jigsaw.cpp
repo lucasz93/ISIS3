@@ -41,7 +41,8 @@ namespace Isis {
   BundleSettingsQsp bundleSettings(UserInterface &ui);
   void checkImageList(SerialNumberList &heldSerialList, SerialNumberList &cubeSerialList);
   QList<BundleObservationSolveSettings> observationSolveSettings(UserInterface &ui);
-  ControlNetQsp fixHeldImages(const QString &cnetFile,
+  ControlNetQsp fixHeldImages(NaifContextPtr naif,
+                              const QString &cnetFile,
                               const QString &heldList,
                               const QString &imageList);
 
@@ -58,6 +59,8 @@ namespace Isis {
       throw IException(IException::User, msg, _FILEINFO_);
     }
 
+    auto naif = NaifContext::acquire();
+   
     QString cnetFile = ui.GetFileName("CNET");
     QString cubeList = ui.GetFileName("FROMLIST");
 
@@ -83,7 +86,7 @@ namespace Isis {
       if (ui.WasEntered("HELDLIST")) {
         QString heldList = ui.GetFileName("HELDLIST");
         // Update the control network so that any control points intersecting a held image are fixed
-        ControlNetQsp cnet = fixHeldImages(cnetFile, heldList, cubeList);
+        ControlNetQsp cnet = fixHeldImages(naif, cnetFile, heldList, cubeList);
         bundleAdjustment = new BundleAdjust(settings, cnet, cubeList);
       }
       else {
@@ -572,7 +575,8 @@ namespace Isis {
    *         the held images are set to FIXED and have their apriori surface points set to
    *         corresponding surface points for the held image's measures.
    */
-  ControlNetQsp fixHeldImages(const QString &cnetFile,
+  ControlNetQsp fixHeldImages(NaifContextPtr naif,
+                              const QString &cnetFile,
                               const QString &heldList,
                               const QString &snList) {
     ControlNetQsp cnet(new ControlNet(cnetFile));
@@ -591,7 +595,7 @@ namespace Isis {
         ControlPoint *pt = cm->Parent();
         pt->SetType(ControlPoint::Fixed);
         // If possible, set the apriori surface point for the current measure's control point
-        if ( cam->SetImage(cm->GetSample(), cm->GetLine()) ) {
+        if ( cam->SetImage(cm->GetSample(), cm->GetLine(), naif) ) {
           pt->SetAprioriSurfacePoint(cam->GetSurfacePoint());
         }
         else {

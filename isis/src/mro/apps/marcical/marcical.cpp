@@ -165,6 +165,8 @@ namespace Isis {
   Stretch stretch;
 
   void marcical(UserInterface &ui) {
+    auto naif = NaifContext::acquire();
+    
     CubeAttributeInput inAtt = ui.GetInputAttribute("FROM");
     Cube icube;
 
@@ -407,7 +409,7 @@ namespace Isis {
 
     if (iof) {
       cam = icube.camera();
-      cam->SetImage(icubeMgr.size() / 2.0, 0.5 + (16 / 2) / summing);
+      cam->SetImage(icubeMgr.size() / 2.0, 0.5 + (16 / 2) / summing, naif);
       solarDist = cam->SolarDistance();
     }
 
@@ -537,8 +539,8 @@ namespace Isis {
 
       if (newFramelet && cam != NULL) {
         // center the cameras position on the new framelet to keep the solar distance accurate
-        cam->SetBand(icubeMgr.Band());
-        cam->SetImage(icubeMgr.size() / 2.0 + 0.5, (icubeMgr.Line() - 0.5) + (16 / 2) / summing);
+        cam->SetBand(icubeMgr.Band(), naif);
+        cam->SetImage(icubeMgr.size() / 2.0 + 0.5, (icubeMgr.Line() - 0.5) + (16 / 2) / summing, naif);
         solarDist = cam->SolarDistance();
       }
 

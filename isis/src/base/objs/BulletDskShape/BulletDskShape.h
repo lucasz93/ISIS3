@@ -13,6 +13,7 @@ find files of those names at the top level of this repository. **/
 
 #include "BulletTargetShape.h"
 #include "BulletClosestRayCallback.h"
+#include "NaifContext.h"
 
 namespace Isis {
 

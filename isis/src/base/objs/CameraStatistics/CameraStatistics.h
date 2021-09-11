@@ -9,6 +9,7 @@ find files of those names at the top level of this repository. **/
 /* SPDX-License-Identifier: CC0-1.0 */
 
 #include <QString>
+#include "NaifContext.h"
 
 namespace Isis {
   class Camera;
@@ -41,12 +42,12 @@ namespace Isis {
    */
   class CameraStatistics {
     public:
-      CameraStatistics(QString filename, int sinc, int linc);
-      CameraStatistics(Camera *cam, int sinc, int linc);
-      CameraStatistics(Camera *cam, int sinc, int linc, QString filename);
+      CameraStatistics(NaifContextPtr naif, QString filename, int sinc, int linc);
+      CameraStatistics(NaifContextPtr naif, Camera *cam, int sinc, int linc);
+      CameraStatistics(NaifContextPtr naif, Camera *cam, int sinc, int linc, QString filename);
       virtual ~CameraStatistics();
 
-      void addStats(Camera *cam, int &sample, int &line);
+      void addStats(NaifContextPtr naif, Camera *cam, int &sample, int &line);
       PvlKeyword constructKeyword(QString keyname, double value,
           QString unit) const;
       Pvl toPvl() const;
@@ -220,7 +221,7 @@ namespace Isis {
       };
 
     private:
-      void init(Camera *cam, int sinc, int linc, QString filename);
+      void init(NaifContextPtr naif, Camera *cam, int sinc, int linc, QString filename);
 
       
       QString m_filename;     //!< FileName of the Cube the Camera was derived from.

@@ -51,7 +51,7 @@ namespace Isis {
                                          std::vector<double> observerPos,
                                          std::vector<double> lookDirection) {
 
-    return (intersectEllipsoid(observerPos, lookDirection));
+    return (intersectEllipsoid(naif, observerPos, lookDirection));
   }
 
 

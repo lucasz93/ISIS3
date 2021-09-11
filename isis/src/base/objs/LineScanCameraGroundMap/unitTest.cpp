@@ -14,7 +14,10 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 int main() {
-  Isis::Preference::Preferences(true);
+  Preference::Preferences(true);
+  NaifContextLifecycle naif_lifecycle;
+  auto naif = NaifContext::acquire();
+  
   cerr << "This class is mostly tested by the applications and the individual Camera models." << endl;
 
   //create a camera for the test cube
@@ -24,7 +27,7 @@ int main() {
 
   cerr << "attempting to back project a point behind the planet into the image (this should throw an error)\n";
   try {
-    campt.SetGround(90.0, 0.0, true);
+    campt.SetGround(naif, 90.0, 0.0, true);
     
   }catch (IException &e) {
     e.print();

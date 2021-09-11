@@ -19,6 +19,7 @@ find files of those names at the top level of this repository. **/
 #include "Endian.h"
 #include "PixelType.h"
 #include "PvlKeyword.h"
+#include "NaifContext.h"
 
 class QFile;
 class QMutex;
@@ -243,7 +244,7 @@ namespace Isis {
       bool isReadWrite() const;
       bool labelsAttached() const;
 
-      void attachSpiceFromIsd(nlohmann::json Isd);
+      void attachSpiceFromIsd(NaifContextPtr naif, nlohmann::json Isd);
 
       void close(bool remove = false);
       Cube *copy(FileName newFile, const CubeAttributeOutput &newFileAttributes);
@@ -322,7 +323,7 @@ namespace Isis {
       bool hasTable(const QString &name);
       bool hasBlob(const QString &name, const QString &type);
       void putGroup(const PvlGroup &group);
-      void latLonRange(double &minLatitude, double &maxLatitude, double &minLongitude,
+      void latLonRange(NaifContextPtr naif, double &minLatitude, double &maxLatitude, double &minLongitude,
                        double &maxLongitude);
 
 

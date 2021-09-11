@@ -127,7 +127,7 @@ namespace Isis {
     dmap->SetFrameletOrderReversed(flippedFramelets, numFramelets);
 
     // Setup focal plane map
-    new CameraFocalPlaneMap(this, -74400);
+    new CameraFocalPlaneMap(naif, this, -74400);
 
     if ((int) naifIkCode() == -74410) {
       // The line detector origin is in the middle of the orange framelet
@@ -142,7 +142,7 @@ namespace Isis {
     }
 
     // Setup distortion map
-    new MarciDistortionMap(this, naifIkCode());
+    new MarciDistortionMap(naif, this, naifIkCode());
 
     // Setup the ground and sky map
     bool evenFramelets = (inst["Framelets"][0] == "Even");
@@ -178,8 +178,9 @@ namespace Isis {
    *
    * @param vband The band number to set
    */
-  void MarciCamera::SetBand(const int vband) {
-    Camera::SetBand(vband);
+  void MarciCamera::SetBand(const int vband, NaifContextPtr naif) {
+
+    Camera::SetBand(vband, naif);
 
     PushFrameCameraDetectorMap *dmap = (PushFrameCameraDetectorMap *)DetectorMap();
     dmap->SetBandFirstDetectorLine(p_detectorStartLines[vband-1]);

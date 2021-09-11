@@ -147,7 +147,7 @@ namespace Isis {
    * @internal
    *   @history 2013-12-05 Kris Becker - Original version.
    */
-  Angle Intercept::emission() const {
+  Angle Intercept::emission(NaifContextPtr naif) const {
     verify( isValid(), 
             "Unable to return Intercept emission angle. Invalid/undefined Intercept point." );
   
@@ -156,7 +156,7 @@ namespace Isis {
     m_point->ToNaifArray(&point[0]);
   
     NaifVector raydir(3);
-    vsub_c(&m_observer[0], &point[0], &raydir[0]);
+    naif->vsub_c(&m_observer[0], &point[0], &raydir[0]);
   
     // Return the separation angle between them
     return (separationAngle(raydir));

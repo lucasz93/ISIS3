@@ -42,6 +42,8 @@ namespace Isis {
     }
 
     void ctxcal(Cube *icube, UserInterface &ui) {
+      auto naif = NaifContext::acquire();
+      
       // We will be processing by line
       ProcessByLine p;
 
@@ -153,25 +155,25 @@ namespace Isis {
           // Astronomical Units (AU)
           QString bspKernel = p.MissionData("base", "/kernels/spk/de???.bsp", true);
           naif->CheckErrors();
-          furnsh_c(bspKernel.toLatin1().data());
+          naif->furnsh_c(bspKernel.toLatin1().data());
           naif->CheckErrors();
           QString satKernel = p.MissionData("base", "/kernels/spk/mar???.bsp", true);
-          furnsh_c(satKernel.toLatin1().data());
+          naif->furnsh_c(satKernel.toLatin1().data());
           naif->CheckErrors();
           QString pckKernel = p.MissionData("base", "/kernels/pck/pck?????.tpc", true);
-          furnsh_c(pckKernel.toLatin1().data());
+          naif->furnsh_c(pckKernel.toLatin1().data());
           naif->CheckErrors();
           double sunpos[6], lt;
 
-          spkezr_c("sun", etStart, "iau_mars", "LT+S", "mars", sunpos, &lt);
+          naif->spkezr_c("sun", etStart, "iau_mars", "LT+S", "mars", sunpos, &lt);
           naif->CheckErrors();
 
           dist1 = vnorm_c(sunpos);
 
           naif->CheckErrors();
-          unload_c(bspKernel.toLatin1().data());
-          unload_c(satKernel.toLatin1().data());
-          unload_c(pckKernel.toLatin1().data());
+          naif->unload_c(bspKernel.toLatin1().data());
+          naif->unload_c(satKernel.toLatin1().data());
+          naif->unload_c(pckKernel.toLatin1().data());
           naif->CheckErrors();
         }
 

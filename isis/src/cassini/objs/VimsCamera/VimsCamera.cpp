@@ -142,7 +142,7 @@ namespace Isis {
     new CameraDetectorMap(this);
 
     // Setup focal plane map
-    new CameraFocalPlaneMap(this, naifIkCode());
+    new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     // Setup distortion map
     new CameraDistortionMap(this);
@@ -151,8 +151,8 @@ namespace Isis {
     new VimsGroundMap(this, lab);
     new VimsSkyMap(this, lab);
 
-    ((VimsGroundMap *)GroundMap())->Init(lab);
-    ((VimsSkyMap *)SkyMap())->Init(lab);
+    ((VimsGroundMap *)GroundMap())->Init(naif, lab);
+    ((VimsSkyMap *)SkyMap())->Init(naif, lab);
 
     LoadCache(naif);
 

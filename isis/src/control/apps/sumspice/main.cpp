@@ -9,7 +9,6 @@ find files of those names at the top level of this repository. **/
 #include "Isis.h"
 
 #include "Application.h"
->>>>>>> New approach
 #include "Pvl.h"
 #include "sumspice.h"
 

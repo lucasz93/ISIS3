@@ -107,9 +107,10 @@ namespace Isis {
    *
    * @return @b bool conversion successful
    */
-  bool LineScanCameraDetectorMap::SetParent(const double sample, 
+  bool LineScanCameraDetectorMap::SetParent(NaifContextPtr naif, 
+                                            const double sample, 
                                             const double line) {
-    return SetParent(sample, line, 0.0);
+    return SetParent(naif, sample, line, 0.0);
   }
 
 
@@ -125,16 +126,17 @@ namespace Isis {
    *
    * @return @b bool conversion successful
    */
-  bool LineScanCameraDetectorMap::SetParent(const double sample, 
+  bool LineScanCameraDetectorMap::SetParent(NaifContextPtr naif, 
+                                            const double sample, 
                                             const double line, 
                                             const double deltaT) {
 
-    if(!CameraDetectorMap::SetParent(sample, line)) {
+    if(!CameraDetectorMap::SetParent(naif, sample, line)) {
       return false;
     }
     p_detectorLine = p_camera->FocalPlaneMap()->DetectorLineOffset();
     double etLine = p_etStart + p_lineRate * (line - 0.5);
-    p_camera->setTime(etLine + deltaT);
+    p_camera->setTime(etLine + deltaT, naif);
     return true;
 
   }
