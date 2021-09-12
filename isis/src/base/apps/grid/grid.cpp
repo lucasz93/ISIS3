@@ -239,8 +239,8 @@ namespace Isis {
 
       UniversalGroundMap *gmap = new UniversalGroundMap(*icube, UniversalGroundMap::ProjectionFirst);
 
-      GroundGrid *latLonGrid = new GroundGrid(gmap, ticks, extendGrid, inputSamples, inputLines);
-      Latitude baseLat = Latitude(ui.GetDouble("BASELAT"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
+      GroundGrid *latLonGrid = new GroundGrid(naif, gmap, ticks, extendGrid, inputSamples, inputLines);
+      Latitude baseLat = Latitude(naif, ui.GetDouble("BASELAT"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
       Longitude baseLon = Longitude(ui.GetDouble("BASELON"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
       Angle latInc = Angle(ui.GetDouble("LATINC"), Angle::Degrees);
       Angle lonInc = Angle(ui.GetDouble("LONINC"), Angle::Degrees);
@@ -250,12 +250,12 @@ namespace Isis {
 
       Latitude minLat;
       if (ui.WasEntered("MINLAT")) {
-        minLat = Latitude(ui.GetDouble("MINLAT"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
+        minLat = Latitude(naif, ui.GetDouble("MINLAT"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
       }
 
       Latitude maxLat;
       if (ui.WasEntered("MAXLAT")) {
-        maxLat = Latitude(ui.GetDouble("MAXLAT"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
+        maxLat = Latitude(naif, ui.GetDouble("MAXLAT"), *latLonGrid->GetMappingGroup(), Angle::Degrees);
       }
 
       Longitude minLon;

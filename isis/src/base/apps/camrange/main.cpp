@@ -9,7 +9,6 @@
 using namespace Isis;
 
 void IsisMain() {
-
   UserInterface &ui = Application::GetUserInterface();
   Pvl appLog;
   try {

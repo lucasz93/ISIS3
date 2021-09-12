@@ -29,7 +29,7 @@ namespace Isis {
   };
 
   // Computes the special MORPHOLOGYRANK and ALBEDORANK planes
-  static MosData *getMosaicIndicies(Camera &camera, MosData &md);
+  static MosData *getMosaicIndicies(NaifContextPtr naif, Camera &camera, MosData &md);
   // Updates BandBin keyword
   static void UpdateBandKey(const QString &keyname, PvlGroup &bb, const int &nvals,
                      const QString &default_value = "Null");
@@ -279,6 +279,8 @@ namespace Isis {
      * @param out The output cube buffer.
      */
     auto phocube = [&](Buffer &in, Buffer &out)->void {
+      auto naif = NaifContext::acquire();
+
       for (int i = 0; i < 64; i++) {
         for (int j = 0; j < 64; j++) {
 
@@ -423,7 +425,7 @@ namespace Isis {
             // Special Mosaic indexes
             if (morphologyRank) {
               if (!p_mosd) {
-                p_mosd = getMosaicIndicies(*cam, mosd);
+                p_mosd = getMosaicIndicies(naif, *cam, mosd);
               }
               out[index] = mosd.m_morph;
               index += 64 * 64;
@@ -431,7 +433,7 @@ namespace Isis {
 
             if (albedoRank) {
               if (!p_mosd) {
-                p_mosd = getMosaicIndicies(*cam, mosd);
+                p_mosd = getMosaicIndicies(naif, *cam, mosd);
               }
               out[index] = mosd.m_albedo;
               index += 64 * 64;
@@ -535,7 +537,7 @@ namespace Isis {
 
 
   // Computes the special MORPHOLOGYRANK and ALBEDORANK planes
-  MosData *getMosaicIndicies(Camera &camera, MosData &md) {
+  MosData *getMosaicIndicies(NaifContextPtr naif, Camera &camera, MosData &md) {
     const double Epsilon(1.0E-8);
     Angle myphase;
     Angle myincidence;

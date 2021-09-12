@@ -55,12 +55,14 @@ namespace Isis {
 
 
   void moccal(Cube *icube, UserInterface &ui) {
+    auto naif = NaifContext::acquire();
+    
     // We will be processing by line
     ProcessByLine p;
 
     // Setup the input and make sure it is a moc file
     p.SetInputCube(icube, OneBand);
-    gbl::moc = new MocLabels(icube->fileName());
+    gbl::moc = new MocLabels(icube->fileName(), naif);
 
     // If it is already calibrated then complain
     if(icube->hasGroup("Radiometry")) {
@@ -141,22 +143,22 @@ namespace Isis {
       
       naif->CheckErrors();
       QString bspKernel = p.MissionData("base", "/kernels/spk/de???.bsp", true);
-      furnsh_c(bspKernel.toLatin1().data());
+      naif->furnsh_c(bspKernel.toLatin1().data());
       QString satKernel = p.MissionData("base", "/kernels/spk/mar???.bsp", true);
-      furnsh_c(satKernel.toLatin1().data());
+      naif->furnsh_c(satKernel.toLatin1().data());
       QString pckKernel = p.MissionData("base", "/kernels/pck/pck?????.tpc", true);
-      furnsh_c(pckKernel.toLatin1().data());
+      naif->furnsh_c(pckKernel.toLatin1().data());
       naif->CheckErrors();
 
       double sunpos[6], lt;
-      spkezr_c("sun", etStart, "iau_mars", "LT+S", "mars", sunpos, &lt);
+      naif->spkezr_c("sun", etStart, "iau_mars", "LT+S", "mars", sunpos, &lt);
       double dist = vnorm_c(sunpos);
       sunAU = dist / kmPerAU;
       
       naif->CheckErrors();
-      unload_c(bspKernel.toLatin1().data());
-      unload_c(satKernel.toLatin1().data());
-      unload_c(pckKernel.toLatin1().data());
+      naif->unload_c(bspKernel.toLatin1().data());
+      naif->unload_c(satKernel.toLatin1().data());
+      naif->unload_c(pckKernel.toLatin1().data());
       naif->CheckErrors();
     }
 

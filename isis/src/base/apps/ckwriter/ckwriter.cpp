@@ -12,6 +12,7 @@ using namespace std;
 
 namespace Isis {
   void ckwriter(UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
     Process p;
 
     // Get the list of names of input CCD cubes to stitch together
@@ -32,7 +33,7 @@ namespace Isis {
 
     for (int i = 0 ; i < flist.size() ; i++) {
       // Add and process each image
-      kernel.add(flist[i].toString());
+      kernel.add(naif, flist[i].toString());
       prog.CheckStatus();
     }
 
@@ -64,7 +65,7 @@ namespace Isis {
     // Write the output file if requested
     if (ui.WasEntered("TO")) {
       int cktype = ui.GetInteger("CKTYPE");
-      kernel.write(ui.GetFileName("TO"), comfile, cktype);
+      kernel.write(naif, ui.GetFileName("TO"), comfile, cktype);
     }
 
     // Write a summary of the documentation

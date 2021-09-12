@@ -55,7 +55,7 @@ namespace Isis {
   static FileName ReadWeightTable(Cube *icube);
   static FileName GetScaleFactorFile();
   static int getGainModeID(Cube *icube);
-  static void calculateScaleFactor0(Cube *icube, Cube *gaincube);
+  static void calculateScaleFactor0(NaifContextPtr naif, Cube *icube, Cube *gaincube);
   
   void gllssical(UserInterface &ui, Pvl *log) {
     Cube icube(ui.GetFileName("FROM"));
@@ -63,6 +63,8 @@ namespace Isis {
   }   
 
   void gllssical(Cube *icube, UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
+    
     // Initialize Globals
     weight.clear();
     dcScaleFactor = 0.0;
@@ -104,7 +106,7 @@ namespace Isis {
       }
     }
   
-    calculateScaleFactor0(icube, gaincube);
+    calculateScaleFactor0(naif, icube, gaincube);
   
     exposureDuration = toDouble(icube->group("Instrument")["ExposureDuration"][0]) * 1000;
   
@@ -414,7 +416,7 @@ namespace Isis {
    *
    * if output units are in radiance.
    */
-  void calculateScaleFactor0(Cube *icube, Cube *gaincube) {
+  void calculateScaleFactor0(NaifContextPtr naif, Cube *icube, Cube *gaincube) {
     Pvl conversionFactors(GetScaleFactorFile().expanded());
     PvlKeyword fltToRef, fltToRad;
   
@@ -483,16 +485,16 @@ namespace Isis {
           QString sclkName(sclk.expanded());
   
           naif->CheckErrors();
-          furnsh_c(sclkName.toLatin1().data());
+          naif->furnsh_c(sclkName.toLatin1().data());
           naif->CheckErrors();
   
           double obsStartTime;
-          scs2e_c(-77, startTime.toLatin1().data(), &obsStartTime);
-          spicegll.setTime(obsStartTime);
+          naif->scs2e_c(-77, startTime.toLatin1().data(), &obsStartTime);
+          spicegll.setTime(obsStartTime, naif);
           double sunv[3];
           spicegll.sunPosition(sunv);
   
-          double sunkm = vnorm_c(sunv);
+          double sunkm = naif->vnorm_c(sunv);
           
           //  Convert to AU units
           rsun = sunkm / 1.49597870691E8 / 5.2;

@@ -16,4 +16,3 @@ void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
   cam2cam(ui);
 }
-

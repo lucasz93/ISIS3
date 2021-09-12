@@ -17,13 +17,14 @@ namespace Isis {
   }
 
   void camrange(Cube *incube, UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
     Process p;
 
     // Set the input image, get the camera model, and a basic mapping
     // group
     Camera *cam = incube->camera();
     Pvl mapping;
-    cam->BasicMapping(mapping);
+    cam->BasicMapping(mapping, naif);
     PvlGroup &mapgrp = mapping.findGroup("Mapping");
 
     // Setup the log->results by first adding the filename
@@ -40,15 +41,15 @@ namespace Isis {
 
     // Get resolution
     PvlGroup res("PixelResolution");
-    double lowres = cam->LowestImageResolution();
-    double hires = cam->HighestImageResolution();
+    double lowres = cam->LowestImageResolution(naif);
+    double hires = cam->HighestImageResolution(naif);
     res += PvlKeyword("Lowest", toString(lowres), "meters");
     res += PvlKeyword("Highest", toString(hires), "meters");
 
     // Get the universal ground range
     PvlGroup ugr("UniversalGroundRange");
     double minlat, maxlat, minlon, maxlon;
-    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping);
+    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping, naif);
     ugr += PvlKeyword("LatitudeType", "Planetocentric");
     ugr += PvlKeyword("LongitudeDirection", "PositiveEast");
     ugr += PvlKeyword("LongitudeDomain", "360");
@@ -60,7 +61,7 @@ namespace Isis {
     // Get the ographic latitude range
     mapgrp.addKeyword(PvlKeyword("LatitudeType", "Planetographic"),
                       Pvl::Replace);
-    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping);
+    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping, naif);
     PvlGroup ogr("LatitudeRange");
     ogr += PvlKeyword("LatitudeType", "Planetographic");
     ogr += PvlKeyword("MinimumLatitude", toString(minlat));
@@ -69,7 +70,7 @@ namespace Isis {
     // Get positive west longitude coordinates in 360 domain
     mapgrp.addKeyword(PvlKeyword("LongitudeDirection", "PositiveWest"),
                       Pvl::Replace);
-    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping);
+    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping, naif);
     PvlGroup pos360("PositiveWest360");
     pos360 += PvlKeyword("LongitudeDirection", "PositiveWest");
     pos360 += PvlKeyword("LongitudeDomain", "360");
@@ -81,7 +82,7 @@ namespace Isis {
                       Pvl::Replace);
     mapgrp.addKeyword(PvlKeyword("LongitudeDomain", "180"),
                       Pvl::Replace);
-    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping);
+    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping, naif);
     PvlGroup pos180("PositiveEast180");
     pos180 += PvlKeyword("LongitudeDirection", "PositiveEast");
     pos180 += PvlKeyword("LongitudeDomain", "180");
@@ -91,7 +92,7 @@ namespace Isis {
     // Get positive west longitude coordinates in 180 domain
     mapgrp.addKeyword(PvlKeyword("LongitudeDirection", "PositiveWest"),
                       Pvl::Replace);
-    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping);
+    cam->GroundRange(minlat, maxlat, minlon, maxlon, mapping, naif);
     PvlGroup neg180("PositiveWest180");
     neg180 += PvlKeyword("LongitudeDirection", "PositiveWest");
     neg180 += PvlKeyword("LongitudeDomain", "180");
