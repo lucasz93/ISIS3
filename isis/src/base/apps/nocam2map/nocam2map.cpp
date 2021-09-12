@@ -38,6 +38,8 @@ namespace Isis {
 
 
   void nocam2map(Cube *inCube, UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
+    
     //Create a process to create the input cubes
     Process p;
 
@@ -232,7 +234,7 @@ namespace Isis {
       }
       //Else read them from the pck
       else {
-        PvlGroup radii = Target::radiiGroup(targetName[0]);
+        PvlGroup radii = Target::radiiGroup(naif, targetName[0]);
         equRadius = radii["EquatorialRadius"];
         polRadius = radii["PolarRadius"];
       }

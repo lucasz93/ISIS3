@@ -48,7 +48,7 @@ namespace Isis {
    * @param pNewNet   - Modified output Control Net
    *
    */
-  void CnetRefByEmission::FindCnetRef(ControlNet &pNewNet) {
+  void CnetRefByEmission::FindCnetRef(NaifContextPtr naif, ControlNet &pNewNet) {
     // Process each existing control point in the network
     int iPointsModified = 0;
     int iMeasuresModified = 0;
@@ -127,7 +127,7 @@ namespace Isis {
             Cube *measureCube = mCubeMgr.OpenCube(mSerialNumbers.fileName(sn));
 
             MeasureValidationResults results =
-              ValidStandardOptions(newMsr, measureCube, &pvlMeasureGrp);
+              ValidStandardOptions(naif, newMsr, measureCube, &pvlMeasureGrp);
             if (results.isValid()) {
               if (!bPntEditLock && !bRefLocked) {
                 newMsr->SetType(ControlMeasure::Candidate);

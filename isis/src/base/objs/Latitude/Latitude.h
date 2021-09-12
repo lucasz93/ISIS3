@@ -9,6 +9,7 @@ find files of those names at the top level of this repository. **/
 /* SPDX-License-Identifier: CC0-1.0 */
 
 #include "Angle.h"
+#include "NaifContext.h"
 
 namespace Isis {
   class Distance;
@@ -110,11 +111,13 @@ namespace Isis {
 
       Latitude(Angle latitude, ErrorChecking errors = AllowPastPole);
 
-      Latitude(Angle latitude,
+      Latitude(NaifContextPtr naif,
+               Angle latitude,
                PvlGroup mapping,
                ErrorChecking errors = ThrowAllErrors);
 
-      Latitude(double latitude,
+      Latitude(NaifContextPtr naif,
+               double latitude,
                PvlGroup mapping,
                Angle::Units latitudeUnits,
                ErrorChecking errors = ThrowAllErrors);
@@ -142,7 +145,7 @@ namespace Isis {
       bool inRange(Latitude min, Latitude max) const;
 
       Latitude& operator=(const Latitude & latitudeToCopy);
-      Latitude add(Angle angleToAdd, PvlGroup mapping);
+      Latitude add(NaifContextPtr naif, Angle angleToAdd, PvlGroup mapping);
       Latitude add(Angle angleToAdd, Distance equatorialRadius, Distance polarRadius,
                    CoordinateType latType);
 

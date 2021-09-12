@@ -44,7 +44,8 @@ class LineOffsetFunctor :
   public std::unary_function<double, double > {
   public:
 
-    LineOffsetFunctor(Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+    LineOffsetFunctor(NaifContextPtr naif, Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+      m_naif = naif;
       m_camera = camera;
       m_surfacePoint = surPt;
     }
@@ -61,7 +62,7 @@ class LineOffsetFunctor :
      *
      * @return Line off (see description)
      */
-    double operator()(NaifContextPtr naif, double et) {
+    double operator()(double et) {
       double lookC[3] = {0.0, 0.0, 0.0};
       double ux = 0.0;
       double uy = 0.0;
@@ -77,17 +78,17 @@ class LineOffsetFunctor :
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
 
-      m_camera->Sensor::setTime(et, naif);
+      m_camera->Sensor::setTime(et, m_naif);
 
       // Set ground
-      if (!m_camera->Sensor::SetGround(naif, m_surfacePoint, false)) {
+      if (!m_camera->Sensor::SetGround(m_naif, m_surfacePoint, false)) {
         IString msg = "Sensor::SetGround failed for surface point in LineScanCameraGroundMap.cpp"
                       " LineOffsetFunctor";
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
 
       // Calculate the undistorted focal plane coordinates
-      m_camera->Sensor::LookDirection(lookC, naif);
+      m_camera->Sensor::LookDirection(lookC, m_naif);
       ux = m_camera->FocalLength() * lookC[0] / lookC[2];
       uy = m_camera->FocalLength() * lookC[1] / lookC[2];
 
@@ -137,6 +138,7 @@ class LineOffsetFunctor :
   private:
     SurfacePoint m_surfacePoint;
     Camera* m_camera;
+    NaifContextPtr m_naif;
 };
 
 
@@ -149,7 +151,8 @@ class SensorSurfacePointDistanceFunctor :
   public std::unary_function<double, double > {
 
   public:
-    SensorSurfacePointDistanceFunctor(Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+    SensorSurfacePointDistanceFunctor(NaifContextPtr naif, Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+      m_naif = naif;
       m_camera = camera;
       surfacePoint = surPt;
     }
@@ -158,7 +161,7 @@ class SensorSurfacePointDistanceFunctor :
     ~SensorSurfacePointDistanceFunctor() {}
 
 
-    double operator()(NaifContextPtr naif, double et) {
+    double operator()(double et) {
       double s[3], p[3];
 
       //verify the time is with the cache bounds
@@ -170,12 +173,12 @@ class SensorSurfacePointDistanceFunctor :
                       "cache bounds";
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
-      m_camera->Sensor::setTime(et, naif);
-      if (!m_camera->Sensor::SetGround(naif, surfacePoint, false)) {
+      m_camera->Sensor::setTime(et, m_naif);
+      if (!m_camera->Sensor::SetGround(m_naif, surfacePoint, false)) {
          IString msg = "Sensor::SetGround failed for surface point in LineScanCameraGroundMap.cpp"
                        "SensorSurfacePointDistanceFunctor";
       }
-      m_camera->instrumentPosition(s, naif);
+      m_camera->instrumentPosition(s, m_naif);
       m_camera->Coordinate(p);
       return sqrt((s[0] - p[0]) * (s[0] - p[0]) +
                   (s[1] - p[1]) * (s[1] - p[1]) +
@@ -185,6 +188,7 @@ class SensorSurfacePointDistanceFunctor :
   private:
     SurfacePoint surfacePoint;
     Camera* m_camera;
+    NaifContextPtr m_naif;
 };
 
 
@@ -214,7 +218,7 @@ namespace Isis {
     Distance radius(p_camera->LocalRadius(lat, lon));
 
     if (radius.isValid()) {
-      return SetGround(naif, SurfacePoint(lat, lon, radius));
+      return SetGround(naif, SurfacePoint(naif, lat, lon, radius));
     }
     else {
       return false;
@@ -288,8 +292,8 @@ namespace Isis {
 
     if (lineRate == 0.0) return Failure;
 
-    LineOffsetFunctor offsetFunc(p_camera,surfacePoint);
-    SensorSurfacePointDistanceFunctor distanceFunc(p_camera,surfacePoint);
+    LineOffsetFunctor offsetFunc(naif,p_camera,surfacePoint);
+    SensorSurfacePointDistanceFunctor distanceFunc(naif,p_camera,surfacePoint);
 
     // METHOD #1
     // Use the line given as a start point for the secant method root search.
@@ -299,7 +303,7 @@ namespace Isis {
       p_camera->DetectorMap()->SetParent(naif, p_camera->ParentSamples() / 2.0, approxLine);
       approxTime = p_camera->time().Et();
 
-      approxOffset = offsetFunc(naif, approxTime);
+      approxOffset = offsetFunc(approxTime);
 
       // Check to see if there is no need to improve this root, it's good enough
       if (fabs(approxOffset) < 1e-2) {
@@ -331,7 +335,7 @@ namespace Isis {
 
       // starting offsets
       fh = approxOffset;  //the first is already calculated
-      fl = offsetFunc(naif, xl);
+      fl = offsetFunc(xl);
 
       // Iterate to refine the given approximate time that the instrument imaged the ground point
       for (int j=0; j < 10; j++) {
@@ -343,7 +347,7 @@ namespace Isis {
         if (etGuess < cacheStart) etGuess = cacheStart;
         if (etGuess > cacheEnd) etGuess = cacheEnd;
 
-        double f = offsetFunc(naif, etGuess);
+        double f = offsetFunc(etGuess);
 
 
         // elliminate the node farthest away from the current best guess
@@ -399,7 +403,7 @@ namespace Isis {
     double temp;
 
     for (int i=0; i<3; i++) {
-      offsetNodes[i] = offsetFunc(naif, timeNodes[i]);
+      offsetNodes[i] = offsetFunc(timeNodes[i]);
     }
 
     // centralize and normalize the data for stability in root finding
@@ -489,8 +493,8 @@ namespace Isis {
     // the shortest distance being the winner.  For legacy consistency I have used the same logic below.
 
     for (int i=0; i<root.size(); i++) {  // Offset/dist calculation loop
-      dist << distanceFunc(naif, root[i]);
-      offset << offsetFunc(naif, root[i]);
+      dist << distanceFunc(root[i]);
+      offset << offsetFunc(root[i]);
     }
 
     // Save the root with the smallest dist
@@ -587,8 +591,8 @@ namespace Isis {
     dist.clear();
     offset.clear();
     for (int i=0; i<root.size(); i++) {  // Offset/dist calculation loop
-      dist << distanceFunc(naif, root[i]);
-      offset << offsetFunc(naif, root[i]);
+      dist << distanceFunc(root[i]);
+      offset << offsetFunc(root[i]);
     }
 
     // Save the root with the smallest dist

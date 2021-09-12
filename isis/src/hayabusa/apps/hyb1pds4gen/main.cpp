@@ -30,7 +30,8 @@ void generateCSVOutput(Pvl &inputCubeLabel);
 
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
-
+  auto naif = NaifContext::acquire();
+  
   // Check if input file is indeed, a cube
   if (ui.GetFileName("FROM").right(3) != "cub") {
     QString msg = "Input file [" + ui.GetFileName("FROM") +
@@ -51,7 +52,7 @@ void IsisMain() {
   if (instGroup["InstrumentId"][0].compare("NIRS", Qt::CaseInsensitive) == 0) {
 
     process.setImageType(ProcessExportPds4::BinSetSpectrum);
-    QDomDocument &pdsLabel = process.StandardPds4Label();
+    QDomDocument &pdsLabel = process.StandardPds4Label(naif);
 
     translationFile += "HayabusaNirsPds4Export.trn";
     PvlToXmlTranslationManager xlator(*(inputLabel), translationFile);
@@ -62,7 +63,7 @@ void IsisMain() {
   }
   else { // AMICA
 
-    QDomDocument &pdsLabel = process.StandardPds4Label();
+    QDomDocument &pdsLabel = process.StandardPds4Label(naif);
 
     translationFile += "HayabusaAmicaPds4Export.trn";
     PvlToXmlTranslationManager xlator(*(inputLabel), translationFile);

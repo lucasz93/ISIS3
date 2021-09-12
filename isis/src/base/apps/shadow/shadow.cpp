@@ -30,7 +30,7 @@ namespace Isis {
     p.SetInputCube(demCube);
     p.SetBrickSize(demCube->sampleCount(), 128, 1);
 
-    ShadowFunctor functor(demCube);
+    ShadowFunctor functor(naif, demCube);
 
     PvlKeyword kernelsUsed("Kernels");
     kernelsUsed.addCommentWrapped("These NAIF kernels were furnished in order to compute the "

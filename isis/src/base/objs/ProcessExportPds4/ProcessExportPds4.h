@@ -83,11 +83,11 @@ namespace Isis {
         UniformlySampledSpectrum
       };
 
-      QDomDocument &StandardPds4Label();
+      QDomDocument &StandardPds4Label(NaifContextPtr naif);
       QDomDocument &SpectralPds4Label();
-      void StandardAllMapping();
+      void StandardAllMapping(NaifContextPtr naif);
 
-      void CreateImageLabel();
+      void CreateImageLabel(NaifContextPtr naif);
       void StandardImageImage();
 
       void OutputLabel(std::ofstream &os);

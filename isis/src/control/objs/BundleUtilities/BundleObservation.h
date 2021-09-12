@@ -71,13 +71,12 @@ namespace Isis {
       virtual LinearAlgebra::Vector &aprioriSigmas();
       virtual LinearAlgebra::Vector &adjustedSigmas();
 
-
       virtual const BundleObservationSolveSettingsQsp solveSettings() = 0;
       virtual int numberParameters() = 0;
-      virtual bool applyParameterCorrections(LinearAlgebra::Vector corrections) = 0;
+      virtual bool applyParameterCorrections(NaifContextPtr naif, LinearAlgebra::Vector corrections) = 0;
 
-      virtual void bundleOutputString(std::ostream &fpOut,bool errorPropagation) = 0;
-      virtual QString bundleOutputCSV(bool errorPropagation) = 0;
+      virtual void bundleOutputString(NaifContextPtr naif, std::ostream &fpOut,bool errorPropagation) = 0;
+      virtual QString bundleOutputCSV(NaifContextPtr naif, bool errorPropagation) = 0;
 
       virtual QStringList parameterList() = 0;
       virtual QStringList imageNames();

@@ -177,7 +177,7 @@ namespace Isis {
    * @return MeasureValidationResults
    */
   MeasureValidationResults ControlNetValidMeasure::ValidStandardOptions(
-      double pSample, double pLine, const ControlMeasure *pMeasure, Cube *pCube,
+      NaifContextPtr naif, double pSample, double pLine, const ControlMeasure *pMeasure, Cube *pCube,
       PvlGroup *pMeasureGrp) {
 
     // Get the Camera
@@ -192,13 +192,13 @@ namespace Isis {
       }
     }
 
-    return ValidStandardOptions(pSample, pLine, pMeasure,
+    return ValidStandardOptions(naif, pSample, pLine, pMeasure,
         pCube, measureCamera, pMeasureGrp);
   }
 
 
   MeasureValidationResults ControlNetValidMeasure::ValidStandardOptions(
-      double pSample, double pLine, const ControlMeasure *pMeasure, Cube *pCube,
+      NaifContextPtr naif, double pSample, double pLine, const ControlMeasure *pMeasure, Cube *pCube,
       Camera *measureCamera, PvlGroup *pMeasureGrp) {
 
     mdEmissionAngle  = Null;
@@ -213,11 +213,11 @@ namespace Isis {
     m_pixelShift = 0;
 
     if (measureCamera != NULL) {
-      bool success = measureCamera->SetImage(pSample, pLine);
+      bool success = measureCamera->SetImage(pSample, pLine, naif);
       if (success) {
-        mdEmissionAngle     = measureCamera->EmissionAngle();
+        mdEmissionAngle     = measureCamera->EmissionAngle(naif);
         mdIncidenceAngle    = measureCamera->IncidenceAngle();
-        mdResolution        = measureCamera->PixelResolution();
+        mdResolution        = measureCamera->PixelResolution(naif);
       }
     }
 
@@ -314,7 +314,7 @@ namespace Isis {
         results.addFailure(MeasureValidationResults::PixelsFromEdge, miPixelsFromEdge);
       }
 
-      if(!MetersFromEdge((int)pSample, (int)pLine, pCube)) {
+      if(!MetersFromEdge(naif, (int)pSample, (int)pLine, pCube)) {
         results.addFailure(MeasureValidationResults::MetersFromEdge,
             mdMetersFromEdge);
       }
@@ -343,9 +343,9 @@ namespace Isis {
    * @return MeasureValidationResults
    */
   MeasureValidationResults ControlNetValidMeasure::ValidStandardOptions(
-       double pSample, double pLine, Cube *pCube, PvlGroup *pMeasureGrp) {
+       NaifContextPtr naif, double pSample, double pLine, Cube *pCube, PvlGroup *pMeasureGrp) {
 
-    return ValidStandardOptions(pSample, pLine, NULL, pCube, pMeasureGrp);
+    return ValidStandardOptions(naif, pSample, pLine, NULL, pCube, pMeasureGrp);
 
   }
 
@@ -363,25 +363,25 @@ namespace Isis {
    * @return bool
    */
   MeasureValidationResults ControlNetValidMeasure::ValidStandardOptions(
-    const ControlMeasure * pMeasure, Cube *pCube, PvlGroup *pMeasureGrp) {
+    NaifContextPtr naif, const ControlMeasure * pMeasure, Cube *pCube, PvlGroup *pMeasureGrp) {
 
     double dSample, dLine;
     dSample = pMeasure->GetSample();
     dLine   = pMeasure->GetLine();
 
-    return (ValidStandardOptions(dSample, dLine, pMeasure, pCube, pMeasureGrp));
+    return (ValidStandardOptions(naif, dSample, dLine, pMeasure, pCube, pMeasureGrp));
   }
 
 
   MeasureValidationResults ControlNetValidMeasure::ValidStandardOptions(
-    const ControlMeasure * pMeasure, Cube *pCube, Camera *camera,
+    NaifContextPtr naif, const ControlMeasure * pMeasure, Cube *pCube, Camera *camera,
     PvlGroup *pMeasureGrp) {
 
     double dSample, dLine;
     dSample = pMeasure->GetSample();
     dLine   = pMeasure->GetLine();
 
-    return ValidStandardOptions(dSample, dLine, pMeasure,
+    return ValidStandardOptions(naif, dSample, dLine, pMeasure,
           pCube, camera, pMeasureGrp);
   }
 
@@ -863,7 +863,7 @@ namespace Isis {
    *
    * @return bool
    */
-  bool ControlNetValidMeasure::MetersFromEdge(int piSample, int piLine, Cube *pCube) {
+  bool ControlNetValidMeasure::MetersFromEdge(NaifContextPtr naif, int piSample, int piLine, Cube *pCube) {
     if(mdMetersFromEdge <= 0) {
       return true;
     }
@@ -879,8 +879,8 @@ namespace Isis {
 
       // test top
       for(int line = piLine - 1; line > 0; line--) {
-        camera->SetImage(piSample, line);
-        double resolution = camera->PixelResolution();
+        camera->SetImage(piSample, line, naif);
+        double resolution = camera->PixelResolution(naif);
         resMetersTotal += resolution;
         if(resMetersTotal >= mdMetersFromEdge) {
           bMinDistance = true;
@@ -895,8 +895,8 @@ namespace Isis {
       bMinDistance   = false;
       resMetersTotal = 0;
       for(int line = piLine + 1; line <= iNumLines; line++) {
-        camera->SetImage(piSample, line);
-        double resolution = camera->PixelResolution();
+        camera->SetImage(piSample, line, naif);
+        double resolution = camera->PixelResolution(naif);
         resMetersTotal += resolution;
         if(resMetersTotal >= mdMetersFromEdge) {
           bMinDistance = true;
@@ -911,8 +911,8 @@ namespace Isis {
       resMetersTotal = 0;
       bMinDistance   = false;
       for(int sample = piSample - 1; sample > 0; sample--) {
-        camera->SetImage(sample, piLine);
-        double resolution = camera->PixelResolution();
+        camera->SetImage(sample, piLine, naif);
+        double resolution = camera->PixelResolution(naif);
         resMetersTotal += resolution;
         if(resMetersTotal >= mdMetersFromEdge) {
           bMinDistance = true;
@@ -927,8 +927,8 @@ namespace Isis {
       resMetersTotal = 0;
       bMinDistance   = false;
       for(int sample = piSample + 1; sample <= iNumSamples; sample++) {
-        camera->SetImage(sample, piLine);
-        double resolution = camera->PixelResolution();
+        camera->SetImage(sample, piLine, naif);
+        double resolution = camera->PixelResolution(naif);
         resMetersTotal += resolution;
         if(resMetersTotal >= mdMetersFromEdge) {
           return true;

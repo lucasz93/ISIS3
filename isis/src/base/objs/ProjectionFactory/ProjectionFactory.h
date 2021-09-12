@@ -8,6 +8,7 @@ find files of those names at the top level of this repository. **/
 /* SPDX-License-Identifier: CC0-1.0 */
 #include "Plugin.h"
 #include "WorldMapper.h"
+#include "NaifContext.h"
 
 namespace Isis {
   class Camera;
@@ -85,10 +86,10 @@ namespace Isis {
       static Isis::Projection *RingsCreateForCube(Isis::Pvl &label,
                                                    int &samples, int &lines,
                                                    bool sizeMatch);
-      static Isis::Projection *CreateForCube(Isis::Pvl &label,
+      static Isis::Projection *CreateForCube(NaifContextPtr naif, Isis::Pvl &label,
                                              int &samples, int &lines,
                                              Camera &cam);
-      static Isis::Projection *RingsCreateForCube(Isis::Pvl &label,
+      static Isis::Projection *RingsCreateForCube(NaifContextPtr naif, Isis::Pvl &label,
                                                    int &samples, int &lines,
                                                    Camera &cam);
 

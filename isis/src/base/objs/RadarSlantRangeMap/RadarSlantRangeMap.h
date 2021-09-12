@@ -61,7 +61,7 @@ namespace Isis {
 
       virtual bool SetUndistortedFocalPlane(const double ux, const double uy);
 
-      void SetCoefficients(PvlKeyword &keyword);
+      void SetCoefficients(NaifContextPtr naif, PvlKeyword &keyword);
 
       void SetWeightFactors(double range_sigma, double doppler_sigma);
 

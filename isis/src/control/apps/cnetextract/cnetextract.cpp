@@ -12,7 +12,7 @@ using namespace std;
 
 namespace Isis {
   void ExtractPointList(ControlNet &outNet, QVector<QString> &nonListedPoints, FileName pointListFile);
-  void ExtractLatLonRange(ControlNet &outNet, QVector<QString> &nonLatLonPoints,
+  void ExtractLatLonRange(NaifContextPtr naif, ControlNet &outNet, QVector<QString> &nonLatLonPoints,
                           QVector<QString> &cannotGenerateLatLonPoints,
                           QMap<QString, QString> sn2filename,
                           UserInterface &ui);
@@ -302,7 +302,7 @@ namespace Isis {
      // Use another pass on outNet, because this is by far the most time consuming
      // process, and time could be saved by using the reduced size of outNet
     if(latLon) {
-      ExtractLatLonRange(outNet, nonLatLonPoints, cannotGenerateLatLonPoints, sn2filename, ui);
+      ExtractLatLonRange(naif, outNet, nonLatLonPoints, cannotGenerateLatLonPoints, sn2filename, ui);
     }
 
     int outputPoints = outNet.GetNumPoints();
@@ -566,7 +566,8 @@ namespace Isis {
    *                           Modified the QVector parameters to be pass-by-reference OUT parameters,
    *                           since the cnetextract main uses them for summary output.
    */
-  void ExtractLatLonRange(ControlNet &outNet,
+  void ExtractLatLonRange(NaifContextPtr naif,
+                          ControlNet &outNet,
                           QVector<QString> &nonLatLonPoints,
                           QVector<QString> &cannotGenerateLatLonPoints,
                           QMap<QString, QString> sn2filename,
@@ -688,7 +689,7 @@ namespace Isis {
           bool notInRange = false;
           bool validLatLonRadius = lat.isValid() && lon.isValid() && radius.isValid();
           if(validLatLonRadius) {
-            SurfacePoint sfpt(lat, lon, radius);
+            SurfacePoint sfpt(naif, lat, lon, radius);
             notInRange = NotInLatLonRange(sfpt, minlat, maxlat, minlon, maxlon);
           }
 
@@ -697,7 +698,7 @@ namespace Isis {
             omit(outNet, cp);
           }
           else if(validLatLonRadius) { // Add the reference lat/lon/radius to the Control Point
-            outNet.GetPoint(cp)->SetAprioriSurfacePoint(SurfacePoint(lat, lon, radius));
+            outNet.GetPoint(cp)->SetAprioriSurfacePoint(SurfacePoint(naif, lat, lon, radius));
           }
         }
       }

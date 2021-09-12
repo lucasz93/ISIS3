@@ -135,7 +135,7 @@ namespace Isis {
                                       std::vector<double> lookDirection) {
     NaifVertex obs(3, &observerPos[0]);
     NaifVector raydir(3, &lookDirection[0]);
-    m_intercept.reset(m_model.intercept(obs, raydir));
+    m_intercept.reset(m_model.intercept(naif, obs, raydir));
 
     bool success = !m_intercept.isNull();
     if (success) {
@@ -161,9 +161,10 @@ namespace Isis {
    *
    * @return Distance Radius value of the intercept grid point
    */
-  Distance NaifDskShape::localRadius(const Latitude &lat,
-                                          const Longitude &lon) {
-    QScopedPointer<SurfacePoint> pnt(m_model.point(lat, lon));
+  Distance NaifDskShape::localRadius(NaifContextPtr naif,
+                                     const Latitude &lat,
+                                     const Longitude &lon) {
+    QScopedPointer<SurfacePoint> pnt(m_model.point(naif, lat, lon));
     if ( !pnt.isNull() )  return (pnt->GetLocalRadius());
     return (Distance());
   }
@@ -177,7 +178,7 @@ namespace Isis {
    *
    * @author 2014-02-14 Kris Becker
    */
-  void NaifDskShape::setLocalNormalFromIntercept()  {
+  void NaifDskShape::setLocalNormalFromIntercept(NaifContextPtr naif)  {
 
     // Sanity check
     if ( !hasIntersection() ) { // hasIntersection()  <==>  !m_intercept.isNull()
@@ -186,7 +187,7 @@ namespace Isis {
     }
 
     // Got it, use the existing intercept point (plate) normal
-    NaifVector norm(m_intercept->normal());
+    NaifVector norm(m_intercept->normal(naif));
     setNormal(norm[0], norm[1], norm[2]); // this also takes care of setHasNormal(true);
     return;
   }
@@ -238,7 +239,7 @@ namespace Isis {
       throw IException(IException::Programmer, mess, _FILEINFO_);
     }
 
-    setLocalNormalFromIntercept();
+    setLocalNormalFromIntercept(naif);
     return;
   }
 

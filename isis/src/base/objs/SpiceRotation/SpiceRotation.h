@@ -9,9 +9,7 @@ find files of those names at the top level of this repository. **/
 #include <string>
 #include <vector>
 
-//#include "NaifContext.h"
-//#include <SpiceZfc.h>
-//#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include <nlohmann/json.hpp>
 #include <ale/Orientations.h>

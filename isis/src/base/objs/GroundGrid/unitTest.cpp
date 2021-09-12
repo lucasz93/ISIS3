@@ -22,6 +22,8 @@ using namespace std;
 using namespace Isis;
 
 void IsisMain() {
+  auto naif = NaifContext::acquire();
+
   /*
     The output of this class directly correlates to the output of the "grid"
     application when mode=ground - if that application is correct, then this
@@ -37,13 +39,13 @@ void IsisMain() {
 
   cout << "Create grid..." << endl;
   Progress progress;
-  GroundGrid grid(&gmap, false, false, someCube.sampleCount(), someCube.lineCount());
+  GroundGrid grid(naif, &gmap, false, false, someCube.sampleCount(), someCube.lineCount());
   grid.SetGroundLimits(Latitude(28.572438078395002, Angle::Degrees),
                        Longitude(-133.284402721991682, Angle::Degrees),
                        Latitude(34.340453944831125, Angle::Degrees),
                        Longitude(-134.060950006448195, Angle::Degrees));
 
-  grid.CreateGrid(Latitude(0, Angle::Degrees), Longitude(0, Angle::Degrees),
+  grid.CreateGrid(naif, Latitude(0, Angle::Degrees), Longitude(0, Angle::Degrees),
       Angle(0.2, Angle::Degrees), Angle(0.2, Angle::Degrees),
       &progress, Angle(0.1, Angle::Degrees), Angle(0.01, Angle::Degrees));
 
@@ -84,13 +86,13 @@ void IsisMain() {
     incompleteLabelsCube.open("$ISISTESTDATA/isis/src/base/unitTestData/GroundGrid/unitTest.cub");
     UniversalGroundMap gmap(incompleteLabelsCube,
         UniversalGroundMap::ProjectionFirst);
-    GroundGrid tmp(&gmap, false, false, someCube.sampleCount(), someCube.lineCount());
+    GroundGrid tmp(naif, &gmap, false, false, someCube.sampleCount(), someCube.lineCount());
     Longitude invalidLon;
     Latitude invalidLat;
     tmp.SetGroundLimits(Latitude(28.572438078395002, Angle::Degrees),
                          invalidLon, invalidLat,
                          Longitude(-134.060950006448195, Angle::Degrees));
-    tmp.CreateGrid(Latitude(0, Angle::Degrees), Longitude(0, Angle::Degrees),
+    tmp.CreateGrid(naif, Latitude(0, Angle::Degrees), Longitude(0, Angle::Degrees),
         Angle(0.2, Angle::Degrees), Angle(0.2, Angle::Degrees),
         &progress, Angle(0.1, Angle::Degrees), Angle(0.01, Angle::Degrees));
   }

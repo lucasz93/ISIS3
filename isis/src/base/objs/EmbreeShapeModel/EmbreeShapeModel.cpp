@@ -204,7 +204,8 @@ namespace Isis {
  * 
  * @return @b bool If an intersection was found
  */
-  bool EmbreeShapeModel::intersectSurface(const Latitude &lat, const Longitude &lon,
+  bool EmbreeShapeModel::intersectSurface(NaifContextPtr naif,
+                                          const Latitude &lat, const Longitude &lon,
                                           const std::vector<double> &observerPos,
                                           const bool &backCheck) {
     // Remove any previous intersection
@@ -400,7 +401,8 @@ namespace Isis {
    *
    * @return @b Distance Radius value of the intercept grid point
    */
-  Distance EmbreeShapeModel::localRadius(const Latitude &lat,
+  Distance EmbreeShapeModel::localRadius(NaifContextPtr naif,
+                                         const Latitude &lat,
                                          const Longitude &lon) {
 
     // Create a ray from the origin to the surface point

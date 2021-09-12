@@ -223,7 +223,7 @@ void IsisMain() {
       m->SetType(ControlMeasure::RegisteredPixel);
 
       ControlPoint * p = new ControlPoint;
-      p->SetAprioriSurfacePoint(SurfacePoint(lat1, lon1, rad1));
+      p->SetAprioriSurfacePoint(SurfacePoint(naif, lat1, lon1, rad1));
       p->SetId("Point1");
       p->SetType(ControlPoint::Fixed);
       p->Add(m);
@@ -255,7 +255,7 @@ void IsisMain() {
         m->SetType(ControlMeasure::Manual);
 
         ControlPoint * p = new ControlPoint;
-        p->SetAprioriSurfacePoint(SurfacePoint(lat2, lon2, rad2));
+        p->SetAprioriSurfacePoint(SurfacePoint(naif, lat2, lon2, rad2));
         p->SetId("Point2");
         p->SetType(ControlPoint::Fixed);
         p->Add(m);
@@ -330,7 +330,7 @@ void IsisMain() {
 Distance GetRadius(NaifContextPtr naif, QString filename, Latitude lat, Longitude lon) {
   Cube cube(filename, "r");
   Camera *sensor = CameraFactory::Create(cube);
-  sensor->SetGround(naif, SurfacePoint(lat, lon, sensor->LocalRadius(lat, lon)));
+  sensor->SetGround(naif, SurfacePoint(naif, lat, lon, sensor->LocalRadius(lat, lon)));
   Distance radius = sensor->LocalRadius();
   if (!radius.isValid()) {
     QString msg = "Could not determine radius from DEM at lat/lon [";

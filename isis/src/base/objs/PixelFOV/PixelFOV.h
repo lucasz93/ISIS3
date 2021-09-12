@@ -9,6 +9,8 @@ find files of those names at the top level of this repository. **/
 #include <QList>
 #include <QPointF>
 
+#include "NaifContext.h"
+
 namespace Isis {
   class Camera;
 
@@ -40,13 +42,14 @@ namespace Isis {
       PixelFOV(const PixelFOV &other);
       ~PixelFOV();
 
-      QList< QList<QPointF> > latLonVertices(Camera &camera,
+      QList< QList<QPointF> > latLonVertices(NaifContextPtr naif,
+                                             Camera &camera,
                                              const double sample,
                                              const double line,
                                              const int numIfovs = 1) const;
 
     private:
-      QList<QPointF> instantaneousFov(Camera &camera) const;
+      QList<QPointF> instantaneousFov(NaifContextPtr naif, Camera &camera) const;
       QList<QPointF> envelope(QList<QPointF> vertices) const;
       QList< QList<QPointF> > splitIfov(QList<QPointF> vertices) const;
 

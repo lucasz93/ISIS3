@@ -30,6 +30,8 @@ using namespace Isis;
  */
 void IsisMain() {
   Preference::Preferences(true);
+  NaifContextLifecycle naif_lifecycle;
+  auto naif = NaifContext::acquire();
 
   try {
     std::cout << "Testing ProcessExportPds4" << std::endl << std::endl;
@@ -55,7 +57,7 @@ void IsisMain() {
 
     // Remove the schema from the lable because we cannot ensure that
     // attributes come out in the same order every time
-    QString rawLabel = p.StandardPds4Label().toString();
+    QString rawLabel = p.StandardPds4Label(naif).toString();
     rawLabel.remove(QRegExp(" xmlns.*=\".*\""));
     rawLabel.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << rawLabel;
@@ -90,7 +92,7 @@ void IsisMain() {
     stretchProcess.SetOutputEndian(Isis::Msb);
     stretchProcess.SetInputCube(&cub);
 
-    QString stretchedMsbSW = stretchProcess.StandardPds4Label().toString();
+    QString stretchedMsbSW = stretchProcess.StandardPds4Label(naif).toString();
     stretchedMsbSW.remove(QRegExp(" xmlns.*=\".*\""));
     stretchedMsbSW.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << stretchedMsbSW;
@@ -98,7 +100,7 @@ void IsisMain() {
     stretchProcess.SetOutputType(Isis::SignedWord);
     stretchProcess.SetOutputEndian(Isis::Lsb);
 
-    stretchedMsbSW = stretchProcess.StandardPds4Label().toString();
+    stretchedMsbSW = stretchProcess.StandardPds4Label(naif).toString();
     stretchedMsbSW.remove(QRegExp(" xmlns.*=\".*\""));
     stretchedMsbSW.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << stretchedMsbSW;
@@ -106,7 +108,7 @@ void IsisMain() {
     stretchProcess.SetOutputType(Isis::Real);
     stretchProcess.SetOutputEndian(Isis::Msb);
 
-    stretchedMsbSW = stretchProcess.StandardPds4Label().toString();
+    stretchedMsbSW = stretchProcess.StandardPds4Label(naif).toString();
     stretchedMsbSW.remove(QRegExp(" xmlns.*=\".*\""));
     stretchedMsbSW.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << stretchedMsbSW;
@@ -114,7 +116,7 @@ void IsisMain() {
     stretchProcess.SetOutputType(Isis::UnsignedWord);
     stretchProcess.SetOutputEndian(Isis::Msb);
 
-    stretchedMsbSW = stretchProcess.StandardPds4Label().toString();
+    stretchedMsbSW = stretchProcess.StandardPds4Label(naif).toString();
     stretchedMsbSW.remove(QRegExp(" xmlns.*=\".*\""));
     stretchedMsbSW.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << stretchedMsbSW;
@@ -122,7 +124,7 @@ void IsisMain() {
     stretchProcess.SetOutputType(Isis::UnsignedWord);
     stretchProcess.SetOutputEndian(Isis::Lsb);
 
-    stretchedMsbSW = stretchProcess.StandardPds4Label().toString();
+    stretchedMsbSW = stretchProcess.StandardPds4Label(naif).toString();
     stretchedMsbSW.remove(QRegExp(" xmlns.*=\".*\""));
     stretchedMsbSW.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << stretchedMsbSW;
@@ -130,7 +132,7 @@ void IsisMain() {
     stretchProcess.SetOutputType(Isis::UnsignedByte);
     stretchProcess.SetOutputEndian(Isis::Lsb);
 
-    stretchedMsbSW = stretchProcess.StandardPds4Label().toString();
+    stretchedMsbSW = stretchProcess.StandardPds4Label(naif).toString();
     stretchedMsbSW.remove(QRegExp(" xmlns.*=\".*\""));
     stretchedMsbSW.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << stretchedMsbSW;
@@ -143,7 +145,7 @@ void IsisMain() {
 
     ProcessExportPds4 badTimeProcess;
     badTimeProcess.SetInputCube(&cub);
-    badTimeProcess.StandardPds4Label();
+    badTimeProcess.StandardPds4Label(naif);
     badTimeProcess.StartProcess(ofs);
 
     QString badTimeLabel = badTimeProcess.GetLabel().toString();
@@ -158,7 +160,7 @@ void IsisMain() {
     ProcessExportPds4 projectedProcess;
     projectedProcess.SetInputCube(&projectedCube);
 
-    QString projectedLabel = projectedProcess.StandardPds4Label().toString();
+    QString projectedLabel = projectedProcess.StandardPds4Label(naif).toString();
     projectedLabel.remove(QRegExp(" xmlns.*=\".*\""));
     projectedLabel.remove(QRegExp(" xsi.*=\".*\""));
     std::cout << projectedLabel;
@@ -168,7 +170,7 @@ void IsisMain() {
     try {
       std::cout << "Test creating a standard Pds4Label with no input" << std::endl;
       ProcessExportPds4 emptyProcess;
-      emptyProcess.StandardPds4Label();
+      emptyProcess.StandardPds4Label(naif);
     }
     catch(Isis::IException &e) {
       e.print();
@@ -205,7 +207,7 @@ void IsisMain() {
       ProcessExportPds4 testProcess;
       instGroup.deleteKeyword("targetName");
       testProcess.SetInputCube(&cub);
-      testProcess.StandardPds4Label();
+      testProcess.StandardPds4Label(naif);
     }
     catch(Isis::IException &e) {
       QString message = e.toString();

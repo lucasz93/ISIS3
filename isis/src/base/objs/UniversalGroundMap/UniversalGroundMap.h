@@ -6,6 +6,8 @@ For more details about the LICENSE terms and the AUTHORS, you will
 find files of those names at the top level of this repository. **/
 
 /* SPDX-License-Identifier: CC0-1.0 */
+#include "NaifContext.h"
+
 namespace Isis {
   class Camera;
   class Cube;
@@ -88,20 +90,21 @@ namespace Isis {
       UniversalGroundMap(Cube &cube, CameraPriority priority = CameraFirst);
       ~UniversalGroundMap();
 
-      void SetBand(const int band);
-      bool SetUniversalGround(double lat, double lon);
-      bool SetUnboundGround(Latitude lat, Longitude lon);
-      bool SetGround(Latitude lat, Longitude lon);
-      bool SetGround(const SurfacePoint &);
+      void SetBand(const int band, NaifContextPtr naif);
+      bool SetUniversalGround(NaifContextPtr naif, double lat, double lon);
+      bool SetUnboundGround(NaifContextPtr naif, Latitude lat, Longitude lon);
+      bool SetGround(NaifContextPtr naif, Latitude lat, Longitude lon);
+      bool SetGround(NaifContextPtr naif, const SurfacePoint &);
       double Sample() const;
       double Line() const;
 
-      bool SetImage(double sample, double line);
+      bool SetImage(double sample, double line, NaifContextPtr naif);
       double UniversalLatitude() const;
       double UniversalLongitude() const;
-      double Resolution() const;
+      double Resolution(NaifContextPtr naif) const;
 
-      bool GroundRange(Cube *cube,
+      bool GroundRange(NaifContextPtr naif, 
+                       Cube *cube,
                        Latitude &minLat, Latitude &maxLat,
                        Longitude &minLon, Longitude &maxLon,
                        bool allowEstimation = true);

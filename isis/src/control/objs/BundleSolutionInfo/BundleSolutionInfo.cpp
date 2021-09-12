@@ -1082,7 +1082,7 @@ namespace Isis {
    *                           returns a char* at runtime, the compiler does not know if it will
    *                           contain format specifiers and produces the mentioned warning.
    */
-  bool BundleSolutionInfo::outputImagesCSV() {
+  bool BundleSolutionInfo::outputImagesCSV(NaifContextPtr naif) {
 
     char buf[1056];
 
@@ -1171,7 +1171,7 @@ namespace Isis {
           fpOut << buf;
 
           QString observationString =
-              observation->bundleOutputCSV(errorProp);
+              observation->bundleOutputCSV(naif, errorProp);
 
           //Removes trailing commas
           if (observationString.right(1)==",") {
@@ -1198,7 +1198,7 @@ namespace Isis {
    *
    * @return @b bool If the text file was successfully output.
    */
-  bool BundleSolutionInfo::outputText() {
+  bool BundleSolutionInfo::outputText(NaifContextPtr naif) {
 
     QString ofname = "bundleout.txt";
     ofname = m_settings->outputFilePrefix() + ofname;
@@ -1272,7 +1272,7 @@ namespace Isis {
                     "***************************************\n");
         fpOut << buf;
 
-        observation->bundleOutputString(fpOut,berrorProp);
+        observation->bundleOutputString(naif,fpOut,berrorProp);
         // Build list of images and parameters for correlation matrix.
         foreach ( QString image, observation->imageNames() ) {
           imagesAndParameters.insert( image, observation->parameterList() );
@@ -1385,7 +1385,8 @@ namespace Isis {
 
       // Removed radiansToMeters argument 9/18/2018 DAC
       QString pointDetailString =
-          bundleControlPoint->formatBundleOutputDetailString(berrorProp,
+          bundleControlPoint->formatBundleOutputDetailString(naif,
+                                                           berrorProp,
                                                            solveRadius);
       fpOut << (const char*)pointDetailString.toLatin1().data();
     }

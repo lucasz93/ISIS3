@@ -31,6 +31,7 @@ namespace Isis{
   }
 
   void isis2pds(Cube *icube, UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
 
     if (ui.GetString("PDSVERSION") == "PDS3") {
       // Set the processing object
@@ -199,7 +200,7 @@ namespace Isis{
         log->addGroup(results);
       }
 
-      process.StandardPds4Label();
+      process.StandardPds4Label(naif);
       process.WritePds4(outFileName);
     }
 

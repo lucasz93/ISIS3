@@ -39,7 +39,7 @@ namespace Isis {
   double g_endPad = 0.0;
   QString g_shapeKernelStr;
 
-  bool tryKernels(Cube &cube, UserInterface &ui, Pvl *log, Pvl &labels, Process &p,
+  bool tryKernels(NaifContextPtr naif, Cube &cube, UserInterface &ui, Pvl *log, Pvl &labels, Process &p,
                   Kernel lk, Kernel pck,
                   Kernel targetSpk, Kernel ck,
                   Kernel fk, Kernel ik,
@@ -56,7 +56,7 @@ namespace Isis {
   //! Convert a table into an xml tag
   QString tableToXml(QString tableName, QString file);
 
-  void spiceserver(UserInterface &ui, Pvl *log) {
+  void spiceserver(NaifContextPtr naif, UserInterface &ui, Pvl *log) {
 
     try {
       Process p;
@@ -294,7 +294,7 @@ namespace Isis {
         label.write( inputLabels.expanded() );
         Cube cube;
         cube.open(inputLabels.expanded(), "rw");
-        kernelSuccess = tryKernels(cube, ui, log, label, p, lk, pck, targetSpk,
+        kernelSuccess = tryKernels(naif, cube, ui, log, label, p, lk, pck, targetSpk,
                                    realCkKernel, fk, ik, sclk, spk,
                                    iak, dem, exk);
       }
@@ -327,7 +327,7 @@ namespace Isis {
     }
   }
 
-  bool tryKernels(Cube &cube, UserInterface &ui, Pvl *log, Pvl &lab, Process &p,
+  bool tryKernels(NaifContextPtr naif, Cube &cube, UserInterface &ui, Pvl *log, Pvl &lab, Process &p,
                   Kernel lk, Kernel pck,
                   Kernel targetSpk, Kernel ck,
                   Kernel fk, Kernel ik, Kernel sclk,
@@ -462,7 +462,7 @@ namespace Isis {
         }
         throw e;
       }
-      Table ckTable = cam->instrumentRotation()->Cache("InstrumentPointing");
+      Table ckTable = cam->instrumentRotation()->Cache("InstrumentPointing", naif);
       ckTable.Label() += PvlKeyword("Description", "Created by spiceinit");
       ckTable.Label() += PvlKeyword("Kernels");
 
@@ -471,7 +471,7 @@ namespace Isis {
 
       ckTable.toBlob().Write(ui.GetFileName("TO") + ".pointing");
 
-      Table spkTable = cam->instrumentPosition()->Cache("InstrumentPosition");
+      Table spkTable = cam->instrumentPosition()->Cache("InstrumentPosition", naif);
       spkTable.Label() += PvlKeyword("Description", "Created by spiceinit");
       spkTable.Label() += PvlKeyword("Kernels");
       for (int i = 0; i < spkKeyword.size(); i++)
@@ -479,7 +479,7 @@ namespace Isis {
 
       spkTable.toBlob().Write(ui.GetFileName("TO") + ".position");
 
-      Table bodyTable = cam->bodyRotation()->Cache("BodyRotation");
+      Table bodyTable = cam->bodyRotation()->Cache("BodyRotation", naif);
       bodyTable.Label() += PvlKeyword("Description", "Created by spiceinit");
       bodyTable.Label() += PvlKeyword("Kernels");
       for (int i = 0; i < targetSpkKeyword.size(); i++)
@@ -488,10 +488,10 @@ namespace Isis {
       for (int i = 0; i < pckKeyword.size(); i++)
         bodyTable.Label()["Kernels"].addValue(pckKeyword[i]);
 
-      bodyTable.Label() += PvlKeyword( "SolarLongitude", toString( cam->solarLongitude().degrees() ) );
+      bodyTable.Label() += PvlKeyword( "SolarLongitude", toString( cam->solarLongitude(naif).degrees() ) );
       bodyTable.toBlob().Write(ui.GetFileName("TO") + ".bodyrot");
 
-      Table sunTable = cam->sunPosition()->Cache("SunPosition");
+      Table sunTable = cam->sunPosition()->Cache("SunPosition", naif);
       sunTable.Label() += PvlKeyword("Description", "Created by spiceinit");
       sunTable.Label() += PvlKeyword("Kernels");
       for (int i = 0; i < targetSpkKeyword.size(); i++)

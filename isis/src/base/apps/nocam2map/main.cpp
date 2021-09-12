@@ -162,6 +162,7 @@ void ComputeInputRange() {
   Cube *lonCub = p.SetInputCube("LONCUB");
 
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
   Pvl userMap;
   userMap.read(ui.GetFileName("MAP"));
   PvlGroup &userGrp = userMap.findGroup("Mapping", Pvl::Traverse);
@@ -204,7 +205,7 @@ void ComputeInputRange() {
         target = (QString)fromFile.findKeyword("TargetName", Pvl::Traverse);
       }
 
-      PvlGroup radii = Target::radiiGroup(target);
+      PvlGroup radii = Target::radiiGroup(naif, target);
       equRadius = double(radii["EquatorialRadius"]);
       polRadius = double(radii["PolarRadius"]);
     }

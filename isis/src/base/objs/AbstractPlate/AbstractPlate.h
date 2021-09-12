@@ -62,28 +62,28 @@ namespace Isis {
        * 
        * @return Distance The minimum radius
        */
-      virtual Distance minRadius() const = 0;
+      virtual Distance minRadius(NaifContextPtr naif) const = 0;
       
       /**
        * Gets the maximum radius. This is a pure virtual function.
        * 
        * @return Distance The maximum radius
        */
-      virtual Distance maxRadius() const = 0;
+      virtual Distance maxRadius(NaifContextPtr naif) const = 0;
   
       /**
        * Gets the area of the plate. This is a pure virtual function.
        * 
        * @return double The area of the plate.
        */
-      virtual double area() const = 0;
+      virtual double area(NaifContextPtr naif) const = 0;
       
       /**
        * Gets the normal. This is a pure virtual function.
        * 
        * @return NaifVector The normal
        */
-      virtual NaifVector normal() const = 0;
+      virtual NaifVector normal(NaifContextPtr naif) const = 0;
       
       /**
        * Gets the separation angle. This is a pure virtual function.
@@ -93,7 +93,7 @@ namespace Isis {
        * 
        * @return Angle The separation angle
        */
-      virtual Angle separationAngle(const NaifVector &raydir) const = 0;
+      virtual Angle separationAngle(NaifContextPtr naif, const NaifVector &raydir) const = 0;
   
       /**
        * @brief Determines if a look direction from a point intercepts the plate 
@@ -107,7 +107,8 @@ namespace Isis {
        * @return bool Returns true if the look direction from the observer intercepts 
        *              the plate, otherwise returns false
        */
-      virtual bool hasIntercept(const NaifVertex &vertex, 
+      virtual bool hasIntercept(NaifContextPtr naif,
+                                const NaifVertex &vertex, 
                                 const NaifVector &raydir) const = 0;
                                 
       /**
@@ -122,7 +123,7 @@ namespace Isis {
        * @return bool Returns true if the lat/lon point intercepts the plate, false 
        *              otherwise
        */  
-      virtual bool hasPoint(const Latitude &lat, const Longitude &lon) const = 0;
+      virtual bool hasPoint(NaifContextPtr naif, const Latitude &lat, const Longitude &lon) const = 0;
         
       /**
        * @brief Conpute the intercept point on a triangular plate 
@@ -138,8 +139,9 @@ namespace Isis {
        * @return Intercept* Returns the intercept point if it exists on the 
        *                    triangular plate, otherwise returns a null pointer.
        */
-      virtual Intercept *intercept(const NaifVertex &vertex, 
-                                      const NaifVector &raydir) const = 0;  
+      virtual Intercept *intercept(NaifContextPtr naif,
+                                   const NaifVertex &vertex, 
+                                   const NaifVector &raydir) const = 0;  
 
       /**
        * @brief Determine the intercept point of a lat/lon location for the plate 
@@ -156,7 +158,8 @@ namespace Isis {
        *                       triangle. If an intersection does not exist a null
        *                       pointer is returned.
        */
-      virtual SurfacePoint *point(const Latitude &lat, 
+      virtual SurfacePoint *point(NaifContextPtr naif,
+                                  const Latitude &lat, 
                                   const Longitude &lon) const = 0;
   
       /**

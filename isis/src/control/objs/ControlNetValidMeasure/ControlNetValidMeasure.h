@@ -15,6 +15,7 @@ find files of those names at the top level of this repository. **/
 #include "PvlGroup.h"
 #include "Progress.h"
 #include "SerialNumberList.h"
+#include "NaifContext.h"
 
 /** This is free and unencumbered software released into the public domain.
 
@@ -94,7 +95,7 @@ namespace Isis {
       };
 
       //! Virtual Function to get better references for a Control Network based on Criteria
-      virtual void FindCnetRef(ControlNet &pNewNet) {};
+      virtual void FindCnetRef(NaifContextPtr naif, ControlNet &pNewNet) {};
 
       //! Validate whether the Emission Angle is in the set Range
       bool ValidEmissionAngle(double pdEmissionAngle);
@@ -177,26 +178,26 @@ namespace Isis {
       bool PixelsFromEdge(int piSample, int piLine, Cube *pCube);
 
       //! Test for a point to be user defined number of meters from the edge
-      bool MetersFromEdge(int piSample, int piLine, Cube *pCube);
+      bool MetersFromEdge(NaifContextPtr naif, int piSample, int piLine, Cube *pCube);
 
       //! Validate Standard options to pick a reference based on a particular criteria
-      MeasureValidationResults ValidStandardOptions(const ControlMeasure *pMeasure,
+      MeasureValidationResults ValidStandardOptions(NaifContextPtr naif, const ControlMeasure *pMeasure,
           Cube *pCube, PvlGroup *pMeasureGrp = NULL);
 
       //! Validate Standard options to pick a reference based on a particular criteria
-      MeasureValidationResults ValidStandardOptions(const ControlMeasure *pMeasure,
+      MeasureValidationResults ValidStandardOptions(NaifContextPtr naif, const ControlMeasure *pMeasure,
           Cube *pCube, Camera *camera, PvlGroup *pMeasureGrp = NULL);
 
       //! Validate Standard options to pick a reference based on a particular criteria
-      MeasureValidationResults ValidStandardOptions(double pSample, double pLine,
+      MeasureValidationResults ValidStandardOptions(NaifContextPtr naif, double pSample, double pLine,
           const ControlMeasure *pMeasure, Cube *pCube, PvlGroup *pMeasureGrp = NULL);
 
-      MeasureValidationResults ValidStandardOptions(double pSample, double pLine,
+      MeasureValidationResults ValidStandardOptions(NaifContextPtr naif, double pSample, double pLine,
           const ControlMeasure *pMeasure, Cube *pCube, Camera *measureCamera,
           PvlGroup *pMeasureGrp = NULL);
 
       //! Validate Standard options to pick a reference based on a particular criteria
-      MeasureValidationResults ValidStandardOptions(double pSample, double pLine,
+      MeasureValidationResults ValidStandardOptions(NaifContextPtr naif, double pSample, double pLine,
                                           Cube *pCube, PvlGroup *pMeasureGrp = NULL);
 
       bool IsCubeRequired() {

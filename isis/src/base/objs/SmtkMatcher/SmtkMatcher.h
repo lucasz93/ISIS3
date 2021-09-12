@@ -18,6 +18,7 @@ find files of those names at the top level of this repository. **/
 
 #include "GSLUtility.h"
 #include <gsl/gsl_rng.h>
+#include "NaifContext.h"
 
 
 namespace Isis {
@@ -53,7 +54,7 @@ class SmtkMatcher {
     void setImages(Cube *lhImage, Cube *rhImage);
     void setGruenDef(const QString &regdef);
 
-    bool isValid(const Coordinate &pnt);
+    bool isValid(NaifContextPtr naif, const Coordinate &pnt);
     bool isValid(const SmtkPoint &spnt);
 
     /** Return pattern chip */
@@ -80,16 +81,16 @@ class SmtkMatcher {
     SmtkQStackIter FindExpDistEV(SmtkQStack &stack, const double &seedsample,
                                  const double &minEV, const double &maxEV);
 
-    SmtkPoint Register(const Coordinate &lpnt,
+    SmtkPoint Register(NaifContextPtr naif, const Coordinate &lpnt,
                        const AffineRadio &affrad = AffineRadio());
-    SmtkPoint Register(const PointPair &pnts,
+    SmtkPoint Register(NaifContextPtr naif, const PointPair &pnts,
                        const AffineRadio &affrad = AffineRadio());
-    SmtkPoint Register(const SmtkPoint &spnt,
+    SmtkPoint Register(NaifContextPtr naif, const SmtkPoint &spnt,
                        const AffineRadio &affrad = AffineRadio());
-    SmtkPoint Register(const PointGeometry &lpg, const PointGeometry &rpg,
+    SmtkPoint Register(NaifContextPtr naif, const PointGeometry &lpg, const PointGeometry &rpg,
                        const AffineRadio &affrad  = AffineRadio());
 
-    SmtkPoint Create(const Coordinate &left, const Coordinate &right);
+    SmtkPoint Create(NaifContextPtr naif, const Coordinate &left, const Coordinate &right);
     SmtkPoint Clone(const SmtkPoint &point, const Coordinate &left);
 
     inline BigInt OffImageErrorCount() const { return (m_offImage);  }
@@ -119,12 +120,13 @@ class SmtkMatcher {
     inline Camera &lhCamera() { return (*m_lhCube->camera());   }
     inline Camera &rhCamera() { return (*m_rhCube->camera());   }
 
-    Coordinate getLineSample(Camera &camera, const Coordinate &geom);
-    Coordinate getLatLon(Camera &camera, const Coordinate &pnt);
+    Coordinate getLineSample(NaifContextPtr naif, Camera &camera, const Coordinate &geom);
+    Coordinate getLatLon(NaifContextPtr naif, Camera &camera, const Coordinate &pnt);
 
     bool inCube(const Camera &camera, const Coordinate &point) const;
 
-    SmtkPoint makeRegisteredPoint(const PointGeometry &left,
+    SmtkPoint makeRegisteredPoint(NaifContextPtr naif, 
+                                  const PointGeometry &left,
                                   const PointGeometry &right, Gruen *gruen);
 };
 } // namespace Isis

@@ -222,7 +222,8 @@ namespace Isis {
  * 
  * @return @b bool If an intersection was found and saved.
  */
-  bool BulletShapeModel::intersectSurface(const Latitude &lat, const Longitude &lon,
+  bool BulletShapeModel::intersectSurface(NaifContextPtr naif,
+                                          const Latitude &lat, const Longitude &lon,
                                           const std::vector<double> &observerPos,
                                           const bool &checkOcclusion) {
 
@@ -408,7 +409,8 @@ namespace Isis {
    *                     intersection is found, a default, invalid, Distance
    *                     object is returned.
    */
-  Distance BulletShapeModel::localRadius(const Latitude &lat,
+  Distance BulletShapeModel::localRadius(NaifContextPtr naif,
+                                         const Latitude &lat,
                                          const Longitude &lon) {
 
     // Cast a ray from the origin through the surface point at the input lat/lon

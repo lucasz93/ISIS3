@@ -1915,7 +1915,7 @@ namespace Isis {
    *
    * @param band
    */
-  void CubeViewport::viewGray(int band) {
+  void CubeViewport::viewGray(NaifContextPtr naif, int band) {
     p_gray.band = band;
     p_color = false;
     setCaption();
@@ -1963,7 +1963,7 @@ namespace Isis {
     }
 
     if(p_camera) {
-      p_camera->SetBand(band);
+      p_camera->SetBand(band, naif);
     }
 
     viewport()->repaint();
@@ -1999,7 +1999,7 @@ namespace Isis {
    * @param gband
    * @param bband
    */
-  void CubeViewport::viewRGB(int rband, int gband, int bband) {
+  void CubeViewport::viewRGB(NaifContextPtr naif, int rband, int gband, int bband) {
     p_red.band = rband;
     p_green.band = gband;
     p_blue.band = bband;
@@ -2093,7 +2093,7 @@ namespace Isis {
     p_grayBuffer = NULL;
 
     if(p_camera) {
-      p_camera->SetBand(rband);
+      p_camera->SetBand(rband, naif);
     }
   }
 
