@@ -96,11 +96,11 @@ namespace Isis {
 
       virtual void subSpacecraftPoint(double &lat, double &lon, NaifContextPtr naif) override;
       virtual void subSpacecraftPoint(double &lat, double &lon, double line, double sample);
-      virtual void subSolarPoint(double &lat, double &lon, NaifContextPtr naif);
+      virtual void subSolarPoint(double &lat, double &lon, NaifContextPtr naif) override;
 
-      virtual double PhaseAngle(NaifContextPtr naif) const;
-      virtual double EmissionAngle(NaifContextPtr naif) const;
-      virtual double IncidenceAngle() const;
+      virtual double PhaseAngle(NaifContextPtr naif) const override;
+      virtual double EmissionAngle(NaifContextPtr naif) const override;
+      virtual double IncidenceAngle(NaifContextPtr naif) const override;
 
       virtual SpicePosition *sunPosition() const;
       virtual SpicePosition *instrumentPosition() const;
@@ -111,11 +111,11 @@ namespace Isis {
       virtual void sunPosition(double p[3], NaifContextPtr naif) const override;
       virtual double SolarDistance() const;
 
-      virtual double SlantDistance(NaifContextPtr naif) const;
+      virtual double SlantDistance(NaifContextPtr naif) const override;
       virtual double targetCenterDistance(NaifContextPtr naif) const override;
 
-      virtual double RightAscension(NaifContextPtr naif);
-      virtual double Declination(NaifContextPtr naif);
+      virtual double RightAscension(NaifContextPtr naif) override;
+      virtual double Declination(NaifContextPtr naif) override;
 
       std::vector<int> getParameterIndices(csm::param::Set paramSet) const;
       std::vector<int> getParameterIndices(csm::param::Type paramType) const;

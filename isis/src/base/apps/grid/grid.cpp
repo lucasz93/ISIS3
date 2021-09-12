@@ -40,6 +40,8 @@ namespace Isis {
   }
 
   void grid(Cube *icube, UserInterface &ui) {
+    auto naif = NaifContext::acquire();
+    
     // We will be processing by line
     ProcessByLine p;
     p.SetInputCube(icube);
@@ -301,7 +303,7 @@ namespace Isis {
 
       bool walkBoundary = false;
       if (ui.GetBoolean("BOUNDARY")) {
-        latLonGrid->WalkBoundary();
+        latLonGrid->WalkBoundary(naif);
         walkBoundary = true;
       }
 
@@ -499,7 +501,7 @@ namespace Isis {
     latLonGrid->CreateGrid(baseLat, baseLon, latInc, lonInc, &progress);
 
     if (walkBoundary) {
-      latLonGrid->WalkBoundary();
+      latLonGrid->WalkBoundary(naif);
     }
   }
 

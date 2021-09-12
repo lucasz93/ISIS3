@@ -19,7 +19,10 @@ using namespace Isis;
 
 int main() {
   try {
-    Isis::Preference::Preferences(true);
+    Preference::Preferences(true);
+    NaifContextLifecycle naif_lifecycle;
+    auto naif = NaifContext::acquire();
+
     PvlGroup op("Operator");
     op += PvlKeyword("Name", "Forstner");
     op += PvlKeyword("DeltaLine", "100");
@@ -51,7 +54,7 @@ int main() {
 
     //iop->Operate(c, 100, 350);
     UniversalGroundMap univGrndMap(c);
-    iop->Operate(c,  univGrndMap, 100, 350);
+    iop->Operate(naif, c,  univGrndMap, 100, 350);
 
     std::cout << "Sample: " << iop->CubeSample() << std::endl
               << "Line : " << iop->CubeLine() << std::endl

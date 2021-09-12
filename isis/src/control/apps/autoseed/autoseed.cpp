@@ -292,7 +292,7 @@ namespace Isis {
           mp = PolygonTools::LatLonToXY(*polygonOverlaps, proj);
         }
         else if (seedDomain == SampleLine) {
-          mp = PolygonTools::LatLonToSampleLine(*polygonOverlaps, ugmap);
+          mp = PolygonTools::LatLonToSampleLine(naif, *polygonOverlaps, ugmap);
         }
         points = seeder->Seed(mp);
       }
@@ -394,8 +394,8 @@ namespace Isis {
               gmap->Camera()->EmissionAngle(naif) > maxEmission) {
             ignore = true;
           }
-          if (gmap->Camera()->IncidenceAngle() < minIncidence ||
-              gmap->Camera()->IncidenceAngle() > maxIncidence) {
+          if (gmap->Camera()->IncidenceAngle(naif) < minIncidence ||
+              gmap->Camera()->IncidenceAngle(naif) > maxIncidence) {
             ignore = true;
           }
 
@@ -414,7 +414,7 @@ namespace Isis {
 
           // Check the Resolution with the camera from the gmap
           if (gmap->Resolution(naif) < minResolution ||
-              (maxResolution > 0.0 && gmap->Resolution() > maxResolution)) {
+              (maxResolution > 0.0 && gmap->Resolution(naif) > maxResolution)) {
             ignore = true;
           }
 

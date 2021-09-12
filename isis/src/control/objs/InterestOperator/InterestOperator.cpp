@@ -690,7 +690,7 @@ namespace Isis {
           // this image
           if (mbOverlaps) {
             UniversalGroundMap unvGround = UniversalGroundMap(*inCube);
-            geos::geom::MultiPolygon *poly = PolygonTools::LatLonToSampleLine(*overlapPoly,
+            geos::geom::MultiPolygon *poly = PolygonTools::LatLonToSampleLine(naif, *overlapPoly,
                                                                               &unvGround);
             SetClipPolygon(*poly);
             delete poly;
@@ -819,7 +819,7 @@ namespace Isis {
         mtInterestResults[piMeasure].mdOrigSample = iOrigSample;
         mtInterestResults[piMeasure].mdOrigLine   = iOrigLine;
         mtInterestResults[piMeasure].mdEmission   = camera->EmissionAngle(naif);
-        mtInterestResults[piMeasure].mdIncidence  = camera->IncidenceAngle();
+        mtInterestResults[piMeasure].mdIncidence  = camera->IncidenceAngle(naif);
         mtInterestResults[piMeasure].mdDn         = inPortal[0];
         mtInterestResults[piMeasure].mdResolution = camera->PixelResolution(naif);
         mtInterestResults[piMeasure].mbValid      = false;

@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
            << spi.LocalRadius().meters() << endl;
       cerr << "Phase               = " << spi.PhaseAngle() << endl;
       cerr << "Emission            = " << spi.EmissionAngle() << endl;
-      cerr << "Incidence           = " << spi.IncidenceAngle() << endl;
+      cerr << "Incidence           = " << spi.IncidenceAngle(naif) << endl;
       spi.LookDirection(p);
       cerr << "Look Direction      = " << p[0] << " " << p[1] << " " << p[2]
            << endl;
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     cerr << "Local Radius        = " << spi.LocalRadius().meters() << endl;
     cerr << "Phase               = " << spi.PhaseAngle() << endl;
     cerr << "Emission            = " << spi.EmissionAngle() << endl;
-    cerr << "Incidence           = " << spi.IncidenceAngle() << endl;
+    cerr << "Incidence           = " << spi.IncidenceAngle(naif) << endl;
     spi.LookDirection(p);
     cerr << "Look Direction      = " << p[0] << " " << p[1] << " " << p[2]
          << endl;
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
     cerr << "Local Radius        = " << spi.LocalRadius().meters() << endl;
     cerr << "Phase               = " << spi.PhaseAngle() << endl;
     cerr << "Emission            = " << spi.EmissionAngle() << endl;
-    cerr << "Incidence           = " << spi.IncidenceAngle() << endl;
+    cerr << "Incidence           = " << spi.IncidenceAngle(naif) << endl;
     spi.LookDirection(p);
     cerr << "Look Direction      = " << p[0] << " " << p[1] << " " << p[2]
          << endl;
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
       cerr << "Local Radius        = " << spi2.LocalRadius().meters() << endl;
       cerr << "Phase               = " << spi2.PhaseAngle() << endl;
       cerr << "Emission            = " << spi2.EmissionAngle() << endl;
-      cerr << "Incidence           = " << spi2.IncidenceAngle() << endl;
+      cerr << "Incidence           = " << spi2.IncidenceAngle(naif) << endl;
       spi2.LookDirection(p);
       cerr << "Look Direction      = " << p[0] << " " << p[1] << " " << p[2]
            << endl;
@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
     cerr << "Local Radius        = " << spi2.LocalRadius().meters() << endl;
     cerr << "Phase               = " << spi2.PhaseAngle() << endl;
     cerr << "Emission            = " << spi2.EmissionAngle() << endl;
-    cerr << "Incidence           = " << spi2.IncidenceAngle() << endl;
+    cerr << "Incidence           = " << spi2.IncidenceAngle(naif) << endl;
     spi2.LookDirection(p);
     cerr << "Look Direction      = " << p[0] << " " << p[1] << " " << p[2]
          << endl;
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     cerr << "Local Radius        = " << spi2.LocalRadius().meters() << endl;
     cerr << "Phase               = " << spi2.PhaseAngle() << endl;
     cerr << "Emission            = " << spi2.EmissionAngle() << endl;
-    cerr << "Incidence           = " << spi2.IncidenceAngle() << endl;
+    cerr << "Incidence           = " << spi2.IncidenceAngle(naif) << endl;
     spi2.LookDirection(p);
     cerr << "Look Direction      = " << p[0] << " " << p[1] << " " << p[2]
          << endl;

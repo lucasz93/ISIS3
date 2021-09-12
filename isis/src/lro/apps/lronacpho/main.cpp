@@ -49,6 +49,7 @@ void IsisMain (){
   Cube *oCube = p.SetOutputCube("TO");
   // Set up the user interface
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
   // Backplane option
   bool useBackplane = false;
 
@@ -90,7 +91,7 @@ void IsisMain (){
 
   // Use generic NAC algorithm
   if (algoName == "LROC_EMPIRICAL") {
-    g_pho = new LROCEmpirical(params, *iCube, !useBackplane);
+    g_pho = new LROCEmpirical(naif, params, *iCube, !useBackplane);
   }
   else {
     string msg = " Algorithm Name [" + algoName + "] not recognized. ";
@@ -140,6 +141,8 @@ void IsisMain (){
  * @param out Buffer of photometrically corrected data
  */
 void phoCal(Buffer &in, Buffer &out){
+  auto naif = NaifContext::acquire();
+  
   // Iterate through pixels
   for(int i = 0; i < in.size(); i++){
     // Ignore special pixels
@@ -148,7 +151,7 @@ void phoCal(Buffer &in, Buffer &out){
     }
     else{
       // Get correction and test for validity
-      double ph = g_pho->compute(in.Line(i), in.Sample(i), in.Band(i), g_useDEM);
+      double ph = g_pho->compute(naif, in.Line(i), in.Sample(i), in.Band(i), g_useDEM);
       out[i] = ( IsSpecial(ph) ? Null : (in[i] * ph) );
     }
   }
@@ -177,6 +180,8 @@ void phoCalWithBackplane ( std::vector<Isis::Buffer *> &in, std::vector<Isis::Bu
   Buffer &incidence = *in[3];
   Buffer &calibrated = *out[0];
 
+  auto naif = NaifContext::acquire();
+
   for (int i = 0; i < image.size(); i++) {
     //  Don't correct special pixels
     if (IsSpecial(image[i])) {
@@ -184,7 +189,7 @@ void phoCalWithBackplane ( std::vector<Isis::Buffer *> &in, std::vector<Isis::Bu
     }
     else {
     // Get correction and test for validity
-      double ph = g_pho->photometry(incidence[i], emission[i], phase[i], image.Band(i));
+      double ph = g_pho->photometry(naif, incidence[i], emission[i], phase[i], image.Band(i));
       calibrated[i] = (IsSpecial(ph) ? Null : image[i] * ph);
     }
   }

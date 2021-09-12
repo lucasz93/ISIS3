@@ -310,21 +310,21 @@ namespace Isis {
             isGood = proj->SetWorld(samp, line);
           }
           else {
-            isGood = cam->SetImage(samp, line);
+            isGood = cam->SetImage(samp, line, naif);
           }
 
           if (isGood) {
 
             if (phase) {
-              out[index] = cam->PhaseAngle();
+              out[index] = cam->PhaseAngle(naif);
               index += 64 * 64;
             }
             if (emission) {
-              out[index] = cam->EmissionAngle();
+              out[index] = cam->EmissionAngle(naif);
               index += 64 * 64;
             }
             if (incidence) {
-              out[index] = cam->IncidenceAngle();
+              out[index] = cam->IncidenceAngle(naif);
               index += 64 * 64;
             }
             if (localEmission || localIncidence) {
@@ -543,8 +543,8 @@ namespace Isis {
     bool mysuccess;
     camera.LocalPhotometricAngles(myphase, myincidence, myemission, mysuccess);
     if (!mysuccess) {
-      myemission.setDegrees(camera.EmissionAngle());
-      myincidence.setDegrees(camera.IncidenceAngle());
+      myemission.setDegrees(camera.EmissionAngle(naif));
+      myincidence.setDegrees(camera.IncidenceAngle(naif));
     }
     double res = camera.PixelResolution();
     if (fabs(res) < Epsilon) res = Epsilon;

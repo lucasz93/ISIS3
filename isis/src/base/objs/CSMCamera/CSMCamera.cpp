@@ -775,7 +775,7 @@ namespace Isis {
    *
    * @returns @b double The incidence angle in degrees
    */
-  double CSMCamera::IncidenceAngle() const {
+  double CSMCamera::IncidenceAngle(NaifContextPtr naif) const {
     csm::EcefCoord groundPt = isisToCsmGround(GetSurfacePoint());
     csm::EcefVector sunEcefVec = m_model->getIlluminationDirection(groundPt);
     // ISIS wants the position of the sun, not just the vector from the ground

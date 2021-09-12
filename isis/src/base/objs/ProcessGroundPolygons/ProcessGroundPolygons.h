@@ -13,6 +13,7 @@ find files of those names at the top level of this repository. **/
 #include "FileName.h"
 #include "ProcessPolygons.h"
 #include "UniversalGroundMap.h"
+#include "NaifContext.h"
 
 namespace Isis {
   /**
@@ -66,11 +67,13 @@ namespace Isis {
       void AppendOutputCube(QString &cube, const QString &avgFileName,
                             const QString &countFileName = "");
 
-      void Rasterize(std::vector<double> &lat,
+      void Rasterize(NaifContextPtr naif,
+                     std::vector<double> &lat,
                      std::vector<double> &lon,
                      std::vector<double> &values);
 
-      void Rasterize(std::vector<double> &lat,
+      void Rasterize(NaifContextPtr naif,
+                     std::vector<double> &lat,
                      std::vector<double> &lon,
                      int &band, double &value);
 
@@ -81,7 +84,7 @@ namespace Isis {
       };
 
     private:
-      void Convert(std::vector<double> &lat, std::vector<double> &lon);
+      void Convert(NaifContextPtr naif, std::vector<double> &lat, std::vector<double> &lon);
       UniversalGroundMap *p_groundMap;
       std::vector<double> p_samples, p_lines;
 

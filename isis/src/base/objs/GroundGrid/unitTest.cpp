@@ -63,7 +63,7 @@ void IsisMain() {
 
   cout << endl;
 
-  grid.WalkBoundary();
+  grid.WalkBoundary(naif);
 
   cout << "\n\nGrid cutout with boundary walk: \n" << endl;
 

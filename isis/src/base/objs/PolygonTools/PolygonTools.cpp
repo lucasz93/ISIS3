@@ -242,7 +242,7 @@ namespace Isis {
    * @return  Returns a multipolygon which is the result of converting the input
    *          multipolygon from (Lon,Lat) to (Sample,Line).
    */
-  geos::geom::MultiPolygon *PolygonTools::LatLonToSampleLine(
+  geos::geom::MultiPolygon *PolygonTools::LatLonToSampleLine(NaifContextPtr naif,
     const geos::geom::MultiPolygon &lonLatPolygon, UniversalGroundMap *ugm) {
 
     if(ugm == NULL) {
@@ -272,7 +272,8 @@ namespace Isis {
 
           // Convert each coordinate in this hole
           for(unsigned int cord = 0; cord < llcoords->getSize(); ++cord) {
-            ugm->SetUniversalGround(llcoords->getAt(cord).y,
+            ugm->SetUniversalGround(naif,
+                                    llcoords->getAt(cord).y,
                                     llcoords->getAt(cord).x);
             slcoords->add(geos::geom::Coordinate(ugm->Sample(),
                                                  ugm->Line()));
@@ -289,7 +290,8 @@ namespace Isis {
 
         // Convert each coordinate in the exterior ring of this polygon
         for(unsigned int cord = 0; cord < llcoords->getSize(); ++cord) {
-          if (ugm->SetUniversalGround(llcoords->getAt(cord).y,
+          if (ugm->SetUniversalGround(naif,
+                                      llcoords->getAt(cord).y,
                                       llcoords->getAt(cord).x)) {
             slcoords->add(geos::geom::Coordinate(ugm->Sample(),
                                                 ugm->Line()));

@@ -23,8 +23,8 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
-void testCamera(Cube &c, double knownLat, double knownLon);
-void testLineSamp(Camera *cam, double sample, double line);
+void testCamera(NaifContextPtr naif, Cube &c, double knownLat, double knownLon);
+void testLineSamp(Camera *cam, double sample, double line, NaifContextPtr naif);
 
 /**
  * Unit Test for the Hayabusa2 ONC camera.
@@ -36,6 +36,8 @@ void testLineSamp(Camera *cam, double sample, double line);
  */
 int main(void) {
   Preference::Preferences(true);
+  NaifContextLifecycle naif_lifecycle;
+  auto naif = NaifContext::acquire();
 
   qDebug() << "Unit Test for Hyb2OncCamera...";
   try {
@@ -48,7 +50,7 @@ int main(void) {
     double knownLat = -54.63487131147738;
     double knownLon = 40.43436155430055;
     Cube c("$ISISTESTDATA/isis/src/hayabusa2/unitTestData/hyb2_onc_20151204_041012_tbf_l2a.fit.cub", "r");
-    testCamera(c, knownLat, knownLon);
+    testCamera(naif, c, knownLat, knownLon);
 
     qDebug() << "";
     qDebug() << "----------------------------------------------";
@@ -56,7 +58,7 @@ int main(void) {
     knownLat = -50.11857108654684;
     knownLon = 91.03535388676204;
     Cube w1("$ISISTESTDATA/isis/src/hayabusa2/unitTestData/hyb2_onc_20151204_045429_w1f_l2a.fit_crop.cub", "r");
-    testCamera(w1, knownLat, knownLon);
+    testCamera(naif, w1, knownLat, knownLon);
 
     qDebug() << "";
     qDebug() << "----------------------------------------------";
@@ -64,7 +66,7 @@ int main(void) {
     knownLat = 25.38911363842043;
     knownLon = 90.86547761107917;
     Cube w2("$ISISTESTDATA/isis/src/hayabusa2/unitTestData/hyb2_onc_20151203_072958_w2f_l2a.fit_crop.cub", "r");
-    testCamera(w2, knownLat, knownLon);
+    testCamera(naif, w2, knownLat, knownLon);
 
   }
   catch(IException &e) {
@@ -74,7 +76,7 @@ int main(void) {
 }
 
 
-void testCamera(Cube &c, double knownLat, double knownLon) {
+void testCamera(NaifContextPtr naif, Cube &c, double knownLat, double knownLon) {
   Hyb2OncCamera *cam = (Hyb2OncCamera *) CameraFactory::Create(c);
   qDebug() << "FileName: " << FileName(c.fileName()).name();
   qDebug() << "CK Frame: " << cam->instrumentRotation()->Frame();
@@ -100,7 +102,7 @@ void testCamera(Cube &c, double knownLat, double knownLon) {
   double exposureDuration = ((double) inst["ExposureDuration"])/1000;
   QString stime = inst["StartTime"];
   double et; // StartTime keyword is the center exposure time
-  str2et_c(stime.toLatin1().data(), &et);
+  naif->str2et_c(stime.toLatin1().data(), &et);
   pair <iTime, iTime> shuttertimes = cam->ShutterOpenCloseTimes(et, exposureDuration);
   qDebug() << "Shutter open  = " << toString(shuttertimes.first.Et(), 16);
   qDebug() << "Shutter close = " << toString(shuttertimes.second.Et(), 16);
@@ -108,20 +110,20 @@ void testCamera(Cube &c, double knownLat, double knownLon) {
 
   // Test all four corners to make sure the conversions are right
   qDebug() << "For upper left corner ...";
-  testLineSamp(cam, 1.0, 1.0);
+  testLineSamp(cam, 1.0, 1.0, naif);
 
   qDebug() << "For upper right corner ...";
-  testLineSamp(cam, cam->Samples(), 1.0);
+  testLineSamp(cam, cam->Samples(), 1.0, naif);
 
   qDebug() << "For lower left corner ...";
-  testLineSamp(cam, 1.0, cam->Lines());
+  testLineSamp(cam, 1.0, cam->Lines(), naif);
 
   qDebug() << "For lower right corner ...";
-  testLineSamp(cam, cam->Samples(), cam->Lines());
+  testLineSamp(cam, cam->Samples(), cam->Lines(), naif);
 
   qDebug() << "For center pixel position ...";
 
-  if(!cam->SetImage((cam->Samples()/2.0), (cam->Lines()/2.0))) {
+  if(!cam->SetImage((cam->Samples()/2.0), (cam->Lines()/2.0), naif)) {
     throw IException(IException::Unknown, "ERROR setting image to known position.", _FILEINFO_);
   }
 
@@ -139,15 +141,15 @@ void testCamera(Cube &c, double knownLat, double knownLon) {
     qDebug() << "Longitude off by: " << toString(cam->UniversalLongitude() - knownLon, 16);
   }
 
-  testLineSamp( cam, (cam->Samples()/2.0), (cam->Lines()/2.0) );
+  testLineSamp( cam, (cam->Samples()/2.0), (cam->Lines()/2.0), naif );
 }
 
 
-void testLineSamp(Camera *cam, double sample, double line) {
-  bool success = cam->SetImage(sample, line);
+void testLineSamp(Camera *cam, double sample, double line, NaifContextPtr naif) {
+  bool success = cam->SetImage(sample, line, naif);
 
   if(success) {
-    success = cam->SetUniversalGround(cam->UniversalLatitude(), cam->UniversalLongitude());
+    success = cam->SetUniversalGround(naif, cam->UniversalLatitude(), cam->UniversalLongitude());
   }
 
   if(success) {
