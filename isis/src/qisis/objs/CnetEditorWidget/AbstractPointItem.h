@@ -10,7 +10,7 @@ find files of those names at the top level of this repository. **/
 /* SPDX-License-Identifier: CC0-1.0 */
 
 #include "AbstractTreeItem.h"
-
+#include "NaifContext.h"
 
 class QString;
 class QVariant;
@@ -97,11 +97,11 @@ namespace Isis {
       AbstractPointItem(const AbstractPointItem &other);
       const AbstractPointItem &operator=(const AbstractPointItem &other);
 
-      SurfacePoint prepareSigmas(Distance, SurfacePoint);
-      SurfacePoint prepareSurfacePoint(Latitude, SurfacePoint);
-      SurfacePoint prepareSurfacePoint(Longitude, SurfacePoint);
-      SurfacePoint prepareSurfacePoint(Distance, SurfacePoint);
-      SurfacePoint prepareSurfacePoint(SurfacePoint);
+      SurfacePoint prepareSigmas(NaifContextPtr, Distance, SurfacePoint);
+      SurfacePoint prepareSurfacePoint(NaifContextPtr, Latitude, SurfacePoint);
+      SurfacePoint prepareSurfacePoint(NaifContextPtr, Longitude, SurfacePoint);
+      SurfacePoint prepareSurfacePoint(NaifContextPtr, Distance, SurfacePoint);
+      SurfacePoint prepareSurfacePoint(NaifContextPtr, SurfacePoint);
 
 
     private:

@@ -211,8 +211,9 @@ namespace Isis {
     }
     else if (s == Qt::RightButton) {
 
+      auto naif = NaifContext::acquire();
       UniversalGroundMap *gmap = cvp->universalGroundMap();
-      if (!gmap->SetImage(samp,line)) {
+      if (!gmap->SetImage(samp,line,naif)) {
         QString message = "Invalid latitude or longitude at this point. ";
         QMessageBox::critical(NULL, "Error", message);
         return;
@@ -399,6 +400,7 @@ namespace Isis {
       currentEditPoint = m_directory->controlPointEditView()->controlPointEditWidget()->editPoint();
     }
 
+    auto naif = NaifContext::acquire();
 
     // loop through control network looking for fixed and constrained points
     for (int i = 0; i < m_controlNet->GetNumPoints(); i++) {
@@ -407,7 +409,8 @@ namespace Isis {
       if (!p.HasAprioriCoordinates()) continue;
 
       // Find the sample, line location on the ground image
-      if (groundMap->SetGround(p.GetAprioriSurfacePoint().GetLatitude(),
+      if (groundMap->SetGround(naif,
+                               p.GetAprioriSurfacePoint().GetLatitude(),
                                p.GetAprioriSurfacePoint().GetLongitude())) {
         double samp = groundMap->Sample();
         double line = groundMap->Line();

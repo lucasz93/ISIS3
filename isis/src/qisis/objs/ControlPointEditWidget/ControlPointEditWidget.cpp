@@ -583,7 +583,10 @@ namespace Isis {
    */
   void ControlPointEditWidget::setShapesForPoint(double latitude, double longitude) {
 
+    auto naif = NaifContext::acquire();
+    
     if (latitude == Null || longitude == Null) {
+      
       //  Use current editPoint to get latitude, longitude.
       // Use apriori surface point to find location on ground source.  If
       // apriori surface point does not exist use reference measure
@@ -597,7 +600,7 @@ namespace Isis {
         int camIndex = m_serialNumberList->serialNumberIndex(m.GetCubeSerialNumber());
         Camera *cam;
         cam = m_controlNet->Camera(camIndex);
-        cam->SetImage(m.GetSample(),m.GetLine());
+        cam->SetImage(m.GetSample(),m.GetLine(), naif);
         latitude = cam->UniversalLatitude();
         longitude = cam->UniversalLongitude();
       }
@@ -615,7 +618,7 @@ namespace Isis {
     foreach (ShapeList *shapeList, shapeLists) {
       foreach (Shape *shape, *shapeList) {
         UniversalGroundMap *gmap = new UniversalGroundMap(*(shape->cube()));
-        if (gmap->SetUniversalGround(latitude, longitude)) {
+        if (gmap->SetUniversalGround(naif, latitude, longitude)) {
           m_projectShapeNames<<shape->fileName();
         }
         else {
@@ -756,6 +759,7 @@ namespace Isis {
   ControlMeasure *ControlPointEditWidget::createTemporaryGroundMeasure() {
 
     ControlMeasure *groundMeasure = NULL;
+    auto naif = NaifContext::acquire();
 
     //  Try to set ground source file information.  If unsuccessful, return null ground measure
     if (!setGroundSourceInfo()) {
@@ -776,13 +780,13 @@ namespace Isis {
       int camIndex = m_serialNumberList->serialNumberIndex(m.GetCubeSerialNumber());
       Camera *cam;
       cam = m_controlNet->Camera(camIndex);
-      cam->SetImage(m.GetSample(),m.GetLine());
+      cam->SetImage(m.GetSample(),m.GetLine(), naif);
       lat = cam->UniversalLatitude();
       lon = cam->UniversalLongitude();
     }
 
     //  Try to locate point position on current ground source,
-    if (!m_groundGmap->SetUniversalGround(lat,lon)) {
+    if (!m_groundGmap->SetUniversalGround(naif,lat,lon)) {
       QString message = "This point does not exist on the ground source.\n";
       message += "Latitude = " + QString::number(lat);
       message += "  Longitude = " + QString::number(lon);
@@ -1072,7 +1076,8 @@ namespace Isis {
     if (!m_demOpen) return Null;
 
     UniversalGroundMap *demMap = new UniversalGroundMap(*m_demCube);
-    if (!demMap->SetUniversalGround(latitude, longitude)) {
+    auto naif = NaifContext::acquire();
+    if (!demMap->SetUniversalGround(naif, latitude, longitude)) {
       delete demMap;
       demMap = NULL;
       return Null;
@@ -1461,11 +1466,12 @@ namespace Isis {
     //  contain the point.
     QStringList pointFiles;
 
+    auto naif = NaifContext::acquire();
     Camera *cam;
     for (int i = 0; i < m_serialNumberList->size(); i++) {
       if (m_serialNumberList->serialNumber(i) == m_groundSN) continue;
       cam = m_controlNet->Camera(i);
-      if (cam->SetUniversalGround(latitude, longitude)) {
+      if (cam->SetUniversalGround(naif, latitude, longitude)) {
         //  Make sure point is within image boundary
         double samp = cam->Sample();
         double line = cam->Line();
@@ -1528,7 +1534,7 @@ namespace Isis {
         m->SetCubeSerialNumber(sn);
         int camIndex = m_serialNumberList->fileNameIndex(selectedFile);
         cam = m_controlNet->Camera(camIndex);
-        cam->SetUniversalGround(latitude, longitude);
+        cam->SetUniversalGround(naif, latitude, longitude);
         m->SetCoordinate(cam->Sample(),cam->Line());
         m->SetAprioriSample(cam->Sample());
         m->SetAprioriLine(cam->Line());
@@ -2044,6 +2050,8 @@ namespace Isis {
   */
   void ControlPointEditWidget::updateGroundPosition() {
 
+    auto naif = NaifContext::acquire();
+    
     //  Determine if the left or right measure is the ground.  Use ground measure to update
     //  apriori surface point.
     ControlMeasure *groundMeasure;
@@ -2053,7 +2061,7 @@ namespace Isis {
     else {
       groundMeasure = m_rightMeasure;
     }
-    m_groundGmap->SetImage(groundMeasure->GetSample(), groundMeasure->GetLine());
+    m_groundGmap->SetImage(groundMeasure->GetSample(), groundMeasure->GetLine(), naif);
 
     double lat = m_groundGmap->UniversalLatitude();
     double lon = m_groundGmap->UniversalLongitude();
@@ -2095,7 +2103,8 @@ namespace Isis {
         QString msg = "Could not read radius from DEM, will default to "
           "local radius of reference measure.";
         QMessageBox::warning(this, "Warning", msg);
-        if (m_editPoint->GetRefMeasure()->Camera()->SetGround(Latitude(lat, Angle::Degrees),
+        if (m_editPoint->GetRefMeasure()->Camera()->SetGround(naif,
+                                                              Latitude(lat, Angle::Degrees),
                                                               Longitude(lon, Angle::Degrees))) {
           radius = m_editPoint->GetRefMeasure()->Camera()->LocalRadius().meters();
           //  TODO  Should this be set here, this is probably not working as intended since it is
@@ -2115,7 +2124,8 @@ namespace Isis {
     }
     else {
       //  Get radius from reference image
-      if (m_editPoint->GetRefMeasure()->Camera()->SetGround(Latitude(lat, Angle::Degrees),
+      if (m_editPoint->GetRefMeasure()->Camera()->SetGround(naif,
+                                                            Latitude(lat, Angle::Degrees),
                                                             Longitude(lon, Angle::Degrees))) {
         radius = m_editPoint->GetRefMeasure()->Camera()->LocalRadius().meters();
       }
@@ -2137,14 +2147,15 @@ namespace Isis {
         Distance latSigma = aprioriPt.GetLatSigmaDistance();
         Distance lonSigma = aprioriPt.GetLonSigmaDistance();
         Distance radiusSigma = aprioriPt.GetLocalRadiusSigma();
-        aprioriPt.SetSphericalCoordinates(Latitude(lat, Angle::Degrees),
+        aprioriPt.SetSphericalCoordinates(naif,
+                                          Latitude(lat, Angle::Degrees),
                                           Longitude(lon, Angle::Degrees),
                                           Distance(radius, Distance::Meters));
-        aprioriPt.SetSphericalSigmasDistance(latSigma, lonSigma, radiusSigma);
+        aprioriPt.SetSphericalSigmasDistance(naif, latSigma, lonSigma, radiusSigma);
         m_editPoint->SetAprioriSurfacePoint(aprioriPt);
       }
       else {
-        m_editPoint->SetAprioriSurfacePoint(SurfacePoint(
+        m_editPoint->SetAprioriSurfacePoint(SurfacePoint(naif,
                                         Latitude(lat, Angle::Degrees),
                                         Longitude(lon, Angle::Degrees),
                                         Distance(radius, Distance::Meters)));

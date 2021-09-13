@@ -95,7 +95,8 @@ TEST(Spiceinit, TestSpiceinitPredictAndReconCk) {
 
   QVector<QString> args = {"ckrecon=True", "cksmithed=True", "attach=false"};
   UserInterface options(APP_XML, args);
-  spiceinit(&testCube, options);
+  auto naif = NaifContext::acquire();
+  spiceinit(naif, &testCube, options);
 
   PvlGroup kernels = testCube.group("Kernels");
   ASSERT_TRUE(kernels.hasKeyword("InstrumentPointing"));
@@ -186,7 +187,8 @@ TEST(Spiceinit, TestSpiceinitCkConfigFile) {
 
   QVector<QString> args(0);
   UserInterface options(APP_XML, args);
-  spiceinit(&testCube, options);
+  auto naif = NaifContext::acquire();
+  spiceinit(naif, &testCube, options);
 
   PvlGroup kernels = testCube.group("Kernels");
   ASSERT_TRUE(kernels.hasKeyword("InstrumentPointing"));
@@ -304,7 +306,8 @@ TEST(Spiceinit, TestSpiceinitDefault) {
 
   QVector<QString> args(0);
   UserInterface options(APP_XML, args);
-  spiceinit(&testCube, options);
+  auto naif = NaifContext::acquire();
+  spiceinit(naif, &testCube, options);
 
   PvlGroup kernels = testCube.group("Kernels");
 
@@ -322,7 +325,7 @@ TEST(Spiceinit, TestSpiceinitDefault) {
   EXPECT_TRUE(kernels.hasKeyword("InstrumentPointingQuality"));
   EXPECT_TRUE(kernels.hasKeyword("CameraVersion"));
 
-  spiceinit(&testCube, options);
+  spiceinit(naif, &testCube, options);
 
   PvlGroup secondKernels = testCube.group("Kernels");
 
@@ -410,8 +413,9 @@ TEST(Spiceinit, TestSpiceinitNadir) {
 
   QVector<QString> args = {"cknadir=True", "tspk=$base/kernels/spk/de405.bsp", "attach=false"};
   UserInterface options(APP_XML, args);
+  auto naif = NaifContext::acquire();
 
-  spiceinit(&testCube, options);
+  spiceinit(naif, &testCube, options);
 
   PvlGroup kernels = testCube.group("Kernels");
 
@@ -509,8 +513,9 @@ TEST(Spiceinit, TestSpiceinitPadding) {
 
   QVector<QString> args = {"startpad=1.1", "endpad=0.5", "fk=$cassini/kernels/fk/cas_v40_usgs.tf", "attach=false"};
   UserInterface options(APP_XML, args);
+  auto naif = NaifContext::acquire();
 
-  spiceinit(&testCube, options);
+  spiceinit(naif, &testCube, options);
 
   PvlGroup kernels = testCube.group("Kernels");
 

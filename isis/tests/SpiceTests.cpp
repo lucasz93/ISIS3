@@ -168,6 +168,7 @@ class ConstVelIsd : public ::testing::Test {
 
 TEST_F(ConstVelIsd, TestSpiceFromIsd) {
   Spice testSpice(isisLabel, constVelIsdStr);
+<<<<<<< HEAD
   testSpice.setTime(100);
 
   EXPECT_DOUBLE_EQ(testSpice.time().Et(), 100);
@@ -176,11 +177,23 @@ TEST_F(ConstVelIsd, TestSpiceFromIsd) {
   EXPECT_STREQ(testSpice.getString("FRAME_-85600_NAME").toStdString().c_str(), "LRO_LROCNACL");
   EXPECT_EQ(testSpice.getInteger("INS-85600_CK_FRAME_ID"), -85000);
 
+=======
+  auto naif = NaifContext::acquire();
+  testSpice.setTime(100, naif); 
+  
+  EXPECT_DOUBLE_EQ(testSpice.time().Et(), 100);
+
+  EXPECT_DOUBLE_EQ(testSpice.getDouble(naif, "INS-85600_FOCAL_LENGTH"), 699.62);
+  EXPECT_STREQ(testSpice.getString(naif, "FRAME_-85600_NAME").toStdString().c_str(), "LRO_LROCNACL");
+  EXPECT_EQ(testSpice.getInteger(naif, "INS-85600_CK_FRAME_ID"), -85000);
+  
+>>>>>>> Conversions
   Distance radii[3];
   testSpice.radii(radii);
   EXPECT_DOUBLE_EQ(radii[0].kilometers(), 1000);
   EXPECT_DOUBLE_EQ(radii[1].kilometers(), 2000);
   EXPECT_DOUBLE_EQ(radii[2].kilometers(), 3000);
+<<<<<<< HEAD
 
   EXPECT_DOUBLE_EQ(testSpice.solarLongitude().positiveEast(), 3.1415926535897931);
 
@@ -189,4 +202,15 @@ TEST_F(ConstVelIsd, TestSpiceFromIsd) {
 TEST_F(ConstVelIsd, SunToBodyDist) {
   Spice testSpice(isisLabel, constVelIsdStr);
   EXPECT_DOUBLE_EQ(testSpice.sunToBodyDist(), 20);
+=======
+  
+  EXPECT_DOUBLE_EQ(testSpice.solarLongitude(naif).positiveEast(), 3.1415926535897931);
+  
+}
+
+TEST_F(ConstVelIsd, SunToBodyDist) {   
+  auto naif = NaifContext::acquire();
+  Spice testSpice(isisLabel, constVelIsdStr); 
+  EXPECT_DOUBLE_EQ(testSpice.sunToBodyDist(naif), 20);
+>>>>>>> Conversions
 }

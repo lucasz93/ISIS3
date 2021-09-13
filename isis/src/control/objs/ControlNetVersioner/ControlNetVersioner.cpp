@@ -1345,6 +1345,7 @@ namespace Isis {
 
     ControlPointFileEntryV0002 protoPoint = point.pointData();
     ControlPoint *controlPoint = new ControlPoint;
+    auto naif = NaifContext::acquire();
 
     // ID is required, no need for if-statement here
     controlPoint->SetId(QString(protoPoint.id().c_str()));
@@ -1462,7 +1463,8 @@ namespace Isis {
         && protoPoint.has_aprioriy()
         && protoPoint.has_aprioriz() ) {
 
-      SurfacePoint aprioriSurfacePoint(Displacement(protoPoint.apriorix(), Displacement::Meters),
+      SurfacePoint aprioriSurfacePoint(naif,
+                                       Displacement(protoPoint.apriorix(), Displacement::Meters),
                                        Displacement(protoPoint.aprioriy(), Displacement::Meters),
                                        Displacement(protoPoint.aprioriz(), Displacement::Meters));
 
@@ -1476,7 +1478,7 @@ namespace Isis {
         aprioriCovarianceMatrix(1, 1) = protoPoint.aprioricovar(3);
         aprioriCovarianceMatrix(1, 2) = protoPoint.aprioricovar(4);
         aprioriCovarianceMatrix(2, 2) = protoPoint.aprioricovar(5);
-        aprioriSurfacePoint.SetRectangularMatrix(aprioriCovarianceMatrix);
+        aprioriSurfacePoint.SetRectangularMatrix(naif, aprioriCovarianceMatrix);
         // note: setting lat/lon/rad constrained happens when we call SetAprioriSurfacePoint()
       }
 
@@ -1488,7 +1490,8 @@ namespace Isis {
         && protoPoint.has_adjustedy()
         && protoPoint.has_adjustedz() ) {
 
-      SurfacePoint adjustedSurfacePoint(Displacement(protoPoint.adjustedx(),Displacement::Meters),
+      SurfacePoint adjustedSurfacePoint(naif,
+                                        Displacement(protoPoint.adjustedx(),Displacement::Meters),
                                         Displacement(protoPoint.adjustedy(),Displacement::Meters),
                                         Displacement(protoPoint.adjustedz(),Displacement::Meters));
 
@@ -1502,7 +1505,7 @@ namespace Isis {
         adjustedCovarianceMatrix(1, 1) = protoPoint.adjustedcovar(3);
         adjustedCovarianceMatrix(1, 2) = protoPoint.adjustedcovar(4);
         adjustedCovarianceMatrix(2, 2) = protoPoint.adjustedcovar(5);
-        adjustedSurfacePoint.SetRectangularMatrix(adjustedCovarianceMatrix);
+        adjustedSurfacePoint.SetRectangularMatrix(naif, adjustedCovarianceMatrix);
       }
 
       controlPoint->SetAdjustedSurfacePoint(adjustedSurfacePoint);

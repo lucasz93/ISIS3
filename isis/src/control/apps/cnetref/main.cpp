@@ -43,6 +43,7 @@ void IsisMain() {
 
   try {
     UserInterface &ui = Application::GetUserInterface();
+    auto naif = NaifContext::acquire();
     QString sSerialNumFile = ui.GetFileName("FROMLIST");
 
     // get the Criteria option
@@ -107,13 +108,13 @@ void IsisMain() {
     // Process Reference by Emission Angle
     if (sCriteria == "EMISSION") {
       cnetValidMeas = new CnetRefByEmission(pvlDefFile, sSerialNumFile);
-      cnetValidMeas->FindCnetRef(cNet);
+      cnetValidMeas->FindCnetRef(naif, cNet);
     }
 
     // Process Reference by Incidence Angle
     else if (sCriteria == "INCIDENCE") {
       cnetValidMeas = new CnetRefByIncidence(pvlDefFile, sSerialNumFile);
-      cnetValidMeas->FindCnetRef(cNet);
+      cnetValidMeas->FindCnetRef(naif, cNet);
     }
 
     // Process Reference by Resolution
@@ -137,7 +138,7 @@ void IsisMain() {
         }
       }
       cnetValidMeas = new CnetRefByResolution(pvlDefFile, sSerialNumFile, GetResolutionType(sType), dResValue, dMinRes, dMaxRes);
-      cnetValidMeas->FindCnetRef(cNet);
+      cnetValidMeas->FindCnetRef(naif, cNet);
     }
 
     // Process Reference by Interest
@@ -155,7 +156,7 @@ void IsisMain() {
 
       // Get the InterestOperator set up
       InterestOperator *interestOp = InterestOperatorFactory::Create(*pvlDefFile);
-      interestOp->Operate(cNet, sSerialNumFile, sOverlapListFile);
+      interestOp->Operate(naif, cNet, sSerialNumFile, sOverlapListFile);
 
       // Write to print.prt and screen interest details
       // add operator to print.prt

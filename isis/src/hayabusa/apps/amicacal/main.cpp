@@ -48,7 +48,7 @@ using namespace std;
 FileName determineFlatFieldFile(const QString &filter, const bool nullPolarPix);
 void calibrate(vector<Buffer *>& in, vector<Buffer *>& out);
 
-QString loadCalibrationVariables(const QString &config, Cube *iCube);
+QString loadCalibrationVariables(NaifContextPtr naif, const QString &config, Cube *iCube);
 
 #if 0
 // PSF correction is currently not working and has been removed as an option.
@@ -144,6 +144,7 @@ void IsisMain() {
 
 
   UserInterface& ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
   g_nullPolarizedPixels = ui.GetBoolean("NULLPOLARPIX");
   g_iofCorrection = ui.GetString("UNITS");
 
@@ -299,14 +300,14 @@ void IsisMain() {
   //nb = inputCube->bandCount();
 #endif
 
-  QString calfile = loadCalibrationVariables(ui.GetAsString("CONFIG"), inputCube);
+  QString calfile = loadCalibrationVariables(naif, ui.GetAsString("CONFIG"), inputCube);
 
   g_timeRatio = g_tvct / (g_exposureTime + g_tvct);
   g_darkCurrent = g_d0 * exp(g_d1 * g_temperature);
   g_calibrationScale = 1.0;
   QString g_units = "DN";
 
-  if ( !sunDistanceAU(inputCube, startTime, target, g_solarDist) ) {
+  if ( !sunDistanceAU(inputCube, startTime, target, naif, g_solarDist) ) {
      throw IException(IException::Programmer,
                       "Cannot calculated distance to sun!",
                       _FILEINFO_);
@@ -600,7 +601,7 @@ void psfCorrection(vector<Buffer *> &in, vector<Buffer *> &out) {
  * @brief Loads the calibration variables into the program.
  */
 
-QString loadCalibrationVariables(const QString &config, Cube *iCube)  {
+QString loadCalibrationVariables(NaifContextPtr naif, const QString &config, Cube *iCube)  {
 
 //  UserInterface& ui = Application::GetUserInterface();
 
@@ -671,8 +672,8 @@ QString loadCalibrationVariables(const QString &config, Cube *iCube)  {
   }
   catch(IException &e) {
     try{
-      loadNaifTiming();  // Ensure the proper kernels are loaded
-      scs2e_c(g_hayabusaNaifCode, g_startTime.toLatin1().data(), &obsStartTime);
+      loadNaifTiming(naif);  // Ensure the proper kernels are loaded
+      naif->scs2e_c(g_hayabusaNaifCode, g_startTime.toLatin1().data(), &obsStartTime);
     }
     catch (IException &e) {
         QString message = "IOF option does not work with non-spiceinited cubes.";

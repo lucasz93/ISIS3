@@ -47,6 +47,8 @@ void socetlinescankeywords (UserInterface &ui) {
 
 
 void socetlinescankeywords(Cube *input, UserInterface &ui) {
+  auto naif = NaifContext::acquire();
+  
   // Use a regular Process
   Process p;
 
@@ -287,7 +289,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
 
   // Get the ephemeris time, ground position and undistorted focal plane X
   // coordinate at the center line/samp of image
-  cam->SetImage(input->sampleCount() / 2.0, input->lineCount() / 2.0);
+  cam->SetImage(input->sampleCount() / 2.0, input->lineCount() / 2.0, naif);
 
   double tMid = cam->time().Et();
 
@@ -301,9 +303,9 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
   // time by the line rate and map the ground position into the sensor in
   // undistorted focal plane coordinates
 
-  cam->setTime(iTime(tMid + intTime));
+  cam->setTime(iTime(tMid + intTime), naif);
   double uX, uY;
-  groundMap->GetXY(latCenter, lonCenter, radiusCenter, &uX, &uY);
+  groundMap->GetXY(naif, latCenter, lonCenter, radiusCenter, &uX, &uY);
 
   // the along scan pixel size is the difference in focal plane X coordinates
   alongScanPxSize = abs(uXCenter - uX);
@@ -352,7 +354,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
   radii[1] = Dradii[1].kilometers();
   radii[2] = Dradii[2].kilometers();
 
-  cam->SetImage(boresightSample, totalLines / 2.0);
+  cam->SetImage(boresightSample, totalLines / 2.0, naif);
 
   centerGp[0] = DEG2RAD *
                   TProjection::ToPlanetographic(cam->UniversalLatitude(), radii[0], radii[2]);
@@ -366,17 +368,17 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
   // First get the ephemeris time and camera Lat Lon at image center line, boresight sample.
   double centerLine = double(totalLines) / 2.0;
 
-  cam->SetImage(boresightSample, centerLine); //set to boresight of image
+  cam->SetImage(boresightSample, centerLine, naif); //set to boresight of image
   double etCenter = cam->time().Et();
 
   // Get the sensor position at the image center in ographic lat,
   // +E lon domain 180 coordinates, radians, height in meters
   double sensorPosition[3] = {0.0, 0.0, 0.0};
   double ocentricLat, e360Lon;
-  cam->subSpacecraftPoint(ocentricLat, e360Lon);
+  cam->subSpacecraftPoint(ocentricLat, e360Lon, naif);
   sensorPosition[0] = DEG2RAD * TProjection::ToPlanetographic(ocentricLat, radii[0], radii[2]);
   sensorPosition[1] = DEG2RAD * TProjection::To180Domain(e360Lon);
-  sensorPosition[2] = cam->SpacecraftAltitude() * 1000.0;
+  sensorPosition[2] = cam->SpacecraftAltitude(naif) * 1000.0;
 
   // Build the ephem data.  If the image label contains the InstrumentPosition
   // table, use it as a guide for number and spacing of Ephem points.
@@ -419,7 +421,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
     //build the tables of values
     double et = etCenter - (((numEphem - 1) / 2) * dtEphem);
     for (int i = 0; i < numEphem; i++) {
-      cam->setTime(iTime(et));
+      cam->setTime(iTime(et), naif);
       SpiceRotation *bodyRot = cam->bodyRotation();
       vector<double> pos = bodyRot->ReferenceVector(cam->instrumentPosition()->Coordinate());
 //TO DO: UNCOMMENT THE FOLLOWING LINE WHEN VELOCITY BLOBS ARE CORRECT IN ISIS
@@ -516,7 +518,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
     // to_ephem needed by SOCET (to_ephem is relative to etCenter)
     double et = etCenter - (((numEphem - 1) / 2) * dtEphem);
     for (int i = 0; i < numEphem; i++) {
-      cam->setTime(iTime(et));
+      cam->setTime(iTime(et), naif);
       SpiceRotation *bodyRot = cam->bodyRotation();
       vector<double> pos = bodyRot->ReferenceVector(cam->instrumentPosition()->Coordinate());
 //TO DO: UNCOMMENT THE FOLLOWING LINE WHEN VELOCITY BLOBS ARE CORRECT IN ISIS
@@ -585,7 +587,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
   double et = etCenter - (((numQuaternions - 1) / 2) * dtQuat);
 
   for (int i = 0; i < numQuaternions; i++) {
-    cam->setTime(iTime(et));
+    cam->setTime(iTime(et), naif);
     vector<double> j2000ToBodyFixedMatrixVector = cam->bodyRotation()->Matrix();
     vector<double> j2000ToCameraMatrixVector = cam->instrumentRotation()->Matrix();
     double quaternion[4] = {0.0, 0.0, 0.0, 0.0};
@@ -603,9 +605,9 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
     }
 
     // get the quaternion
-    mxmt_c(j2000ToBodyFixedRotationMatrix, j2000ToCameraRotationMatrix,
+    naif->mxmt_c(j2000ToBodyFixedRotationMatrix, j2000ToCameraRotationMatrix,
            cameraToBodyFixedRotationMatrix);
-    m2q_c(cameraToBodyFixedRotationMatrix, quaternion);
+    naif->m2q_c(cameraToBodyFixedRotationMatrix, quaternion);
 
     // add the quaternion to the list of quaternions
     QList<double> quat;

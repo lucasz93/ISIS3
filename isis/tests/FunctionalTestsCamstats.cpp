@@ -16,9 +16,10 @@ static QString APP_XML = FileName("$ISISROOT/bin/xml/camstats.xml").expanded();
 TEST_F(DefaultCube, FunctionalTestCamstatsDefaultParameters) {
   QVector<QString> args = {};
   UserInterface options(APP_XML, args);
+  auto naif = NaifContext::acquire();
   Pvl appLog;
 
-  camstats(testCube, options, &appLog);
+  camstats(naif, testCube, options, &appLog);
 
   PvlGroup group = appLog.findGroup("User Parameters");
   EXPECT_DOUBLE_EQ((double) group.findKeyword("Linc"), 1.0);
@@ -119,11 +120,16 @@ TEST_F(DefaultCube, FunctionalTestCamstatsDefaultParameters) {
 TEST_F(DefaultCube, FunctionalTestCamstatsAttach) {
   QVector<QString> args = {"attach=true", "linc=100", "sinc=100"};
   UserInterface options(APP_XML, args);
+  auto naif = NaifContext::acquire();
   Pvl appLog;
 
+<<<<<<< HEAD
   QString inPath = testCube->fileName();
 
   camstats(testCube, options, &appLog);
+=======
+  camstats(naif, testCube, options, &appLog);
+>>>>>>> Conversions
 
   testCube->open(inPath, "r");
   EXPECT_TRUE(testCube->hasTable("CameraStatistics"));
@@ -135,9 +141,10 @@ TEST_F(DefaultCube, FunctionalTestCamstatsFlat) {
 
   QVector<QString> args = {"to=" + flatFile.fileName(), "format=flat", "linc=100", "sinc=100"};
   UserInterface options(APP_XML, args);
+  auto naif = NaifContext::acquire();
   Pvl appLog;
 
-  camstats(testCube, options, &appLog);
+  camstats(naif, testCube, options, &appLog);
 
   int lineNumber = 0;
   QTextStream flatStream(&flatFile);
