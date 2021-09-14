@@ -89,6 +89,7 @@ namespace Isis{
   }
 
   void findfeatures(UserInterface &ui, Pvl *log) {
+    auto naif = NaifContext::acquire();
 
     //  Program constants
     const QString findfeatures_program = "findfeatures";
@@ -256,7 +257,7 @@ namespace Isis{
 
     // Check for FASTGEOM option
     if ( ui.GetBoolean("FASTGEOM") ) {
-      FastGeom geom( factory->globalParameters() );
+      FastGeom geom( naif, factory->globalParameters() );
       matcher.foreachPair( geom );
     }
 
