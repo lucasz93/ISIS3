@@ -129,8 +129,6 @@ namespace Isis {
 
   //! Constructor
   Gui::Gui(Isis::UserInterface &ui) : QMainWindow(0, Qt::Window) {
-    p_naif_lifecycle = new NaifContextLifecycle;
-
     // Create the toolbar and menu and populate them with actions
     CreateAreas();
 
@@ -181,8 +179,6 @@ namespace Isis {
     }
 
     p_parameters.clear();
-
-    delete p_naif_lifecycle;
   }
 
   // Create the main widget, menus, toolbars, status, actions

@@ -31,6 +31,7 @@ namespace Isis {
   class Gui;
   class IException;
   class Progress;
+  class NaifContextLifecycle;
 
   /**
    *  @author ????-??-?? Unknown
@@ -188,6 +189,8 @@ namespace Isis {
       pid_t p_pid;                                //!<
       std::map<QString, void *> p_guiHelpers; //!<
       static QString p_appName;                   //!<
+
+      NaifContextLifecycle *p_naif_lifecycle;
 
   };
 
