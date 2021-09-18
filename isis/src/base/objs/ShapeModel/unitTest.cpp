@@ -224,7 +224,7 @@ class MyEllipse : public ShapeModel {
 int main() {
   try {
     Preference::Preferences(true);
-    NaifContextLifecycle naif_lifecycle;
+    NaifContextReference naif_reference;
     auto naif = NaifContext::acquire();
 
     QString inputFile = "$ISISTESTDATA/isis/src/mgs/unitTestData/ab102401.cub";

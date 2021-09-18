@@ -34,7 +34,7 @@ using namespace Isis;
  */   
 int main(void) {
   Preference::Preferences(true);
-  NaifContextLifecycle naif_lifecycle;
+  NaifContextReference naif_reference;
   auto naif = NaifContext::acquire();
 
   cout << "Unit Test for PixelFOV..." << endl;

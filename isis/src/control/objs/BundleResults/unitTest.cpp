@@ -104,7 +104,7 @@ namespace Isis {
 int main(int argc, char *argv[]) {
   try {
     Preference::Preferences(true);
-    NaifContextLifecycle naif_lifecycle;
+    NaifContextReference naif_reference;
     auto naif = NaifContext::acquire();
 
     cout.precision(6);

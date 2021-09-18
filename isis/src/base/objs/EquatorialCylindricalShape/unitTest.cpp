@@ -43,7 +43,7 @@ using namespace Isis;
 int main() {
   try {
     Preference::Preferences(true);
-    NaifContextLifecycle naif_lifecycle;
+    NaifContextReference naif_reference;
     auto naif = NaifContext::acquire();
     QString inputFile = "$ISISTESTDATA/isis/src/mgs/unitTestData/ab102401.cub";
     // string inputFile = "/work/projects/isis/latest/m00775/test/M123149061RE.lev1.cub";
