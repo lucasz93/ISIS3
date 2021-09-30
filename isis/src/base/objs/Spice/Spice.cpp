@@ -213,7 +213,7 @@ namespace Isis {
           json props;
           props["kernels"] = kernel_pvl.str();
 
-          isd = ale::load(lab.fileName().toStdString(), props.dump(), "ale");
+          isd = ale::load(naif, lab.fileName().toStdString(), props.dump(), "ale");
         }
 
         json aleNaifKeywords = isd["naif_keywords"];
