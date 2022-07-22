@@ -320,6 +320,7 @@ namespace Isis {
   // Transfere the needed PDS labels to the ISIS Cube and update them where necessary
   void translateChandrayaan1M3Labels(Pvl& pdsLabel, Cube *ocube, Table& utcTable,
                                      ProcessImportPds::PdsFileType fileType) {
+    auto naif = NaifContext::acquire();
     Pvl outLabel;
 
     // Translate the archive group
@@ -347,12 +348,12 @@ namespace Isis {
       QString lsk = "$base/kernels/lsk/naif????.tls";
       FileName lskName(lsk);
       lskName = lskName.highestVersion();
-      furnsh_c(lskName.expanded().toLatin1().data());
+      naif->furnsh_c(lskName.expanded().toLatin1().data());
 
       QString sclk = "$chandrayaan1/kernels/sclk/aig_ch1_sclk_complete_biased_m1p???.tsc";
       FileName sclkName(sclk);
       sclkName = sclkName.highestVersion();
-      furnsh_c(sclkName.expanded().toLatin1().data());
+      naif->furnsh_c(sclkName.expanded().toLatin1().data());
 
       SpiceInt sclkCode = -86;
 
@@ -391,13 +392,13 @@ namespace Isis {
 
       inst.findKeyword("StartTime").setValue(firstEt.UTC());
       SpiceChar startClockString[100];
-      sce2s_c (sclkCode, firstEt.Et(), 100, startClockString);
+      naif->sce2s_c (sclkCode, firstEt.Et(), 100, startClockString);
       QString startClock(startClockString);
       inst.findKeyword("SpacecraftClockStartCount").setValue(startClock);
 
       inst.findKeyword("StopTime").setValue(lastEt.UTC());
       SpiceChar stopClockString[100];
-      sce2s_c (sclkCode, lastEt.Et(), 100, stopClockString);
+      naif->sce2s_c (sclkCode, lastEt.Et(), 100, stopClockString);
       QString stopClock(stopClockString);
       inst.findKeyword("SpacecraftClockStopCount").setValue(stopClock);
     }

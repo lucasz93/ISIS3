@@ -187,7 +187,7 @@ namespace Isis {
    *
    * @return @b bool Returns true upon successful intialization
    */
-  bool IsisBundleObservation::initializeExteriorOrientation() {
+  bool IsisBundleObservation::initializeExteriorOrientation(NaifContextPtr naif) {
     if (m_solveSettings->instrumentPositionSolveOption() !=
         BundleObservationSolveSettings::NoPositionFactors) {
 
@@ -201,22 +201,22 @@ namespace Isis {
 
         // If this image isn't the first, copy the position from the first
         if (i > 0) {
-          spicePosition->SetPolynomialDegree(m_solveSettings->spkSolveDegree());
+          spicePosition->SetPolynomialDegree(m_solveSettings->spkSolveDegree(), naif);
           spicePosition->SetOverrideBaseTime(positionBaseTime, positiontimeScale);
-          spicePosition->SetPolynomial(posPoly1, posPoly2, posPoly3,
+          spicePosition->SetPolynomial(naif, posPoly1, posPoly2, posPoly3,
                                        m_solveSettings->positionInterpolationType());
         }
         // Otherwise we need to fit the initial position
         else {
           // first, set the degree of the spk polynomial to be fit for a priori values
-          spicePosition->SetPolynomialDegree(m_solveSettings->spkDegree());
+          spicePosition->SetPolynomialDegree(m_solveSettings->spkDegree(), naif);
 
           // now, set what kind of interpolation to use (polynomial function or
           // polynomial function over hermite spline)
-          spicePosition->SetPolynomial(m_solveSettings->positionInterpolationType());
+          spicePosition->SetPolynomial(naif, m_solveSettings->positionInterpolationType());
 
           // finally, set the degree of the position polynomial actually used in the bundle adjustment
-          spicePosition->SetPolynomialDegree(m_solveSettings->spkSolveDegree());
+          spicePosition->SetPolynomialDegree(m_solveSettings->spkSolveDegree(), naif);
 
           if (m_instrumentPosition) {
             positionBaseTime = m_instrumentPosition->GetBaseTime();
@@ -240,22 +240,22 @@ namespace Isis {
 
         // If this image isn't the first, copy the pointing from the first
         if (i > 0) {
-          spicerotation->SetPolynomialDegree(m_solveSettings->ckSolveDegree());
+          spicerotation->SetPolynomialDegree(naif, m_solveSettings->ckSolveDegree());
           spicerotation->SetOverrideBaseTime(rotationBaseTime, rotationtimeScale);
-          spicerotation->SetPolynomial(anglePoly1, anglePoly2, anglePoly3,
+          spicerotation->SetPolynomial(naif, anglePoly1, anglePoly2, anglePoly3,
                                        m_solveSettings->pointingInterpolationType());
         }
         // Otherwise we need to fit the initial pointing
         else {
           // first, set the degree of the polynomial to be fit for a priori values
-          spicerotation->SetPolynomialDegree(m_solveSettings->ckDegree());
+          spicerotation->SetPolynomialDegree(naif, m_solveSettings->ckDegree());
 
           // now, set what kind of interpolation to use (polynomial function or
           // polynomial function over a pointing cache)
-          spicerotation->SetPolynomial(m_solveSettings->pointingInterpolationType());
+          spicerotation->SetPolynomial(naif, m_solveSettings->pointingInterpolationType());
 
           // finally, set the degree of the pointing polynomial actually used in the bundle adjustment
-          spicerotation->SetPolynomialDegree(m_solveSettings->ckSolveDegree());
+          spicerotation->SetPolynomialDegree(naif, m_solveSettings->ckSolveDegree());
 
           rotationBaseTime = spicerotation->GetBaseTime();
           rotationtimeScale = spicerotation->GetTimeScale();
@@ -270,14 +270,14 @@ namespace Isis {
   /**
    * Intializes the body rotation
    */
-  void IsisBundleObservation::initializeBodyRotation() {
+  void IsisBundleObservation::initializeBodyRotation(NaifContextPtr naif) {
     std::vector<Angle> raCoefs = m_bundleTargetBody->poleRaCoefs();
     std::vector<Angle> decCoefs = m_bundleTargetBody->poleDecCoefs();
     std::vector<Angle> pmCoefs = m_bundleTargetBody->pmCoefs();
 
     for (int i = 0; i < size(); i++) {
       BundleImageQsp image = at(i);
-      image->camera()->bodyRotation()->setPckPolynomial(raCoefs, decCoefs, pmCoefs);
+      image->camera()->bodyRotation()->setPckPolynomial(naif, raCoefs, decCoefs, pmCoefs);
     }
   }
 
@@ -285,14 +285,14 @@ namespace Isis {
   /**
    * Updates the body rotation
    */
-  void IsisBundleObservation::updateBodyRotation() {
+  void IsisBundleObservation::updateBodyRotation(NaifContextPtr naif) {
     std::vector<Angle> raCoefs = m_bundleTargetBody->poleRaCoefs();
     std::vector<Angle> decCoefs = m_bundleTargetBody->poleDecCoefs();
     std::vector<Angle> pmCoefs = m_bundleTargetBody->pmCoefs();
 
     for (int i = 0; i < size(); i++) {
       BundleImageQsp image = at(i);
-      image->camera()->bodyRotation()->setPckPolynomial(raCoefs, decCoefs, pmCoefs);
+      image->camera()->bodyRotation()->setPckPolynomial(naif, raCoefs, decCoefs, pmCoefs);
     }
   }
 
@@ -402,7 +402,7 @@ namespace Isis {
    *
    * @return @b bool Returns true upon successful application of corrections
    */
-  bool IsisBundleObservation::applyParameterCorrections(LinearAlgebra::Vector corrections) {
+  bool IsisBundleObservation::applyParameterCorrections(NaifContextPtr naif, LinearAlgebra::Vector corrections) {
 
     int index = 0;
 
@@ -449,7 +449,7 @@ namespace Isis {
         for (int i = 0; i < size(); i++) {
           BundleImageQsp image = at(i);
           SpicePosition *spiceposition = image->camera()->instrumentPosition();
-          spiceposition->SetPolynomial(coefX, coefY, coefZ,
+          spiceposition->SetPolynomial(naif, coefX, coefY, coefZ,
                                        m_solveSettings->positionInterpolationType());
         }
       }
@@ -495,7 +495,7 @@ namespace Isis {
         for (int i = 0; i < size(); i++) {
           BundleImageQsp image = at(i);
           SpiceRotation *spiceRotation = image->camera()->instrumentRotation();
-          spiceRotation->SetPolynomial(coefRA, coefDEC, coefTWI,
+          spiceRotation->SetPolynomial(naif, coefRA, coefDEC, coefTWI,
                                        m_solveSettings->pointingInterpolationType());
         }
       }
@@ -643,7 +643,8 @@ QStringList IsisBundleObservation::parameterList() {
   * @param useDefaultPointing Reference to boolean of whether to use default pointing
   * @param useDefaultTwist Reference to bollean of whether to use defualt twist
   */
-  void IsisBundleObservation::bundleOutputFetchData(QVector<double> &finalParameterValues,
+  void IsisBundleObservation::bundleOutputFetchData(NaifContextPtr naif,
+                          QVector<double> &finalParameterValues,
                           int &nPositionCoefficients, int &nPointingCoefficients,
                           bool &useDefaultPosition,
                           bool &useDefaultPointing, bool &useDefaultTwist) {
@@ -685,7 +686,7 @@ QStringList IsisBundleObservation::parameterList() {
       }
       // Use the position's center coordinate if not solving for spacecraft position
       else {
-        const std::vector<double> centerCoord = m_instrumentPosition->GetCenterCoordinate();
+        const std::vector<double> centerCoord = m_instrumentPosition->GetCenterCoordinate(naif);
         coefX[0] = centerCoord[0];
         coefY[0] = centerCoord[1];
         coefZ[0] = centerCoord[2];
@@ -698,7 +699,7 @@ QStringList IsisBundleObservation::parameterList() {
       }
       // Use the pointing's center angles if not solving for pointing (rotation)
       else {
-        const std::vector<double> centerAngles = m_instrumentRotation->GetCenterAngles();
+        const std::vector<double> centerAngles = m_instrumentRotation->GetCenterAngles(naif);
         coefRA[0] = centerAngles[0];
         coefDEC[0] = centerAngles[1];
         coefTWI[0] = centerAngles[2];
@@ -741,7 +742,7 @@ QStringList IsisBundleObservation::parameterList() {
    * @param errorPropagation Boolean indicating whether or not to attach more information
    *     (corrections, sigmas, adjusted sigmas...) to the output.
    */
-  void IsisBundleObservation::bundleOutputString(std::ostream &fpOut, bool errorPropagation) {
+  void IsisBundleObservation::bundleOutputString(NaifContextPtr naif, std::ostream &fpOut, bool errorPropagation) {
 
     char buf[4096];
 
@@ -749,7 +750,8 @@ QStringList IsisBundleObservation::parameterList() {
     int nPositionCoefficients, nPointingCoefficients;
     bool useDefaultPosition, useDefaultPointing,useDefaultTwist;
 
-    bundleOutputFetchData(finalParameterValues,
+    bundleOutputFetchData(naif,
+                          finalParameterValues,
                           nPositionCoefficients,nPointingCoefficients,
                           useDefaultPosition,useDefaultPointing,useDefaultTwist);
 
@@ -962,13 +964,14 @@ QStringList IsisBundleObservation::parameterList() {
    * @return @b QString Returns a formatted QString representing the IsisBundleObservation in
    * csv format
    */
-  QString IsisBundleObservation::bundleOutputCSV(bool errorPropagation) {
+  QString IsisBundleObservation::bundleOutputCSV(NaifContextPtr naif, bool errorPropagation) {
 
     QVector<double> finalParameterValues;
     int nPositionCoefficients, nPointingCoefficients;
     bool useDefaultPosition, useDefaultPointing,useDefaultTwist;
 
-    bundleOutputFetchData(finalParameterValues,
+    bundleOutputFetchData(naif,
+                          finalParameterValues,
                           nPositionCoefficients,nPointingCoefficients,
                           useDefaultPosition,useDefaultPointing,useDefaultTwist);
 
@@ -1070,7 +1073,7 @@ QStringList IsisBundleObservation::parameterList() {
    *
    * @return bool
    */
-  bool IsisBundleObservation::computeTargetPartials(matrix<double> &coeffTarget, BundleMeasure &measure,
+  bool IsisBundleObservation::computeTargetPartials(NaifContextPtr naif, matrix<double> &coeffTarget, BundleMeasure &measure,
                                                 BundleSettingsQsp &bundleSettings, BundleTargetBodyQsp &bundleTargetBody) {
     coeffTarget.clear();
 
@@ -1081,42 +1084,42 @@ QStringList IsisBundleObservation::parameterList() {
     int index = 0;
 
     if (bundleSettings->solvePoleRA()) {
-      measureCamera->GroundMap()->GetdXYdTOrientation(SpiceRotation::WRT_RightAscension, 0,
+      measureCamera->GroundMap()->GetdXYdTOrientation(naif, SpiceRotation::WRT_RightAscension, 0,
                                                       &coeffTarget(0, index),
                                                       &coeffTarget(1, index));
       index++;
     }
 
     if (bundleSettings->solvePoleRAVelocity()) {
-      measureCamera->GroundMap()->GetdXYdTOrientation(SpiceRotation::WRT_RightAscension, 1,
+      measureCamera->GroundMap()->GetdXYdTOrientation(naif, SpiceRotation::WRT_RightAscension, 1,
                                                       &coeffTarget(0, index),
                                                       &coeffTarget(1, index));
       index++;
     }
 
     if (bundleSettings->solvePoleDec()) {
-      measureCamera->GroundMap()->GetdXYdTOrientation(SpiceRotation::WRT_Declination, 0,
+      measureCamera->GroundMap()->GetdXYdTOrientation(naif, SpiceRotation::WRT_Declination, 0,
                                                       &coeffTarget(0, index),
                                                       &coeffTarget(1, index));
       index++;
     }
 
     if (bundleSettings->solvePoleDecVelocity()) {
-      measureCamera->GroundMap()->GetdXYdTOrientation(SpiceRotation::WRT_Declination, 1,
+      measureCamera->GroundMap()->GetdXYdTOrientation(naif, SpiceRotation::WRT_Declination, 1,
                                                       &coeffTarget(0, index),
                                                       &coeffTarget(1, index));
       index++;
     }
 
     if (bundleSettings->solvePM()) {
-      measureCamera->GroundMap()->GetdXYdTOrientation(SpiceRotation::WRT_Twist, 0,
+      measureCamera->GroundMap()->GetdXYdTOrientation(naif, SpiceRotation::WRT_Twist, 0,
                                                       &coeffTarget(0, index),
                                                       &coeffTarget(1, index));
       index++;
     }
 
     if (bundleSettings->solvePMVelocity()) {
-      measureCamera->GroundMap()->GetdXYdTOrientation(SpiceRotation::WRT_Twist, 1,
+      measureCamera->GroundMap()->GetdXYdTOrientation(naif, SpiceRotation::WRT_Twist, 1,
                                                       &coeffTarget(0, index),
                                                       &coeffTarget(1, index));
       index++;
@@ -1127,7 +1130,7 @@ QStringList IsisBundleObservation::parameterList() {
           measureCamera->GroundMap()->MeanRadiusPartial(surfacePoint,
                                                         bundleTargetBody->meanRadius());
 
-      measureCamera->GroundMap()->GetdXYdPoint(lookBWRTMeanRadius, &coeffTarget(0, index),
+      measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTMeanRadius, &coeffTarget(0, index),
                                                &coeffTarget(1, index));
       index++;
     }
@@ -1138,7 +1141,7 @@ QStringList IsisBundleObservation::parameterList() {
           measureCamera->GroundMap()->EllipsoidPartial(surfacePoint,
                                                        CameraGroundMap::WRT_MajorAxis);
 
-      measureCamera->GroundMap()->GetdXYdPoint(lookBWRTRadiusA, &coeffTarget(0, index),
+      measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTRadiusA, &coeffTarget(0, index),
                                                &coeffTarget(1, index));
       index++;
 
@@ -1146,7 +1149,7 @@ QStringList IsisBundleObservation::parameterList() {
           measureCamera->GroundMap()->EllipsoidPartial(surfacePoint,
                                                        CameraGroundMap::WRT_MinorAxis);
 
-      measureCamera->GroundMap()->GetdXYdPoint(lookBWRTRadiusB, &coeffTarget(0, index),
+      measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTRadiusB, &coeffTarget(0, index),
                                                &coeffTarget(1, index));
       index++;
 
@@ -1154,7 +1157,7 @@ QStringList IsisBundleObservation::parameterList() {
           measureCamera->GroundMap()->EllipsoidPartial(surfacePoint,
                                                        CameraGroundMap::WRT_PolarAxis);
 
-      measureCamera->GroundMap()->GetdXYdPoint(lookBWRTRadiusC, &coeffTarget(0, index),
+      measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTRadiusC, &coeffTarget(0, index),
                                                &coeffTarget(1, index));
       index++;
     }
@@ -1181,7 +1184,7 @@ QStringList IsisBundleObservation::parameterList() {
    *
    * @return bool
    */
-  bool IsisBundleObservation::computeImagePartials(matrix<double> &coeffImage, BundleMeasure &measure) {
+  bool IsisBundleObservation::computeImagePartials(NaifContextPtr naif, matrix<double> &coeffImage, BundleMeasure &measure) {
     coeffImage.clear();
 
     Camera *camera = measure.camera();
@@ -1198,7 +1201,7 @@ QStringList IsisBundleObservation::parameterList() {
       // Add the partial for the x coordinate of the position (differentiating
       // point(x,y,z) - spacecraftPosition(x,y,z) in J2000
       for (int cameraCoef = 0; cameraCoef < numCamPositionCoefficients; cameraCoef++) {
-        camera->GroundMap()->GetdXYdPosition(SpicePosition::WRT_X, cameraCoef,
+        camera->GroundMap()->GetdXYdPosition(naif, SpicePosition::WRT_X, cameraCoef,
                                                     &coeffImage(0, index),
                                                     &coeffImage(1, index));
         index++;
@@ -1206,7 +1209,7 @@ QStringList IsisBundleObservation::parameterList() {
 
       // Add the partial for the y coordinate of the position
       for (int cameraCoef = 0; cameraCoef < numCamPositionCoefficients; cameraCoef++) {
-        camera->GroundMap()->GetdXYdPosition(SpicePosition::WRT_Y, cameraCoef,
+        camera->GroundMap()->GetdXYdPosition(naif, SpicePosition::WRT_Y, cameraCoef,
                                                     &coeffImage(0, index),
                                                     &coeffImage(1, index));
         index++;
@@ -1214,7 +1217,7 @@ QStringList IsisBundleObservation::parameterList() {
 
       // Add the partial for the z coordinate of the position
       for (int cameraCoef = 0; cameraCoef < numCamPositionCoefficients; cameraCoef++) {
-        camera->GroundMap()->GetdXYdPosition(SpicePosition::WRT_Z, cameraCoef,
+        camera->GroundMap()->GetdXYdPosition(naif, SpicePosition::WRT_Z, cameraCoef,
                                                     &coeffImage(0, index),
                                                     &coeffImage(1, index));
         index++;
@@ -1230,7 +1233,7 @@ QStringList IsisBundleObservation::parameterList() {
 
       // Add the partials for ra
       for (int cameraCoef = 0; cameraCoef < numCamAngleCoefficients; cameraCoef++) {
-        camera->GroundMap()->GetdXYdOrientation(SpiceRotation::WRT_RightAscension,
+        camera->GroundMap()->GetdXYdOrientation(naif, SpiceRotation::WRT_RightAscension,
                                                        cameraCoef, &coeffImage(0, index),
                                                        &coeffImage(1, index));
         index++;
@@ -1238,7 +1241,7 @@ QStringList IsisBundleObservation::parameterList() {
 
       // Add the partials for dec
       for (int cameraCoef = 0; cameraCoef < numCamAngleCoefficients; cameraCoef++) {
-        camera->GroundMap()->GetdXYdOrientation(SpiceRotation::WRT_Declination,
+        camera->GroundMap()->GetdXYdOrientation(naif, SpiceRotation::WRT_Declination,
                                                        cameraCoef, &coeffImage(0, index),
                                                        &coeffImage(1, index));
         index++;
@@ -1247,7 +1250,7 @@ QStringList IsisBundleObservation::parameterList() {
       // Add the partial for twist if necessary
       if (solveSettings()->solveTwist()) {
         for (int cameraCoef = 0; cameraCoef < numCamAngleCoefficients; cameraCoef++) {
-          camera->GroundMap()->GetdXYdOrientation(SpiceRotation::WRT_Twist,
+          camera->GroundMap()->GetdXYdOrientation(naif, SpiceRotation::WRT_Twist,
                                                          cameraCoef, &coeffImage(0, index),
                                                          &coeffImage(1, index));
           index++;
@@ -1278,7 +1281,7 @@ QStringList IsisBundleObservation::parameterList() {
    *
    * @return bool
    */
-  bool IsisBundleObservation::computePoint3DPartials(matrix<double> &coeffPoint3D, BundleMeasure &measure, SurfacePoint::CoordinateType coordType) {
+  bool IsisBundleObservation::computePoint3DPartials(NaifContextPtr naif, matrix<double> &coeffPoint3D, BundleMeasure &measure, SurfacePoint::CoordinateType coordType) {
     coeffPoint3D.clear();
     Camera *measureCamera = measure.camera();
     BundleControlPoint* point = measure.parentControlPoint();
@@ -1289,13 +1292,13 @@ QStringList IsisBundleObservation::parameterList() {
     std::vector<double> lookBWRTCoord2 = point->adjustedSurfacePoint().Partial(coordType, SurfacePoint::Two);
     std::vector<double> lookBWRTCoord3 = point->adjustedSurfacePoint().Partial(coordType, SurfacePoint::Three);
 
-    measureCamera->GroundMap()->GetdXYdPoint(lookBWRTCoord1,
+    measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTCoord1,
                                              &coeffPoint3D(0, 0),
                                              &coeffPoint3D(1, 0));
-    measureCamera->GroundMap()->GetdXYdPoint(lookBWRTCoord2,
+    measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTCoord2,
                                              &coeffPoint3D(0, 1),
                                              &coeffPoint3D(1, 1));
-    measureCamera->GroundMap()->GetdXYdPoint(lookBWRTCoord3,
+    measureCamera->GroundMap()->GetdXYdPoint(naif, lookBWRTCoord3,
                                              &coeffPoint3D(0, 2),
                                              &coeffPoint3D(1, 2));
 
@@ -1321,7 +1324,7 @@ QStringList IsisBundleObservation::parameterList() {
    *
    * @return bool
    */
-  bool IsisBundleObservation::computeRHSPartials(boost::numeric::ublas::vector<double> &coeffRHS, BundleMeasure &measure) {
+  bool IsisBundleObservation::computeRHSPartials(NaifContextPtr naif, boost::numeric::ublas::vector<double> &coeffRHS, BundleMeasure &measure) {
     coeffRHS.clear();
     Camera *measureCamera = measure.camera();
     BundleControlPoint* point = measure.parentControlPoint();
@@ -1329,7 +1332,7 @@ QStringList IsisBundleObservation::parameterList() {
     // lat/lon/radius.  As of 05/15/2019, this call no longer does the back-of-planet test. An optional
     // bool argument was added CameraGroundMap::GetXY to turn off the test.
     double computedX, computedY;
-    if (!(measureCamera->GroundMap()->GetXY(point->adjustedSurfacePoint(),
+    if (!(measureCamera->GroundMap()->GetXY(naif, point->adjustedSurfacePoint(),
                                             &computedX, &computedY, false))) {
       QString msg = "Unable to map apriori surface point for measure ";
       msg += measure.cubeSerialNumber() + " on point " + point->id() + " into focal plane";

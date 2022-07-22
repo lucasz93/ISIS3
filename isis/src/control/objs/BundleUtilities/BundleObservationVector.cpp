@@ -95,7 +95,8 @@ namespace Isis {
    *                           multiple BundleObservationSolveSettings, we set the settings
    *                           according to the observation number passed. References #4293.
    */
-  BundleObservationQsp BundleObservationVector::addNew(BundleImageQsp bundleImage,
+  BundleObservationQsp BundleObservationVector::addNew(NaifContextPtr naif,
+                                                       BundleImageQsp bundleImage,
                                                        QString observationNumber,
                                                        QString instrumentId,
                                                        BundleSettingsQsp bundleSettings) {
@@ -169,9 +170,9 @@ namespace Isis {
 
       if (isIsisObservation) {
         QSharedPointer<IsisBundleObservation> isisObs = qSharedPointerDynamicCast<IsisBundleObservation>(bundleObservation);
-        isisObs->initializeExteriorOrientation();
+        isisObs->initializeExteriorOrientation(naif);
         if (bundleSettings->solveTargetBody()) {
-          isisObs->initializeBodyRotation();
+          isisObs->initializeBodyRotation(naif);
         }
       }
 

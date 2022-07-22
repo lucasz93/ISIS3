@@ -464,11 +464,12 @@ TEST_F(CombineNetworks, FunctionalTestCnetcombineptCleanMeasures) {
 }
 
 TEST_F(CombineNetworks, FunctionalTestCnetcombineptSetApriori) {
+  auto naif = NaifContext::acquire();
   ControlNet firstNet(firstNetFile);
-  SurfacePoint aprioriPoint(Latitude(30.0, Angle::Degrees),
+  SurfacePoint aprioriPoint(naif, Latitude(30.0, Angle::Degrees),
                             Longitude(0.0, Angle::Degrees),
                             Distance(1000.0, Distance::Kilometers));
-  SurfacePoint adjustedPoint(Latitude(45.0, Angle::Degrees),
+  SurfacePoint adjustedPoint(naif, Latitude(45.0, Angle::Degrees),
                              Longitude(10.0, Angle::Degrees),
                              Distance(1010.0, Distance::Kilometers));
   ControlPoint *newPoint = new ControlPoint("surface");

@@ -95,7 +95,7 @@ namespace Isis {
       virtual double parentSample() const;
 
       virtual void subSpacecraftPoint(double &lat, double &lon, NaifContextPtr naif) override;
-      virtual void subSpacecraftPoint(double &lat, double &lon, double line, double sample);
+      virtual void subSpacecraftPoint(double &lat, double &lon, double line, double sample, NaifContextPtr naif);
       virtual void subSolarPoint(double &lat, double &lon, NaifContextPtr naif) override;
 
       virtual double PhaseAngle(NaifContextPtr naif) const override;
@@ -108,7 +108,7 @@ namespace Isis {
       virtual SpiceRotation *instrumentRotation() const;
 
       virtual void instrumentBodyFixedPosition(double p[3], NaifContextPtr naif) const override;
-      virtual void sunPosition(double p[3], NaifContextPtr naif) const override;
+      virtual void sunPosition(double p[3]) const override;
       virtual double SolarDistance() const;
 
       virtual double SlantDistance(NaifContextPtr naif) const override;
@@ -149,7 +149,7 @@ namespace Isis {
       void isisToCsmPixel(double line, double sample, csm::ImageCoord &csmPixel) const;
       void csmToIsisPixel(csm::ImageCoord csmPixel, double &line, double &sample) const;
       csm::EcefCoord isisToCsmGround(const SurfacePoint &groundPt) const;
-      SurfacePoint csmToIsisGround(const csm::EcefCoord &groundPt) const;
+      SurfacePoint csmToIsisGround(NaifContextPtr naif, const csm::EcefCoord &groundPt) const;
 
       virtual std::vector<double> ImagePartials(SurfacePoint groundPoint);
       virtual std::vector<double> ImagePartials();

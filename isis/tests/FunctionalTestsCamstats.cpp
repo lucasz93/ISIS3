@@ -123,13 +123,9 @@ TEST_F(DefaultCube, FunctionalTestCamstatsAttach) {
   auto naif = NaifContext::acquire();
   Pvl appLog;
 
-<<<<<<< HEAD
   QString inPath = testCube->fileName();
 
-  camstats(testCube, options, &appLog);
-=======
   camstats(naif, testCube, options, &appLog);
->>>>>>> Conversions
 
   testCube->open(inPath, "r");
   EXPECT_TRUE(testCube->hasTable("CameraStatistics"));

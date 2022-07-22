@@ -14,6 +14,8 @@ using namespace testing;
 static QString APP_XML = FileName("$ISISROOT/bin/xml/spkwriter.xml").expanded();
 
 TEST_F(DefaultCube, FunctionalTestSpkwriterDefault) {
+  auto naif = NaifContext::acquire();
+  
   Pvl appLog;
   QVector<QString> args = {"from=" + testCube->fileName(),
                            "to=" + tempDir.path() + "/newKernel.bsp"};
@@ -56,7 +58,7 @@ TEST_F(DefaultCube, FunctionalTestSpkwriterDefault) {
 
   Table oldInstPositionTable = testCube->readTable("InstrumentPosition");
 
-  Table newInstPositionTable = newKernelCube.camera()->instrumentPosition()->Cache("InstrumentPosition");
+  Table newInstPositionTable = newKernelCube.camera()->instrumentPosition()->Cache("InstrumentPosition", naif);
 
   ASSERT_EQ(oldInstPositionTable.Records(), 1);
 
@@ -68,6 +70,8 @@ TEST_F(DefaultCube, FunctionalTestSpkwriterDefault) {
 }
 
 TEST_F(DefaultCube, FunctionalTestSpkwriterFromlist) {
+  auto naif = NaifContext::acquire();
+  
   Pvl appLog;
   FileList cubeList;
   cubeList.append(testCube->fileName());
@@ -115,7 +119,7 @@ TEST_F(DefaultCube, FunctionalTestSpkwriterFromlist) {
 
   Table oldInstPositionTable = testCube->readTable("InstrumentPosition");
 
-  Table newInstPositionTable = newKernelCube.camera()->instrumentPosition()->Cache("InstrumentPosition");
+  Table newInstPositionTable = newKernelCube.camera()->instrumentPosition()->Cache("InstrumentPosition", naif);
 
   ASSERT_EQ(oldInstPositionTable.Records(), 1);
 

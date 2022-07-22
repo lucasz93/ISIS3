@@ -14,6 +14,8 @@ using namespace testing;
 static QString APP_XML = FileName("$ISISROOT/bin/xml/ckwriter.xml").expanded();
 
 TEST_F(DefaultCube, FunctionalTestCkwriterDefault) {
+  auto naif = NaifContext::acquire();
+  
   Pvl appLog;
   QVector<QString> args = {"from=" + testCube->fileName(),
                            "to=" + tempDir.path() + "/newKernel.bc"};
@@ -60,8 +62,8 @@ TEST_F(DefaultCube, FunctionalTestCkwriterDefault) {
   Table instPointingTable = testCube->readTable("InstrumentPointing");
   double startTime = double(instPointingTable.Label()["CkTableStartTime"]);
 
-  newKernelRotation->SetEphemerisTime(startTime);
-  originalRotation->SetEphemerisTime(startTime);
+  newKernelRotation->SetEphemerisTime(startTime, naif);
+  originalRotation->SetEphemerisTime(startTime, naif);
 
   ASSERT_EQ(newKernelRotation->cacheSize(), originalRotation->cacheSize());
 
@@ -77,6 +79,8 @@ TEST_F(DefaultCube, FunctionalTestCkwriterDefault) {
 }
 
 TEST_F(DefaultCube, FunctionalTestCkwriterFromlist) {
+  auto naif = NaifContext::acquire();
+  
   Pvl appLog;
   FileList cubeList;
   cubeList.append(testCube->fileName());
@@ -129,8 +133,8 @@ TEST_F(DefaultCube, FunctionalTestCkwriterFromlist) {
   Table instPointingTable = testCube->readTable("InstrumentPointing");
   double startTime = double(instPointingTable.Label()["CkTableStartTime"]);
 
-  newKernelRotation->SetEphemerisTime(startTime);
-  originalRotation->SetEphemerisTime(startTime);
+  newKernelRotation->SetEphemerisTime(startTime, naif);
+  originalRotation->SetEphemerisTime(startTime, naif);
 
   ASSERT_EQ(newKernelRotation->cacheSize(), originalRotation->cacheSize());
 

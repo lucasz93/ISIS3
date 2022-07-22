@@ -22,7 +22,8 @@ namespace Isis {
    * @param Cube &cube Clipper EIS image.
    */
    ClipperPushBroomCamera::ClipperPushBroomCamera(Cube &cube) : LineScanCamera(cube) {
-
+     auto naif = NaifContext::acquire();
+     
      m_spacecraftNameLong = "Europa Clipper";
      m_spacecraftNameShort = "Clipper";
 
@@ -44,8 +45,8 @@ namespace Isis {
 
      naif->CheckErrors();
 
-     SetFocalLength();
-     SetPixelPitch();
+     SetFocalLength(naif);
+     SetPixelPitch(naif);
 
      Pvl &lab = *cube.label();
      PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -58,21 +59,21 @@ namespace Isis {
      new VariableLineScanCameraDetectorMap(this, p_lineRates);
 
      // Set up focal plane map
-     CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+     CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
      // center of array (same for WAC and NAC based on XY origin in EIS_Sensor_summary.xlsx)
      focalMap->SetDetectorOrigin(2048.5, 1024.5);
 
      // Set up distortion map
      CameraDistortionMap *distMap = new CameraDistortionMap(this);
-     distMap->SetDistortion(naifIkCode());
+     distMap->SetDistortion(naif, naifIkCode());
 
      // Set up the ground and sky map
      new LineScanCameraGroundMap(this);
      new LineScanCameraSkyMap(this);
 
-     setTime(etStart.Et());
+     setTime(etStart.Et(), naif);
 
-     LoadCache();
+     LoadCache(naif);
      naif->CheckErrors();
    }
 

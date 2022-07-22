@@ -67,14 +67,14 @@ class FastGeom {
     void apply(MatchImage &query, MatchImage &train);
 
   private:
+    NaifContextPtr m_naif;
+    
     int        m_fastpts;    //!< Number of points to use for geom
     double     m_tolerance;  //!< Tolerance of geom transformation outliers
     QString    m_geomtype;   /** Geometry type to use can be "camera", "crop"
                                  or "map" */
     double     m_maxarea;    //!< Maximum scale change to use "map" option
     PvlFlatMap m_parameters; //!< Parameters of transform
-
-    NaifContextPtr m_naif;
 
     void validate( const QString &geomtype ) const;
 };

@@ -10,9 +10,6 @@ find files of those names at the top level of this repository. **/
 #include <QtCore/qmath.h>
 #include <QString>
 
-// naif library includes
-#include <SpiceUsr.h>
-
 // Isis includes
 #include "Buffer.h"
 #include "Cube.h"
@@ -496,7 +493,7 @@ namespace Isis {
     naif->CheckErrors();
     naif->ckobj_c(ckFileName.c_str(), &currCell);
     naif->CheckErrors();
-    int numberOfBodies = card_c(&currCell);
+    int numberOfBodies = naif->card_c(&currCell);
     if (numberOfBodies != 1) {
       IString msg = "Unable to find start and stop times using the given CK "
                     "file [" + ckFileName + "]. This application only works with"
@@ -517,7 +514,7 @@ namespace Isis {
     naif->ckcov_c(ckFileName.c_str(), body, SPICEFALSE, "SEGMENT", 0.0, "TDB", &cover);
     naif->CheckErrors();
     //Get the number of intervals in the object.
-    int numberOfIntervals = card_c(&cover) / 2;
+    int numberOfIntervals = naif->card_c(&cover) / 2;
     naif->CheckErrors();
     if (numberOfIntervals != 1) {
       IString msg = "Unable to find start and stop times using the given CK "

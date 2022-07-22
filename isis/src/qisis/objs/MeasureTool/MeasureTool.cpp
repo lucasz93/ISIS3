@@ -816,18 +816,18 @@ namespace Isis {
     if (cvp->camera() != NULL) {
 
       // Make sure start line or end line setimage succeeds, otherwise fail. 
-      bool statusStart = cvp->camera()->SetImage(m_startSamp, m_startLine);
+      bool statusStart = cvp->camera()->SetImage(m_startSamp, m_startLine, naif);
       double slantDist = 0;
       if (statusStart) {
-        slantDist = cvp->camera()->SlantDistance();
+        slantDist = cvp->camera()->SlantDistance(naif);
       }
 
-      double ra1 = cvp->camera()->RightAscension() * DEG2RAD;
-      double dec1 = cvp->camera()->Declination()* DEG2RAD; 
+      double ra1 = cvp->camera()->RightAscension(naif) * DEG2RAD;
+      double dec1 = cvp->camera()->Declination(naif)* DEG2RAD; 
 
-      bool statusEnd = cvp->camera()->SetImage(m_endSamp, m_endLine);
+      bool statusEnd = cvp->camera()->SetImage(m_endSamp, m_endLine, naif);
       if ((!statusStart)&&statusEnd) {
-        slantDist = cvp->camera()->SlantDistance();
+        slantDist = cvp->camera()->SlantDistance(naif);
       }
       
       // Cannot calculate a planar distance with no point on the target.       
@@ -835,8 +835,8 @@ namespace Isis {
         return;
       }
 
-      double ra2 = cvp->camera()->RightAscension() * DEG2RAD; 
-      double dec2 = cvp->camera()->Declination()* DEG2RAD; 
+      double ra2 = cvp->camera()->RightAscension(naif) * DEG2RAD; 
+      double dec2 = cvp->camera()->Declination(naif)* DEG2RAD; 
 
       double dRA = (ra1 - ra2);
 

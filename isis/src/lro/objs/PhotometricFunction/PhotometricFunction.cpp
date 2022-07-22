@@ -6,15 +6,12 @@ find files of those names at the top level of this repository. **/
 
 /* SPDX-License-Identifier: CC0-1.0 */
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
-
 #include "Angle.h"
 #include "Camera.h"
 #include "DbProfile.h"
 #include "PhotometricFunction.h"
 #include "PvlObject.h"
+#include "NaifContext.h"
 
 using namespace std;
 

@@ -156,7 +156,8 @@ int main(int argc, char *argv[]) {
                             "TestImageFileName");
     BundleObservationVector observationVector;
     QObject *parent = NULL;
-    observationVector.addNew(BundleImageQsp(new BundleImage(bundleImage)),
+    observationVector.addNew(naif,
+                             BundleImageQsp(new BundleImage(bundleImage)),
                              "ObservationNumber1",
                              "Instrument1",
                              BundleSettingsQsp(new BundleSettings));

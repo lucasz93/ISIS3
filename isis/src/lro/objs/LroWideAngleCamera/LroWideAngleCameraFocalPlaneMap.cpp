@@ -33,7 +33,8 @@ namespace Isis {
   LroWideAngleCameraFocalPlaneMap::LroWideAngleCameraFocalPlaneMap(NaifContextPtr naif,
                                                                    Camera *parent,
                                                                    int naifIkCode) :
-                                                                   CameraFocalPlaneMap(parent,
+                                                                   CameraFocalPlaneMap(naif,
+                                                                                       parent,
                                                                                        naifIkCode) {
   }
 

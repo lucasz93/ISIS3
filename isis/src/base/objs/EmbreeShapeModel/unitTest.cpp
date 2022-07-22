@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
              << observerVec[1] << ", "
              << observerVec[2] << ")";
     qDebug() << "Intersecting Embree shape model";
-    itokawaModel.intersectSurface(testLat, testLon, observerVec);
+    itokawaModel.intersectSurface(naif, testLat, testLon, observerVec);
     outputModelStatus(itokawaModel);
     qDebug() << "";
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     Latitude occLat(0, Angle::Degrees);
     Longitude occLon(282, Angle::Degrees);
     std::vector<double> occlusionObserver(3, 0.0);
-    itokawaCamera->SetUniversalGround( naif, occLat.degrees(), occLon.degrees() );
+    itokawaCamera->SetUniversalGround(naif, occLat.degrees(), occLon.degrees() );
     itokawaCamera->instrumentBodyFixedPosition(&occlusionObserver[0], naif);
     qDebug() << "Intersection inputs:";
     qDebug() << "  Latitude:  " << occLat.degrees();
@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) {
              << occlusionObserver[1] << ", "
              << occlusionObserver[2] << ")";
     qDebug() << "Intersecting Embree shape model";
-    itokawaModel.intersectSurface(occLat, occLon, occlusionObserver);
+    itokawaModel.intersectSurface(naif, occLat, occLon, occlusionObserver);
     outputModelStatus(itokawaModel);
     qDebug() << "Intersecting Embree shape model without occlusion";
-    itokawaModel.intersectSurface(occLat, occLon, occlusionObserver, false);
+    itokawaModel.intersectSurface(naif, occLat, occLon, occlusionObserver, false);
     outputModelStatus(itokawaModel);
     qDebug() << "";
 

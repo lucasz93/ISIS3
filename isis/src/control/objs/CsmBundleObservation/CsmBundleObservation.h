@@ -53,17 +53,17 @@ namespace Isis {
 
       const BundleObservationSolveSettingsQsp solveSettings();
 
-      bool applyParameterCorrections(LinearAlgebra::Vector corrections);
+      bool applyParameterCorrections(NaifContextPtr naif, LinearAlgebra::Vector corrections);
 
-      void bundleOutputString(std::ostream &fpOut,bool errorPropagation);
-      QString bundleOutputCSV(bool errorPropagation);
+      void bundleOutputString(NaifContextPtr naif, std::ostream &fpOut,bool errorPropagation);
+      QString bundleOutputCSV(NaifContextPtr naif, bool errorPropagation);
 
       virtual QStringList parameterList();
 
-      bool computeTargetPartials(LinearAlgebra::Matrix &coeffTarget, BundleMeasure &measure, BundleSettingsQsp &bundleSettings, BundleTargetBodyQsp &bundleTargetBody);
-      bool computeImagePartials(LinearAlgebra::Matrix &coeffImage, BundleMeasure &measure);
-      bool computePoint3DPartials(LinearAlgebra::Matrix &coeffPoint3D, BundleMeasure &measure, SurfacePoint::CoordinateType coordType);
-      bool computeRHSPartials(LinearAlgebra::Vector &coeffRHS, BundleMeasure &measure);
+      bool computeTargetPartials(NaifContextPtr naif, LinearAlgebra::Matrix &coeffTarget, BundleMeasure &measure, BundleSettingsQsp &bundleSettings, BundleTargetBodyQsp &bundleTargetBody);
+      bool computeImagePartials(NaifContextPtr naif, LinearAlgebra::Matrix &coeffImage, BundleMeasure &measure);
+      bool computePoint3DPartials(NaifContextPtr naif, LinearAlgebra::Matrix &coeffPoint3D, BundleMeasure &measure, SurfacePoint::CoordinateType coordType);
+      bool computeRHSPartials(NaifContextPtr naif, LinearAlgebra::Vector &coeffRHS, BundleMeasure &measure);
       double computeObservationValue(BundleMeasure &measure, double deltaVal);
 
    private:

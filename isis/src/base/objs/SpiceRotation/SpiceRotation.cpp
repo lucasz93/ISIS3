@@ -15,7 +15,6 @@ find files of those names at the top level of this repository. **/
 
 #include <QDebug>
 #include <QString>
-#include <SpiceUsr.h>
 #include <SpiceZfc.h>
 #include <SpiceZmc.h>
 

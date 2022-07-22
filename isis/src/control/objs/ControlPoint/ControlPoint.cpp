@@ -1218,7 +1218,7 @@ namespace Isis {
       // This does not work with CSM as it does not have a focal plane so
       // just use the sample and line
       if (cam->GetCameraType() == Camera::Csm) {
-        cam->SetGround(GetAdjustedSurfacePoint());
+        cam->SetGround(naif, GetAdjustedSurfacePoint());
         cudx = cam->Sample();
         cudy = cam->Line();
         // Reset to measure
@@ -1227,7 +1227,7 @@ namespace Isis {
       else {
         // no need to call setimage for framing camera
         if (cam->GetCameraType() != 0) {
-          cam->SetImage(m->GetSample(), m->GetLine());
+          cam->SetImage(m->GetSample(), m->GetLine(), naif);
         }
         // The default bool value is true.  Turn back-of-planet test off for bundle adjustment.
         cam->GroundMap()->GetXY(naif, GetAdjustedSurfacePoint(), &cudx, &cudy, false);

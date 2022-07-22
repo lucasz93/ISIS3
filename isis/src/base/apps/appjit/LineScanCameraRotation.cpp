@@ -168,7 +168,7 @@ namespace Isis {
       m_orientation = NULL;
     }
 
-    if (ConstantRotation().size() > 1) {
+    if (ConstantRotation(naif).size() > 1) {
       m_orientation = new ale::Orientations(rotationCache, p_cacheTime, std::vector<ale::Vec3d>(),
                                             ale::Rotation(ConstantMatrix()), ConstantFrameChain(), TimeFrameChain());
     }
@@ -268,7 +268,7 @@ namespace Isis {
       m_orientation = NULL;
     }
 
-    if (ConstantRotation().size() > 1) {
+    if (ConstantRotation(naif).size() > 1) {
       m_orientation = new ale::Orientations(rotationCache, p_cacheTime, std::vector<ale::Vec3d>(),
                                             ale::Rotation(ConstantMatrix()), ConstantFrameChain(), TimeFrameChain());
     }

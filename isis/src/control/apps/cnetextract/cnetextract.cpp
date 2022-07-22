@@ -42,6 +42,8 @@ namespace Isis {
       throw IException(IException::User, msg, _FILEINFO_);
     }
 
+    auto naif = NaifContext::acquire();
+    
     bool noIgnore          = ui.GetBoolean("NOIGNORE");
     bool noMeasureless     = ui.GetBoolean("NOMEASURELESS");
     bool noSingleMeasure   = ui.GetBoolean("NOSINGLEMEASURES");
@@ -575,8 +577,6 @@ namespace Isis {
     if(outNet.GetNumPoints() == 0) {
       return;
     }
-
-    auto naif = NaifContext::acquire();
 
     // Get the lat/lon and fix the range for the internal 0/360
     Latitude minlat(ui.GetDouble("MINLAT"), Angle::Degrees);

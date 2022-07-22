@@ -83,6 +83,7 @@ void gatherDarkStatistics(Buffer& in);
 void calibrate(vector<Buffer *>& in, vector<Buffer *>& out);
 
 void IsisMain() {
+  auto naif = NaifContext::acquire();
 
   const QString mdiscalProgram = "mdiscal";
   // 2015-09-02 Jeannie Backer - Increased cdr version to 6 since we added a new parameter, ECFACTOR
@@ -94,8 +95,6 @@ void IsisMain() {
   // 2015-09-02 Jeannie Backer - Increased cdr version to 5
   const int cdrVersion = 5;
 
-
-  auto naif = NaifContext::acquire();
 
   // We will be processing by column in case of a linear dark current fit. This will make the
   // calibration a one pass system in this case, rather than two.
@@ -318,7 +317,6 @@ void IsisMain() {
     g_empiricalCorrectionFactor = loadEmpiricalCorrection(startTime, g_filterNumber + 1,
                                                           empiricalCorrectionFile,
                                                           empiricalCorrectionDate, icube, naif);
->>>>>>> Conversions
     empiricalCorrectionFactor = toString(g_empiricalCorrectionFactor);
   }
   else {

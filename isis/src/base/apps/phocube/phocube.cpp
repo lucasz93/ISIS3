@@ -334,7 +334,7 @@ namespace Isis {
               Angle incidence;
               Angle emission;
               bool success;
-              cam->LocalPhotometricAngles(phase, incidence, emission, success);
+              cam->LocalPhotometricAngles(naif, phase, incidence, emission, success);
 
               if (localEmission) {
                 out[index] = emission.degrees();
@@ -369,46 +369,46 @@ namespace Isis {
                 out[index] = proj->Resolution();
               }
               else {
-                out[index] = cam->PixelResolution();
+                out[index] = cam->PixelResolution(naif);
               }
               index += 64 * 64;
             }
             if (lineResolution) {
-              out[index] = cam->LineResolution();
+              out[index] = cam->LineResolution(naif);
               index += 64 * 64;
             }
             if (sampleResolution) {
-              out[index] = cam->SampleResolution();
+              out[index] = cam->SampleResolution(naif);
               index += 64 * 64;
             }
             if (detectorResolution) {
-              out[index] = cam->DetectorResolution();
+              out[index] = cam->DetectorResolution(naif);
               index += 64 * 64;
             }
             if (obliqueDetectorResolution) {
-              out[index] = cam->ObliqueDetectorResolution();
+              out[index] = cam->ObliqueDetectorResolution(naif);
               index += 64 * 64;
             }
             if (northAzimuth) {
-              out[index] = cam->NorthAzimuth();
+              out[index] = cam->NorthAzimuth(naif);
               index += 64 * 64;
             }
             if (sunAzimuth) {
-              out[index] = cam->SunAzimuth();
+              out[index] = cam->SunAzimuth(naif);
               index += 64 * 64;
             }
             if (spacecraftAzimuth) {
-              out[index] = cam->SpacecraftAzimuth();
+              out[index] = cam->SpacecraftAzimuth(naif);
               index += 64 * 64;
             }
             if (offnadirAngle) {
-              out[index] = cam->OffNadirAngle();
+              out[index] = cam->OffNadirAngle(naif);
               index += 64 * 64;
             }
             if (subSpacecraftGroundAzimuth) {
               double ssplat, ssplon;
               ssplat = ssplon = 0.0;
-              cam->subSpacecraftPoint(ssplat, ssplon);
+              cam->subSpacecraftPoint(ssplat, ssplon, naif);
               out[index] = cam->GroundAzimuth(cam->UniversalLatitude(),
                   cam->UniversalLongitude(), ssplat, ssplon);
               index += 64 * 64;
@@ -416,7 +416,7 @@ namespace Isis {
             if (subSolarGroundAzimuth) {
               double sslat, sslon;
               sslat = sslon = 0.0;
-              cam->subSolarPoint(sslat,sslon);
+              cam->subSolarPoint(sslat,sslon,naif);
               out[index] = cam->GroundAzimuth(cam->UniversalLatitude(),
                   cam->UniversalLongitude(), sslat, sslon);
               index += 64 * 64;
@@ -440,12 +440,12 @@ namespace Isis {
             }
 
             if (ra) {
-              out[index] = cam->RightAscension();
+              out[index] = cam->RightAscension(naif);
               index += 64 * 64;
             }
 
             if (declination) {
-              out[index] = cam->Declination();
+              out[index] = cam->Declination(naif);
               index += 64 * 64;
             }
 
@@ -467,7 +467,7 @@ namespace Isis {
               }
             }
             if (localSolarTime) {
-              out[index] = cam->LocalSolarTime();
+              out[index] = cam->LocalSolarTime(naif);
               index += 64 * 64;
             }
           }
@@ -476,10 +476,10 @@ namespace Isis {
           else {
             for (int band = (dn) ? 1 : 0; band < nbands; band++) {
               if(ra && band == raBandNum) {
-                out[index] = cam->RightAscension();
+                out[index] = cam->RightAscension(naif);
               }
               else if (declination && band == raBandNum + 1) {
-                out[index] = cam->Declination();
+                out[index] = cam->Declination(naif);
               }
               else {
                 out[index] = Isis::Null;
@@ -543,12 +543,12 @@ namespace Isis {
     Angle myincidence;
     Angle myemission;
     bool mysuccess;
-    camera.LocalPhotometricAngles(myphase, myincidence, myemission, mysuccess);
+    camera.LocalPhotometricAngles(naif, myphase, myincidence, myemission, mysuccess);
     if (!mysuccess) {
       myemission.setDegrees(camera.EmissionAngle(naif));
       myincidence.setDegrees(camera.IncidenceAngle(naif));
     }
-    double res = camera.PixelResolution();
+    double res = camera.PixelResolution(naif);
     if (fabs(res) < Epsilon) res = Epsilon;
 
     md = MosData();  // Nullifies the data

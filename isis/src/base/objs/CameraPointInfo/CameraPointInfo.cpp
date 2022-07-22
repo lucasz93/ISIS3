@@ -602,7 +602,7 @@ namespace Isis {
 
         try {
           double lookC[3];
-          m_camera->LookDirection(lookC);
+          m_camera->LookDirection(lookC, naif);
           gp->findKeyword("LookDirectionCamera").addValue(toString(lookC[0]), "DEGREE");
           gp->findKeyword("LookDirectionCamera").addValue(toString(lookC[1]), "DEGREE");
           gp->findKeyword("LookDirectionCamera").addValue(toString(lookC[2]), "DEGREE");

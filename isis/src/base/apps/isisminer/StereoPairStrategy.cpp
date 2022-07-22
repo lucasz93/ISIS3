@@ -26,9 +26,6 @@
 // std library
 #include <cmath>
 
-// Naif functions
-#include "SpiceUsr.h"
-
 // Other Qt includes
 #include <QtGlobal>
 

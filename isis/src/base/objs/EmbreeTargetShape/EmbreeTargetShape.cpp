@@ -340,7 +340,7 @@ namespace Isis {
     naif->CheckErrors();
 
     // Get The number of polygons and vertices
-    dskz02_c( dskHandle, &dlaDescriptor, &numVertices, &numPlates );
+    naif->dskz02_c( dskHandle, &dlaDescriptor, &numVertices, &numPlates );
     naif->CheckErrors();
 
     // Allocate polygon and vertices arrays

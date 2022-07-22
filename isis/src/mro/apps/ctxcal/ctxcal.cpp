@@ -147,8 +147,8 @@ namespace Isis {
         try {
           Camera *cam;
           cam = icube->camera();
-          cam->setTime(startTime);
-          dist1 = cam->sunToBodyDist();
+          cam->setTime(startTime, naif);
+          dist1 = cam->sunToBodyDist(naif);
         }
         catch(IException &e) {
           // Get the distance between Mars and the Sun at the given time in
@@ -168,7 +168,7 @@ namespace Isis {
           naif->spkezr_c("sun", etStart, "iau_mars", "LT+S", "mars", sunpos, &lt);
           naif->CheckErrors();
 
-          dist1 = vnorm_c(sunpos);
+          dist1 = naif->vnorm_c(sunpos);
 
           naif->CheckErrors();
           naif->unload_c(bspKernel.toLatin1().data());

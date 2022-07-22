@@ -29,8 +29,10 @@ using namespace Isis;
 static QString APP_XML = FileName("$ISISROOT/bin/xml/findimageoverlaps.xml").expanded();
 
 TEST_F(ThreeImageNetwork, FunctionalTestFindimageoverlapsNoOverlap) {
+  auto naif = NaifContext::acquire();
+  
   ImagePolygon fp1;
-  fp1.Create(*cube1);
+  fp1.Create(naif, *cube1);
   cube1->write(fp1);
 
   Cube newCube2;
@@ -39,10 +41,10 @@ TEST_F(ThreeImageNetwork, FunctionalTestFindimageoverlapsNoOverlap) {
   i >> newIsd2;
 
   newIsd2["instrument_position"]["positions"] = {{1,1,1}, {2,2,2}, {3,3,3}};
-  newCube2.fromIsd(tempDir.path()+"/new2.cub", *cube2->label(), newIsd2, "rw");
+  newCube2.fromIsd(naif, tempDir.path()+"/new2.cub", *cube2->label(), newIsd2, "rw");
 
   ImagePolygon fp2;
-  fp2.Create(newCube2);
+  fp2.Create(naif, newCube2);
   newCube2.write(fp2);
 
   FileList cubes;
@@ -107,7 +109,6 @@ TEST_F(ThreeImageNetwork, FunctionalTestFindimageoverlapsTwoImageOverlap) {
 }
 
 TEST_F(ThreeImageNetwork, FunctionalTestFindimageoverlapsFullOverlap) {
-
   ImagePolygon poly;
   coords = {{31, 1},
             {31, 9},

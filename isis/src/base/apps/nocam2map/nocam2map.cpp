@@ -5,15 +5,13 @@
 #include <QStringList>
 #include <QVector>
 
-#include <SpiceUsr.h>
-
 #include "Cube.h"
 #include "Brick.h"
 #include "Constants.h"
 #include "Cube.h"
 #include "IString.h"
 #include "LeastSquares.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "nocam2map.h"
 #include "PolynomialBivariate.h"
 #include "ProcessRubberSheet.h"

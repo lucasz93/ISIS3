@@ -423,7 +423,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
     for (int i = 0; i < numEphem; i++) {
       cam->setTime(iTime(et), naif);
       SpiceRotation *bodyRot = cam->bodyRotation();
-      vector<double> pos = bodyRot->ReferenceVector(cam->instrumentPosition()->Coordinate());
+      vector<double> pos = bodyRot->ReferenceVector(cam->instrumentPosition()->Coordinate(), naif);
 //TO DO: UNCOMMENT THE FOLLOWING LINE WHEN VELOCITY BLOBS ARE CORRECT IN ISIS
       //vector<double> vel = bodyRot->ReferenceVector(cam->instrumentPosition()->Velocity());
 
@@ -520,7 +520,7 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
     for (int i = 0; i < numEphem; i++) {
       cam->setTime(iTime(et), naif);
       SpiceRotation *bodyRot = cam->bodyRotation();
-      vector<double> pos = bodyRot->ReferenceVector(cam->instrumentPosition()->Coordinate());
+      vector<double> pos = bodyRot->ReferenceVector(cam->instrumentPosition()->Coordinate(), naif);
 //TO DO: UNCOMMENT THE FOLLOWING LINE WHEN VELOCITY BLOBS ARE CORRECT IN ISIS
       //vector<double> vel = bodyRot->ReferenceVector(cam->instrumentPosition()->Velocity());
 
@@ -588,8 +588,8 @@ void socetlinescankeywords(Cube *input, UserInterface &ui) {
 
   for (int i = 0; i < numQuaternions; i++) {
     cam->setTime(iTime(et), naif);
-    vector<double> j2000ToBodyFixedMatrixVector = cam->bodyRotation()->Matrix();
-    vector<double> j2000ToCameraMatrixVector = cam->instrumentRotation()->Matrix();
+    vector<double> j2000ToBodyFixedMatrixVector = cam->bodyRotation()->Matrix(naif);
+    vector<double> j2000ToCameraMatrixVector = cam->instrumentRotation()->Matrix(naif);
     double quaternion[4] = {0.0, 0.0, 0.0, 0.0};
 
     double j2000ToBodyFixedRotationMatrix[3][3], //rotation from J2000 to target (aka body, planet)

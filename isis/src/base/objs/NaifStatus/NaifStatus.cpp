@@ -24,19 +24,18 @@ namespace Isis {
    *
    * @param resetNaif True if the NAIF error status should be reset (naif calls valid)
    */
-  void NaifStatus::CheckErrors(bool resetNaif) {
-    auto naifState = NaifContext::get()->top();
+  void NaifStatus::CheckErrors(NaifContextPtr naifState, bool resetNaif) {
     if(!naifState->naifStatusInitialized()) {
       SpiceChar returnAct[32] = "RETURN";
       SpiceChar printAct[32] = "NONE";
-      erract_c("SET", sizeof(returnAct), returnAct);   // Reset action to return
-      errprt_c("SET", sizeof(printAct), printAct);     // ... and print nothing
+      naifState->erract_c("SET", sizeof(returnAct), returnAct);   // Reset action to return
+      naifState->errprt_c("SET", sizeof(printAct), printAct);     // ... and print nothing
       naifState->set_naifStatusInitialized(true);
     }
 
     // Do nothing if NAIF didn't fail
-    //getmsg_c("", 0, NULL);
-    if(!failed_c()) return;
+    //naifState->getmsg_c("", 0, NULL);
+    if(!naifState->failed_c()) return;
 
     // This method has been documented with the information provided
     //   from the NAIF documentation at:
@@ -54,7 +53,7 @@ namespace Isis {
     // to use them in a test to determine which type of error has occurred.
     const int SHORT_DESC_LEN = 26;
     SpiceChar naifShort[SHORT_DESC_LEN];
-    getmsg_c("SHORT", SHORT_DESC_LEN, naifShort);
+    naifState->getmsg_c("SHORT", SHORT_DESC_LEN, naifShort);
 
     // This message may be up to 1840 characters long. The CSPICE error handling
     // mechanism makes no use of its contents. Its purpose is to provide human-readable
@@ -62,7 +61,7 @@ namespace Isis {
     // contain data relevant to the specific error they describe.
     const int LONG_DESC_LEN = 1841;
     SpiceChar naifLong[LONG_DESC_LEN];
-    getmsg_c("LONG", LONG_DESC_LEN, naifLong);
+    naifState->getmsg_c("LONG", LONG_DESC_LEN, naifLong);
 
     // Search for known naif errors...
     QString errMsg;
@@ -90,7 +89,7 @@ namespace Isis {
 
     // Now process the error
     if(resetNaif) {
-      reset_c();
+      naifState->reset_c();
     }
 
     errMsg += " The short explanation ";

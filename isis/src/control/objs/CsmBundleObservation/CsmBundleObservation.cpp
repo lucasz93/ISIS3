@@ -160,7 +160,7 @@ namespace Isis {
    *
    * @return @b bool Returns true upon successful application of corrections
    */
-  bool CsmBundleObservation::applyParameterCorrections(LinearAlgebra::Vector corrections) {
+  bool CsmBundleObservation::applyParameterCorrections(NaifContextPtr naif, LinearAlgebra::Vector corrections) {
     // Check that the correction vector is the correct size
     if (corrections.size() != m_paramIndices.size()) {
       QString msg = "Invalid correction vector passed to observation.";
@@ -202,7 +202,7 @@ namespace Isis {
    * @param errorPropagation Boolean indicating whether or not to attach more information
    *     (corrections, sigmas, adjusted sigmas...) to the output.
    */
-  void CsmBundleObservation::bundleOutputString(std::ostream &fpOut, bool errorPropagation) {
+  void CsmBundleObservation::bundleOutputString(NaifContextPtr naif, std::ostream &fpOut, bool errorPropagation) {
 
     char buf[4096];
 
@@ -271,7 +271,7 @@ namespace Isis {
    * @return @b QString Returns a formatted QString representing the CsmBundleObservation in
    * csv format
    */
-  QString CsmBundleObservation::bundleOutputCSV(bool errorPropagation) {
+  QString CsmBundleObservation::bundleOutputCSV(NaifContextPtr naif, bool errorPropagation) {
     QString finalqStr = "";
     CSMCamera *csmCamera = dynamic_cast<CSMCamera*>(front()->camera());
 
@@ -326,7 +326,7 @@ namespace Isis {
    *
    * @return bool Always false
    */
-  bool CsmBundleObservation::computeTargetPartials(LinearAlgebra::Matrix &coeffTarget, BundleMeasure &measure, BundleSettingsQsp &bundleSettings, BundleTargetBodyQsp &bundleTargetBody) {
+  bool CsmBundleObservation::computeTargetPartials(NaifContextPtr naif, LinearAlgebra::Matrix &coeffTarget, BundleMeasure &measure, BundleSettingsQsp &bundleSettings, BundleTargetBodyQsp &bundleTargetBody) {
     if (bundleTargetBody) {
       QString msg = "Target body parameters cannot be solved for with CSM observations.";
       throw IException(IException::User, msg, _FILEINFO_);
@@ -347,7 +347,7 @@ namespace Isis {
    *
    * @return bool
    */
-  bool CsmBundleObservation::computeImagePartials(LinearAlgebra::Matrix &coeffImage, BundleMeasure &measure) {
+  bool CsmBundleObservation::computeImagePartials(NaifContextPtr naif, LinearAlgebra::Matrix &coeffImage, BundleMeasure &measure) {
     coeffImage.clear();
 
     CSMCamera *csmCamera = dynamic_cast<CSMCamera*>(measure.camera());
@@ -378,7 +378,7 @@ namespace Isis {
    *
    * @return bool
    */
-  bool CsmBundleObservation::computePoint3DPartials(LinearAlgebra::Matrix &coeffPoint3D, BundleMeasure &measure, SurfacePoint::CoordinateType coordType) {
+  bool CsmBundleObservation::computePoint3DPartials(NaifContextPtr naif, LinearAlgebra::Matrix &coeffPoint3D, BundleMeasure &measure, SurfacePoint::CoordinateType coordType) {
     coeffPoint3D.clear();
 
     CSMCamera *measureCamera = dynamic_cast<CSMCamera*>(measure.camera());
@@ -438,7 +438,7 @@ namespace Isis {
    *
    * @return bool
    */
-  bool CsmBundleObservation::computeRHSPartials(LinearAlgebra::Vector &coeffRHS, BundleMeasure &measure) {
+  bool CsmBundleObservation::computeRHSPartials(NaifContextPtr naif, LinearAlgebra::Vector &coeffRHS, BundleMeasure &measure) {
     // Clear old values
     coeffRHS.clear();
 
@@ -446,7 +446,7 @@ namespace Isis {
     BundleControlPoint* point = measure.parentControlPoint();
 
     // Get ground-to-image computed coordinates for this point.
-    if (!(measureCamera->SetGround(point->adjustedSurfacePoint()))) {
+    if (!(measureCamera->SetGround(naif, point->adjustedSurfacePoint()))) {
       QString msg = "Unable to map apriori surface point for measure ";
       msg += measure.cubeSerialNumber() + " on point " + point->id() + " back into image.";
       throw IException(IException::User, msg, _FILEINFO_);

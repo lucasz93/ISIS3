@@ -38,14 +38,15 @@ namespace Isis {
     m_spacecraftNameLong = "Mars Express";
     m_spacecraftNameShort = "MEX";
 
+    auto naif = NaifContext::acquire();
     naif->CheckErrors();
 
-    SetFocalLength(Spice::getDouble("INS" + toString(naifIkCode()) + "_FOCAL_LENGTH"));
+    SetFocalLength(Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_FOCAL_LENGTH"));
 
     // For setting the pixel pitch, the Naif keyword PIXEL_SIZE is used instead of the ISIS
     // default of PIXEL_PITCH, so set the value directly.
     QString pp = "INS" + toString(naifIkCode()) + "_PIXEL_SIZE";
-    double pixelPitch = Spice::getDouble(pp);
+    double pixelPitch = Spice::getDouble(naif, pp);
     pixelPitch /= 1000.0;
     SetPixelPitch(pixelPitch);
 
@@ -56,12 +57,12 @@ namespace Isis {
 
     // Setup focal plane map. The class will read data from the instrument addendum kernel to pull
     // out the affine transforms from detector samp,line to focal plane x,y.
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     // The boresight position recorded in the IK is zero-based and therefore needs to be adjusted
     // for ISIS
-    double boresightSample = Spice::getDouble("INS" + toString(naifIkCode()) + "_CCD_CENTER",0) + 1.0;
-    double boresightLine = Spice::getDouble("INS" + toString(naifIkCode()) + "_CCD_CENTER",1) + 1.0;
+    double boresightSample = Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_CCD_CENTER",0) + 1.0;
+    double boresightLine = Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_CCD_CENTER",1) + 1.0;
     focalMap->SetDetectorOrigin(boresightSample,boresightLine);
 
     // The distortion is documented as near 1 pixel at the corners. This is less than the
@@ -76,14 +77,14 @@ namespace Isis {
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
     QString clockCount = inst["SpacecraftClockStartCount"];
-    double et = getClockTime(clockCount).Et();
+    double et = getClockTime(naif, clockCount).Et();
     double exposureDuration = (double)inst["ExposureDuration"] / 1000.0;
 
     pair<iTime, iTime> startStop = ShutterOpenCloseTimes(et, exposureDuration);
-    setTime(et);
+    setTime(et, naif);
 
     // Internalize all the NAIF SPICE information into memory.
-    LoadCache();
+    LoadCache(naif);
     naif->CheckErrors();
   }
 

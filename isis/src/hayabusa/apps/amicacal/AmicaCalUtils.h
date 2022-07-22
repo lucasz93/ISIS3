@@ -132,7 +132,7 @@ static bool sunDistanceAU(Cube *iCube,
       naif->spkpos_c(target.toLatin1().data(), obsStartTime, "J2000", "LT+S", "sun", sunv, &lt);
       naif->CheckErrors();
 
-      double sunkm = vnorm_c(sunv);
+      double sunkm = naif->vnorm_c(sunv);
 
       //  Return in AU units
       sunDist = sunkm / KM_PER_AU;

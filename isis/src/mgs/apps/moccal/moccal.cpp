@@ -134,8 +134,8 @@ namespace Isis {
     try {
       Camera *cam;
       cam = icube->camera();
-      cam->setTime(startTime);
-      sunAU = cam->sunToBodyDist() / kmPerAU;
+      cam->setTime(startTime, naif);
+      sunAU = cam->sunToBodyDist(naif) / kmPerAU;
     }
     catch(IException &e) {
       // Get the distance between Mars and the Sun at the given time in
@@ -152,7 +152,7 @@ namespace Isis {
 
       double sunpos[6], lt;
       naif->spkezr_c("sun", etStart, "iau_mars", "LT+S", "mars", sunpos, &lt);
-      double dist = vnorm_c(sunpos);
+      double dist = naif->vnorm_c(sunpos);
       sunAU = dist / kmPerAU;
       
       naif->CheckErrors();

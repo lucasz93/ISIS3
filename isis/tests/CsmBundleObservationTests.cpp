@@ -20,6 +20,7 @@
 using namespace Isis;
 
 TEST_F(CSMCameraFixture, CsmBundleOutputString) {
+  auto naif = NaifContext::acquire();
   EXPECT_CALL(mockModel, getNumParameters())
       .WillRepeatedly(::testing::Return(3));
   EXPECT_CALL(mockModel, getParameterType(0))
@@ -68,7 +69,7 @@ TEST_F(CSMCameraFixture, CsmBundleOutputString) {
                                    nullptr);
 
   EXPECT_TRUE(observation.setSolveSettings(bundleSolSetting));
-  observation.bundleOutputString(fpOut, false);
+  observation.bundleOutputString(naif, fpOut, false);
 
   QStringList lines = QString::fromStdString(fpOut.str()).split("\n");
   EXPECT_EQ(lines[0].toStdString(),
@@ -81,6 +82,8 @@ TEST_F(CSMCameraFixture, CsmBundleOutputString) {
 
 
 TEST_F(CSMCameraFixture, CsmBundleOutputCSVString) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getNumParameters())
       .WillRepeatedly(::testing::Return(3));
   EXPECT_CALL(mockModel, getParameterType(0))
@@ -127,13 +130,13 @@ TEST_F(CSMCameraFixture, CsmBundleOutputCSVString) {
                                    nullptr);
 
   EXPECT_TRUE(observation.setSolveSettings(bundleSolSetting));
-  QString csvString = observation.bundleOutputCSV(false);
+  QString csvString = observation.bundleOutputCSV(naif, false);
   EXPECT_EQ(csvString.toStdString(),
             "234.2,0.0,234.2,0.112,N/A,"
             "0.0,0.0,0.0,0.0123,N/A,"
             "100.0,0.0,100.0,0.342,N/A,");
 
-  csvString = observation.bundleOutputCSV(true);
+  csvString = observation.bundleOutputCSV(naif, true);
   EXPECT_FALSE(csvString.contains("N/A"));
 }
 
@@ -205,6 +208,8 @@ TEST_F(CSMCameraFixture, CsmBundleSetSolveSettings) {
 
 
 TEST_F(CSMCameraFixture, CsmBundleApplyParameterCorrections) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getNumParameters())
       .WillRepeatedly(::testing::Return(3));
   EXPECT_CALL(mockModel, getParameterType(0))
@@ -257,11 +262,13 @@ TEST_F(CSMCameraFixture, CsmBundleApplyParameterCorrections) {
   corrections[0] = 1.0;
   corrections[1] = 10.0;
 
-  ASSERT_TRUE(observation.applyParameterCorrections(corrections));
+  ASSERT_TRUE(observation.applyParameterCorrections(naif, corrections));
 }
 
 
 TEST_F(CSMCameraFixture, CsmBundleComputePoint3DPartials) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getNumParameters())
       .WillRepeatedly(::testing::Return(3));
   EXPECT_CALL(mockModel, getParameterType(0))
@@ -304,7 +311,7 @@ TEST_F(CSMCameraFixture, CsmBundleComputePoint3DPartials) {
 
   BundleSettingsQsp testBundleSettings(new BundleSettings());
 
-  SurfacePoint testSurfacePoint(Displacement(1000.0, Displacement::Kilometers),
+  SurfacePoint testSurfacePoint(naif, Displacement(1000.0, Displacement::Kilometers),
                                 Displacement(0.0, Displacement::Kilometers),
                                 Displacement(0.0, Displacement::Kilometers));
 
@@ -321,7 +328,7 @@ TEST_F(CSMCameraFixture, CsmBundleComputePoint3DPartials) {
 
   LinearAlgebra::Matrix coeffPoint3D(2, 3);
 
-  ASSERT_TRUE(observation.computePoint3DPartials(coeffPoint3D, *testBundleMeasure, SurfacePoint::Rectangular));
+  ASSERT_TRUE(observation.computePoint3DPartials(naif, coeffPoint3D, *testBundleMeasure, SurfacePoint::Rectangular));
 
   EXPECT_EQ(coeffPoint3D(0,0), 4000);
   EXPECT_EQ(coeffPoint3D(0,1), 5000);
@@ -330,7 +337,7 @@ TEST_F(CSMCameraFixture, CsmBundleComputePoint3DPartials) {
   EXPECT_EQ(coeffPoint3D(1,1), 2000);
   EXPECT_EQ(coeffPoint3D(1,2), 3000);
 
-  ASSERT_TRUE(observation.computePoint3DPartials(coeffPoint3D, *testBundleMeasure, SurfacePoint::Latitudinal));
+  ASSERT_TRUE(observation.computePoint3DPartials(naif, coeffPoint3D, *testBundleMeasure, SurfacePoint::Latitudinal));
 
   EXPECT_EQ(coeffPoint3D(0,0), 6000000);
   EXPECT_EQ(coeffPoint3D(0,1), 5000000);

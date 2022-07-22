@@ -370,8 +370,9 @@ namespace Isis {
    *   @todo answer comments with questions, TODO, ???, and !!!
    */
   void BundleAdjust::init(Progress *progress) {
-    emit(statusUpdate("Initialization"));
     auto naif = NaifContext::acquire();
+    
+    emit(statusUpdate("Initialization"));
     
     m_previousNumberImagePartials = 0;
 
@@ -429,7 +430,7 @@ namespace Isis {
         }
 
         BundleObservationQsp observation =
-            m_bundleObservations.addNew(image, observationNumber, instrumentId, m_bundleSettings);
+            m_bundleObservations.addNew(naif, image, observationNumber, instrumentId, m_bundleSettings);
 
         if (!observation) {
           QString msg = "In BundleAdjust::init(): observation "
@@ -1901,19 +1902,19 @@ namespace Isis {
     }
 
     if (m_bundleSettings->solveTargetBody()) {
-      observation->computeTargetPartials(coeffTarget, measure, m_bundleSettings, m_bundleTargetBody);
+      observation->computeTargetPartials(naif, coeffTarget, measure, m_bundleSettings, m_bundleTargetBody);
     }
 
-    observation->computeImagePartials(coeffImage, measure);
+    observation->computeImagePartials(naif, coeffImage, measure);
 
     // Complete partials calculations for 3D point (latitudinal or rectangular)
     // Retrieve the coordinate type (latitudinal or rectangular) and compute the partials for
     // the fixed point with respect to each coordinate in Body-Fixed
     SurfacePoint::CoordinateType coordType = m_bundleSettings->controlPointCoordTypeBundle();
-    observation->computePoint3DPartials(coeffPoint3D, measure, coordType);
+    observation->computePoint3DPartials(naif, coeffPoint3D, measure, coordType);
 
     // right-hand side (measured - computed)
-    observation->computeRHSPartials(coeffRHS, measure);
+    observation->computeRHSPartials(naif, coeffRHS, measure);
 
     double deltaX = coeffRHS(0);
     double deltaY = coeffRHS(1);
@@ -1976,7 +1977,7 @@ namespace Isis {
         // TODO: needs to be updated for ISIS vs. CSM CSM has no updateBodyRotation]
         // TODO: this is no good.
         QSharedPointer<IsisBundleObservation> isisObservation = qSharedPointerDynamicCast<IsisBundleObservation>(observation);
-        isisObservation->updateBodyRotation();
+        isisObservation->updateBodyRotation(naif);
       }
 
       t += numParameters;

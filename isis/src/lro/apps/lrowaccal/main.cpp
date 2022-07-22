@@ -242,7 +242,7 @@ void IsisMain () {
           naif->CheckErrors();
           double sunpos[6], lt;
           naif->spkezr_c("sun", etStart, "MOON_ME", "LT+S", "MOON", sunpos, &lt);
-          g_solarDistance = vnorm_c(sunpos) / KM_PER_AU;
+          g_solarDistance = naif->vnorm_c(sunpos) / KM_PER_AU;
           naif->unload_c(bspKernel1.toLatin1().data());
           naif->unload_c(bspKernel2.toLatin1().data());
           naif->unload_c(pckKernel1.toLatin1().data());

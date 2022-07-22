@@ -365,16 +365,16 @@ int main(int argc, char *argv[]) {
                         {"ephemeris_times"       , {1.0}},
                         {"positions"            , {{1.0, 2.0, 3.0}}}};
   SpicePosition zeroDegreePoly(-94, 499);
-  zeroDegreePoly.LoadCache(zeroDegreeIsd);
+  zeroDegreePoly.LoadCache(zeroDegreeIsd, naif);
   zeroDegreePoly.ComputeBaseTime();
-  zeroDegreePoly.SetPolynomialDegree(0);
-  zeroDegreePoly.SetPolynomial();
-  Table zeroDegreeTable = zeroDegreePoly.Cache("TestZeroDegree");
+  zeroDegreePoly.SetPolynomialDegree(0, naif);
+  zeroDegreePoly.SetPolynomial(naif);
+  Table zeroDegreeTable = zeroDegreePoly.Cache("TestZeroDegree", naif);
   SpicePosition singlePosition(-94, 499);
-  singlePosition.LoadCache(zeroDegreeTable);
+  singlePosition.LoadCache(zeroDegreeTable, naif);
   cout << "Source = " << singlePosition.GetSource() << endl;
   cout << "Has velocity? " << (singlePosition.HasVelocity() ? "Yes" : "No") << endl;
-  singlePosition.SetEphemerisTime(1.0);
+  singlePosition.SetEphemerisTime(1.0, naif);
   vector<double> singlePos = singlePosition.Coordinate();
   cout << "Time           = " << 1.0 << endl;
   cout << "Spacecraft (J) = " << singlePos[0] << " " << singlePos[1] << " " << singlePos[2] << endl;

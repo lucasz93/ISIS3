@@ -97,6 +97,8 @@ namespace Isis {
    * @param label The label containing information for the camera
    */
   void Spice::csmInit(Cube &cube, Pvl label) {
+    auto naif = NaifContext::acquire();
+
     defaultInit();
     m_target = new Target;
     naif->CheckErrors();
@@ -248,7 +250,7 @@ namespace Isis {
         }
 
         // Still need to load clock kernels for now
-        load(kernels["LeapSecond"], noTables);
+        load(kernels["LeapSecond"], noTables, naif);
         if ( kernels.hasKeyword("SpacecraftClock")) {
           load(kernels["SpacecraftClock"], noTables, naif);
         }
@@ -1445,7 +1447,7 @@ namespace Isis {
       naif->mxv_c(trans, &sunPos[0], pos);
 
       double radius, ls, lat;
-      naif, reclat_c(pos, &radius, &ls, &lat);
+      naif->reclat_c(pos, &radius, &ls, &lat);
 
       *m_solarLongitude = Longitude(ls, Angle::Radians).force360Domain();
 

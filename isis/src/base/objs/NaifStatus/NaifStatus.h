@@ -8,6 +8,8 @@ find files of those names at the top level of this repository. **/
 
 /* SPDX-License-Identifier: CC0-1.0 */
 namespace Isis {
+  class NaifContext;
+  
   /**
    * @brief Class for checking for errors in the NAIF library
    *
@@ -20,7 +22,7 @@ namespace Isis {
    */
   class NaifStatus {
     public:
-      static void CheckErrors(bool resetNaif = true);
+      static void CheckErrors(NaifContext* naifState, bool resetNaif = true);
   };
 };
 

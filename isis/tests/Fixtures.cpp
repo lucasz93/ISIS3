@@ -344,8 +344,7 @@ namespace Isis {
     }
 
     projTestCube = new Cube();
-<<<<<<< HEAD
-    projTestCube->fromIsd(tempDir.path() + "/default.level2.cub", projLabel, isd, "rw");
+    projTestCube->fromIsd(naif, tempDir.path() + "/default.level2.cub", projLabel, isd, "rw");
 
     line = LineManager(*projTestCube);
     pixelValue = 1;
@@ -357,12 +356,11 @@ namespace Isis {
       projTestCube->write(line);
     }
     projTestCube->reopen("rw");
-=======
-    projTestCube->fromIsd(naif, tempDir.path() + "/default.level2.cub", projLabel, isd, "rw");
->>>>>>> Conversions
   }
 
   void DefaultCube::resizeCube(int samples, int lines, int bands) {
+    auto naif = NaifContext::acquire();
+    
     label = Pvl();
     PvlObject &isisCube = testCube->label()->findObject("IsisCube");
     label.addObject(isisCube);
@@ -374,7 +372,7 @@ namespace Isis {
 
     delete testCube;
     testCube = new Cube();
-    testCube->fromIsd(tempDir.path() + "/default.cub", label, isd, "rw");
+    testCube->fromIsd(naif, tempDir.path() + "/default.cub", label, isd, "rw");
 
     LineManager line(*testCube);
     int pixelValue = 1;
@@ -400,7 +398,7 @@ namespace Isis {
 
     delete projTestCube;
     projTestCube = new Cube();
-    projTestCube->fromIsd(tempDir.path() + "/default.level2.cub", projLabel, isd, "rw");
+    projTestCube->fromIsd(naif, tempDir.path() + "/default.level2.cub", projLabel, isd, "rw");
 
     line = LineManager(*projTestCube);
     pixelValue = 1;
@@ -514,8 +512,7 @@ namespace Isis {
     auto naif = NaifContext::acquire();
 
     cube1 = new Cube();
-<<<<<<< HEAD
-    cube1->fromIsd(tempDir.path() + "/cube1.cub", labelPath1, *isdPath1, "rw");
+    cube1->fromIsd(naif, tempDir.path() + "/cube1.cub", labelPath1, *isdPath1, "rw");
 
     ImagePolygon poly;
     coords = {{30, 0},
@@ -527,7 +524,7 @@ namespace Isis {
     cube1->write(poly);
 
     cube2 = new Cube();
-    cube2->fromIsd(tempDir.path() + "/cube2.cub", labelPath2, *isdPath2, "rw");
+    cube2->fromIsd(naif, tempDir.path() + "/cube2.cub", labelPath2, *isdPath2, "rw");
 
     coords = {{31, 1},
               {31, 11},
@@ -538,7 +535,7 @@ namespace Isis {
     cube2->write(poly);
 
     cube3 = new Cube();
-    cube3->fromIsd(tempDir.path() + "/cube3.cub", labelPath3, *isdPath3, "rw");
+    cube3->fromIsd(naif, tempDir.path() + "/cube3.cub", labelPath3, *isdPath3, "rw");
 
     LineManager line(*cube1);
     LineManager line2(*cube2);
@@ -571,15 +568,6 @@ namespace Isis {
     cube1->reopen("rw");
     cube2->reopen("rw");
     cube3->reopen("rw");
-=======
-    cube1->fromIsd(naif, tempDir.path() + "/cube1.cub", labelPath1, isdPath1, "rw");
-
-    cube2 = new Cube();
-    cube2->fromIsd(naif, tempDir.path() + "/cube2.cub", labelPath2, isdPath2, "rw");
-
-    cube3 = new Cube();
-    cube3->fromIsd(naif, tempDir.path() + "/cube3.cub", labelPath3, isdPath3, "rw");
->>>>>>> Conversions
 
     cubeList = new FileList();
     cubeList->append(cube1->fileName());
@@ -600,9 +588,9 @@ namespace Isis {
     cube1map = new Cube();
     cube2map = new Cube();
     cube3map = new Cube();
-    cube1map->fromIsd(tempDir.path() + "/cube1map.cub", mappedLabelPath1, *isdPath1, "rw");
-    cube2map->fromIsd(tempDir.path() + "/cube2map.cub", mappedLabelPath2, *isdPath2, "rw");
-    cube3map->fromIsd(tempDir.path() + "/cube3map.cub", mappedLabelPath3, *isdPath3, "rw");
+    cube1map->fromIsd(naif, tempDir.path() + "/cube1map.cub", mappedLabelPath1, *isdPath1, "rw");
+    cube2map->fromIsd(naif, tempDir.path() + "/cube2map.cub", mappedLabelPath2, *isdPath2, "rw");
+    cube3map->fromIsd(naif, tempDir.path() + "/cube3map.cub", mappedLabelPath3, *isdPath3, "rw");
   }
 
   void ThreeImageNetwork::TearDown() {
@@ -627,6 +615,7 @@ namespace Isis {
 
 
   void ApolloNetwork::SetUp() {
+    auto naif = NaifContext::acquire();
     TempTestingFiles::SetUp();
 
     cubes.fill(nullptr, 7);
@@ -638,7 +627,7 @@ namespace Isis {
       isdFiles.push_back(FileName("data/apolloNetwork/apolloImage"+QString::number(n)+".isd"));
       labelFiles.push_back(FileName("data/apolloNetwork/apolloImage"+QString::number(n)+".pvl"));
       cubes[i] = new Cube();
-      cubes[i]->fromIsd(tempDir.path() + "/cube"+QString::number(n)+".cub", labelFiles[i], isdFiles[i], "rw");
+      cubes[i]->fromIsd(naif, tempDir.path() + "/cube"+QString::number(n)+".cub", labelFiles[i], isdFiles[i], "rw");
       cubeList->append(cubes[i]->fileName());
     }
 
@@ -663,6 +652,8 @@ namespace Isis {
   }
 
   void ObservationPair::SetUp() {
+      auto naif = NaifContext::acquire();
+
       FileName labelPathL = FileName("data/observationPair/observationImageL.pvl");
       FileName labelPathR = FileName("data/observationPair/observationImageR.pvl");
 
@@ -675,13 +666,13 @@ namespace Isis {
       cubeLPath = tempDir.path() + "/observationPairL.cub";
       cubeRPath = tempDir.path() + "/observationPairR.cub";
 
-      cubeL->fromIsd(cubeLPath, labelPathL, *isdPathL, "rw");
+      cubeL->fromIsd(naif, cubeLPath, labelPathL, *isdPathL, "rw");
       Pvl originalPdsLabL("data/observationPair/observationImageLOriginalLabel.pvl");
       OriginalLabel origLabel(originalPdsLabL);
       cubeL->write(origLabel);
       cubeL->reopen("rw");
 
-      cubeR->fromIsd(cubeRPath, labelPathR, *isdPathR, "rw");
+      cubeR->fromIsd(naif, cubeRPath, labelPathR, *isdPathR, "rw");
 
       cubeList = new FileList();
       cubeList->append(cubeL->fileName());
@@ -728,6 +719,8 @@ namespace Isis {
 
 
   void GalileoSsiCube::SetUp() {
+    auto naif = NaifContext::acquire();
+    
     DefaultCube::SetUp();
 
     // Change default dims
@@ -741,7 +734,7 @@ namespace Isis {
 
     FileName newCube(tempDir.path() + "/testing.cub");
 
-    testCube->fromIsd(newCube, label, isd, "rw");
+    testCube->fromIsd(naif, newCube, label, isd, "rw");
     PvlGroup &kernels = testCube->label()->findObject("IsisCube").findGroup("Kernels");
     kernels.findKeyword("NaifFrameCode").setValue("-77001");
     PvlGroup &inst = testCube->label()->findObject("IsisCube").findGroup("Instrument");
@@ -845,6 +838,8 @@ namespace Isis {
 
 
   void MroHiriseCube::SetUp() {
+    auto naif = NaifContext::acquire();
+    
     DefaultCube::SetUp();
     dejitteredCube.open("data/mroKernels/mroHiriseProj.cub");
 
@@ -860,7 +855,7 @@ namespace Isis {
 
     FileName newCube(tempDir.path() + "/testing.cub");
 
-    testCube->fromIsd(newCube, label, isd, "rw");
+    testCube->fromIsd(naif, newCube, label, isd, "rw");
     PvlGroup &kernels = testCube->label()->findObject("IsisCube").findGroup("Kernels");
     kernels.findKeyword("NaifFrameCode").setValue("-74999");
     PvlGroup &inst = testCube->label()->findObject("IsisCube").findGroup("Instrument");
@@ -1014,6 +1009,8 @@ namespace Isis {
 
 
   void NewHorizonsCube::setInstrument(QString ikid, QString instrumentId, QString spacecraftName) {
+    auto naif = NaifContext::acquire();
+    
     PvlObject &isisCube = testCube->label()->findObject("IsisCube");
 
     label = Pvl();
@@ -1089,7 +1086,7 @@ namespace Isis {
     QString fileName = tempDir.path() + "/leisa.cub";
     delete testCube;
     testCube = new Cube();
-    testCube->fromIsd(fileName, label, isd, "rw");
+    testCube->fromIsd(naif, fileName, label, isd, "rw");
 
     LineManager line(*testCube);
     double pixelValue = 0.0;
@@ -1176,12 +1173,14 @@ namespace Isis {
 
 
  void OsirisRexCube::setInstrument(QString ikid, QString instrumentId) {
+    auto naif = NaifContext::acquire();
+    
     delete testCube;
     testCube = new Cube();
 
     FileName newCube(tempDir.path() + "/testing.cub");
 
-    testCube->fromIsd(newCube, label, isd, "rw");
+    testCube->fromIsd(naif, newCube, label, isd, "rw");
 
     PvlGroup &kernels = testCube->label()->findObject("IsisCube").findGroup("Kernels");
     kernels.findKeyword("NaifFrameCode").setValue(ikid);
@@ -1320,6 +1319,8 @@ namespace Isis {
   }
 
   void CSMCameraSetFixture::SetUp() {
+    auto naif = NaifContext::acquire();
+    
     CSMCameraFixture::SetUp();
 
     imagePt = csm::ImageCoord(4.5, 4.5);
@@ -1334,7 +1335,7 @@ namespace Isis {
         .Times(1)
         .WillOnce(::testing::Return(10.0));
 
-    ASSERT_TRUE(testCam->SetImage(5, 5)); // Assert here so that the test code doesn't run if the camera isn't set
+    ASSERT_TRUE(testCam->SetImage(5, 5, naif)); // Assert here so that the test code doesn't run if the camera isn't set
   }
 
   void CSMCameraDemFixture::SetUp() {
@@ -1598,6 +1599,8 @@ namespace Isis {
   }
 
   void ClipperNacRsCube::SetUp() {
+    auto naif = NaifContext::acquire();
+    
     DefaultCube::SetUp();
 
     delete testCube;
@@ -1605,7 +1608,7 @@ namespace Isis {
 
     FileName newCube(tempDir.path() + "/testing.cub");
 
-    testCube->fromIsd(newCube, label, isd, "rw");
+    testCube->fromIsd(naif, newCube, label, isd, "rw");
 
     PvlGroup &kernels = testCube->label()->findObject("IsisCube").findGroup("Kernels");
     kernels.findKeyword("NaifFrameCode").setValue("-159101");

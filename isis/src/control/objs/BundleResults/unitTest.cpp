@@ -269,7 +269,8 @@ int main(int argc, char *argv[]) {
                             "TestImageSerialNumber",
                             "TestImageFileName");
     BundleObservationVector observationVector;
-    observationVector.addNew(BundleImageQsp(new BundleImage(bundleImage)),
+    observationVector.addNew(naif,
+                             BundleImageQsp(new BundleImage(bundleImage)),
                              "ObservationNumber1",
                              "InstrumentId1",
                              BundleSettingsQsp(new BundleSettings()));

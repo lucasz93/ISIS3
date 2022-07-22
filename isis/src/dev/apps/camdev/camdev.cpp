@@ -110,7 +110,7 @@ namespace Isis {
   };
 
   // Computes the special MORPHOLOGYRANK and ALBEDORANK planes
-  MosData *getMosaicIndicies(Camera &camera, MosData &md);
+  MosData *getMosaicIndicies(NaifContextPtr naif, Camera &camera, MosData &md);
   // Updates BandBin keyword
   static void UpdateBandKey(const QString &keyname, PvlGroup &bb, const int &nvals,
                      const QString &default_value = "Null");
@@ -405,6 +405,8 @@ namespace Isis {
   //  knowledge of the buffers size is assumed below, so ensure the buffer
   //  is still of the expected size.
   void camdev(Buffer &out) {
+    auto naif = NaifContext::acquire();
+    
     // If the DN option is selected, it is already added by the camdevDN
     // function.  We must compute the offset to start at the second band.
     int skipDN = (dn) ? 64 * 64   :  0;
@@ -422,16 +424,16 @@ namespace Isis {
           isGood = proj->SetWorld(samp, line);
         }
         else {
-          isGood = cam->SetImage(samp, line);
+          isGood = cam->SetImage(samp, line, naif);
         }
 
         if (isGood) {
           if (ra) {
-            out[index] = cam->RightAscension();
+            out[index] = cam->RightAscension(naif);
             index += 64 * 64;
           }
           if (declination) {
-            out[index] = cam->Declination();
+            out[index] = cam->Declination(naif);
             index += 64 * 64;
           }
           if(planetocentricLatitude) {
@@ -501,26 +503,26 @@ namespace Isis {
               out[index] = proj->Resolution();
             }
             else {
-              out[index] = cam->PixelResolution();
+              out[index] = cam->PixelResolution(naif);
             }
             index += 64 * 64;
           }
           if(lineResolution) {
-            out[index] = cam->LineResolution();
+            out[index] = cam->LineResolution(naif);
             index += 64 * 64;
           }
           if(sampleResolution) {
-            out[index] = cam->SampleResolution();
+            out[index] = cam->SampleResolution(naif);
             index += 64 * 64;
           }
           if(detectorResolution) {
-            out[index] = cam->DetectorResolution();
+            out[index] = cam->DetectorResolution(naif);
             index += 64 * 64;
           }
           //If spacecraftPositionX is true, Y and Z are true as well so compute them all
           if(spacecraftPositionX) {
             double spB[3];
-            cam->instrumentPosition(spB);
+            cam->instrumentPosition(spB, naif);
             out[index] = spB[0];
             index += 64 * 64;
             out[index] = spB[1];
@@ -529,22 +531,22 @@ namespace Isis {
             index += 64 * 64;
           }
           if(spacecraftAzimuth) {
-            out[index] = cam->SpacecraftAzimuth();
+            out[index] = cam->SpacecraftAzimuth(naif);
             index += 64 * 64;
           }
           if(slantDistance) {
-            out[index] = cam->SlantDistance();
+            out[index] = cam->SlantDistance(naif);
             index += 64 * 64;
           }
           if(targetCenterDistance) {
-            out[index] = cam->targetCenterDistance();
+            out[index] = cam->targetCenterDistance(naif);
             index += 64 * 64;
           }
           if(!noCamera) {
             double ssplat, ssplon;
             ssplat = 0.0;
             ssplon = 0.0;
-            cam->subSpacecraftPoint(ssplat, ssplon);
+            cam->subSpacecraftPoint(ssplat, ssplon, naif);
             if(subSpacecraftLatitude) {
               out[index] = ssplat;
               index += 64 * 64;
@@ -560,11 +562,11 @@ namespace Isis {
             }
           }
           if(spacecraftAltitude) {
-            out[index] = cam->SpacecraftAltitude();
+            out[index] = cam->SpacecraftAltitude(naif);
             index += 64 * 64;
           }
           if(offnadirAngle) {
-            out[index] = cam->OffNadirAngle();
+            out[index] = cam->OffNadirAngle(naif);
             index += 64 * 64;
           }
           //If sunPositionX is true, Y and Z are true as well so compute them all
@@ -579,7 +581,7 @@ namespace Isis {
             index += 64 * 64;
           }
           if(sunAzimuth) {
-            out[index] = cam->SunAzimuth();
+            out[index] = cam->SunAzimuth(naif);
             index += 64 * 64;
           }
           if(solarDistance) {
@@ -590,7 +592,7 @@ namespace Isis {
             double sslat, sslon;
             sslat = 0.0;
             sslon = 0.0;
-            cam->subSolarPoint(sslat, sslon);
+            cam->subSolarPoint(sslat, sslon, naif);
             if(subSolarLatitude) {
               out[index] = sslat;
               index += 64 * 64;
@@ -606,15 +608,15 @@ namespace Isis {
             }
           }
           if(phase) {
-            out[index] = cam->PhaseAngle();
+            out[index] = cam->PhaseAngle(naif);
             index += 64 * 64;
           }
           if(incidence) {
-            out[index] = cam->IncidenceAngle();
+            out[index] = cam->IncidenceAngle(naif);
             index += 64 * 64;
           }
           if(emission) {
-            out[index] = cam->EmissionAngle();
+            out[index] = cam->EmissionAngle(naif);
             index += 64 * 64;
           }
           if(localEmission || localIncidence) {
@@ -622,7 +624,7 @@ namespace Isis {
             Angle incidence;
             Angle emission;
             bool success;
-            cam->LocalPhotometricAngles(phase, incidence, emission, success);
+            cam->LocalPhotometricAngles(naif, phase, incidence, emission, success);
 
             if (localEmission) {
               out[index] = emission.degrees();
@@ -635,7 +637,7 @@ namespace Isis {
             }
           }
           if(northAzimuth) {
-            out[index] = cam->NorthAzimuth();
+            out[index] = cam->NorthAzimuth(naif);
             index += 64 * 64;
           }
           //If distortedFocalPlaneX is true, Y is true as well so compute both
@@ -666,22 +668,22 @@ namespace Isis {
             index += 64 * 64;
           }
           if(localSolarTime) {
-            out[index] = cam->LocalSolarTime();
+            out[index] = cam->LocalSolarTime(naif);
             index += 64 * 64;
           }
           if(solarLongitude) {
-            out[index] = cam->solarLongitude().degrees();
+            out[index] = cam->solarLongitude(naif).degrees();
             index += 64 * 64;
           }
           // Special Mosaic indexes
           if (morphologyRank) {
-            if (!p_mosd) { p_mosd = getMosaicIndicies(*cam, mosd); }
+            if (!p_mosd) { p_mosd = getMosaicIndicies(naif, *cam, mosd); }
             out[index] = mosd.m_morph;
             index += 64 * 64;
           }
 
           if (albedoRank) {
-            if (!p_mosd) { p_mosd = getMosaicIndicies(*cam, mosd); }
+            if (!p_mosd) { p_mosd = getMosaicIndicies(naif, *cam, mosd); }
             out[index] = mosd.m_albedo;
             index += 64 * 64;
           }
@@ -711,18 +713,18 @@ namespace Isis {
 
 
   // Computes the special morphologyRank and albedoRank planes
-  MosData *getMosaicIndicies(Camera &camera, MosData &md) {
+  MosData *getMosaicIndicies(NaifContextPtr naif, Camera &camera, MosData &md) {
     const double Epsilon(1.0E-8);
     Angle myphase;
     Angle myincidence;
     Angle myemission;
     bool mysuccess;
-    camera.LocalPhotometricAngles(myphase, myincidence, myemission, mysuccess);
+    camera.LocalPhotometricAngles(naif, myphase, myincidence, myemission, mysuccess);
     if (!mysuccess) {
-      myemission.setDegrees(camera.EmissionAngle());
-      myincidence.setDegrees(camera.IncidenceAngle());
+      myemission.setDegrees(camera.EmissionAngle(naif));
+      myincidence.setDegrees(camera.IncidenceAngle(naif));
     }
-    double res = camera.PixelResolution();
+    double res = camera.PixelResolution(naif);
     if (fabs(res) < Epsilon) res = Epsilon;
 
     md = MosData();  // Nullifies the data

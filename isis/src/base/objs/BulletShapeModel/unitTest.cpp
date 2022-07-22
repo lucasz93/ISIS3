@@ -280,9 +280,9 @@ void testGroundToCamera(NaifContextPtr naif,
   qDebug() << "Latitude:  " << lat.degrees();
   qDebug() << "Longitude: " << lon.degrees();
   qDebug() << "";
-  qDebug() << "Intersected without occlusion test: " << bulletModel.intersectSurface(lat, lon, observer, false);
+  qDebug() << "Intersected without occlusion test: " << bulletModel.intersectSurface(naif, lat, lon, observer, false);
   qDebug() << "";
-  qDebug() << "Intersected with occlusion test: " << bulletModel.intersectSurface(lat, lon, observer, true);
+  qDebug() << "Intersected with occlusion test: " << bulletModel.intersectSurface(naif, lat, lon, observer, true);
   qDebug() << "";
   outputModelStatus(naif, bulletModel);
 }

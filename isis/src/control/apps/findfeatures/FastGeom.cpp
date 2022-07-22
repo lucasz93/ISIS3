@@ -35,7 +35,7 @@ FastGeom::FastGeom(NaifContextPtr naif, const PvlFlatMap &parameters) : m_naif(n
 
 /* Construct with individual parameters to compute the fast geom transform */
 FastGeom::FastGeom(NaifContextPtr naif, const int maxpts, const double tolerance, const bool crop,
-         const bool preserve, const double &maxarea) : m_naif(naif)
+         const bool preserve, const double &maxarea) : m_naif(naif),
          m_fastpts(maxpts), m_tolerance(tolerance), m_geomtype("camera"),
          m_maxarea(maxarea), m_parameters() {
   validate(m_geomtype);

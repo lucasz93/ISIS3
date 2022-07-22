@@ -468,10 +468,10 @@ namespace Isis {
         cam = icube->camera();
         cam->instrumentPosition()->SetAberrationCorrection("LT+S");
         // Set time to the starting time of the image by setting image.
-        cam->SetImage(0.5, 0.5);
+        cam->SetImage(0.5, 0.5, naif);
   
         // rsun converted to AU
-        rsun = cam->sunToBodyDist() / 1.49597870691E8 / 5.2;
+        rsun = cam->sunToBodyDist(naif) / 1.49597870691E8 / 5.2;
       } 
       catch (IException &e) {
         // try original fallback for previously spiceinited data 

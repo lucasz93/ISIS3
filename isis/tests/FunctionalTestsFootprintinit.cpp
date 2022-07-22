@@ -19,10 +19,12 @@ using namespace Isis;
 static QString APP_XML = FileName("$ISISROOT/bin/xml/footprintinit.xml").expanded();
 
 TEST_F(DefaultCube, FunctionalTestFootprintinitDefault) {
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> footprintArgs = {};
   UserInterface footprintUi(APP_XML, footprintArgs);
 
-  footprintinit(testCube, footprintUi);
+  footprintinit(naif, testCube, footprintUi);
   ASSERT_TRUE(testCube->label()->hasObject("Polygon"));
 
   ImagePolygon poly = testCube->readFootprint();
@@ -41,10 +43,12 @@ TEST_F(DefaultCube, FunctionalTestFootprintinitDefault) {
 }
 
 TEST_F(DefaultCube, FunctionalTestFootprintinitLincSinc) {
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> footprintArgs = {"linc=50", "sinc=50"};
   UserInterface footprintUi(APP_XML, footprintArgs);
 
-  footprintinit(testCube, footprintUi);
+  footprintinit(naif, testCube, footprintUi);
   ASSERT_TRUE(testCube->label()->hasObject("Polygon"));
 
   ImagePolygon poly = testCube->readFootprint();
@@ -63,10 +67,12 @@ TEST_F(DefaultCube, FunctionalTestFootprintinitLincSinc) {
 }
 
 TEST_F(DefaultCube, FunctionalTestFootprintinitVertices) {
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> footprintArgs = {"incType=vertices", "numvertices=40"};
   UserInterface footprintUi(APP_XML, footprintArgs);
 
-  footprintinit(testCube, footprintUi);
+  footprintinit(naif, testCube, footprintUi);
   ASSERT_TRUE(testCube->label()->hasObject("Polygon"));
 
   ImagePolygon poly = testCube->readFootprint();
@@ -85,10 +91,12 @@ TEST_F(DefaultCube, FunctionalTestFootprintinitVertices) {
 }
 
 TEST_F(DefaultCube, FunctionalTestFootprintinitCamera) {
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> footprintArgs = {"maxemission=69", "maxincidence=70"};
   UserInterface footprintUi(APP_XML, footprintArgs);
 
-  footprintinit(testCube, footprintUi);
+  footprintinit(naif, testCube, footprintUi);
   ASSERT_TRUE(testCube->label()->hasObject("Polygon"));
 
   ImagePolygon poly = testCube->readFootprint();
@@ -107,10 +115,12 @@ TEST_F(DefaultCube, FunctionalTestFootprintinitCamera) {
 }
 
 TEST_F(DefaultCube, FunctionalTestFootprintinitTestXY) {
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> footprintArgs = {"testxy=yes"};
   UserInterface footprintUi(APP_XML, footprintArgs);
 
-  footprintinit(testCube, footprintUi);
+  footprintinit(naif, testCube, footprintUi);
   ASSERT_TRUE(testCube->label()->hasObject("Polygon"));
 
   ImagePolygon poly = testCube->readFootprint();
@@ -129,12 +139,14 @@ TEST_F(DefaultCube, FunctionalTestFootprintinitTestXY) {
 }
 
 TEST_F(DefaultCube, FunctionalTestFootprintinitPrecision) {
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> footprintArgs = {"increaseprecision=yes"};
   UserInterface footprintUi(APP_XML, footprintArgs);
 
   Pvl log;
 
-  footprintinit(testCube, footprintUi, &log);
+  footprintinit(naif, testCube, footprintUi, &log);
   ASSERT_TRUE(testCube->label()->hasObject("Polygon"));
 
   ASSERT_TRUE(log.hasGroup("Results"));

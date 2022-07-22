@@ -25,6 +25,7 @@ using json = nlohmann::json;
 using namespace Isis;
 
 TEST_F(CSMCameraFixture, SetImage) {
+  auto naif = NaifContext::acquire();
   csm::Ellipsoid wgs84;
   EXPECT_CALL(mockModel, imageToRemoteImagingLocus(MatchImageCoord(csm::ImageCoord(4.5, 4.5)), ::testing::_, ::testing::_, ::testing::_))
       .Times(1)
@@ -34,7 +35,7 @@ TEST_F(CSMCameraFixture, SetImage) {
       .Times(1)
       .WillOnce(::testing::Return(10.0));
 
-  EXPECT_TRUE(testCam->SetImage(5, 5));
+  EXPECT_TRUE(testCam->SetImage(5, 5, naif));
   EXPECT_EQ(testCam->UniversalLatitude(), 0.0);
   EXPECT_EQ(testCam->UniversalLongitude(), 0.0);
   EXPECT_THAT(testCam->lookDirectionBodyFixed(), ::testing::ElementsAre(-1.0, 0.0, 0.0));
@@ -45,18 +46,20 @@ TEST_F(CSMCameraFixture, SetImage) {
 
 
 TEST_F(CSMCameraFixture, SetImageNoIntersect) {
+  auto naif = NaifContext::acquire();
   csm::Ellipsoid wgs84;
   EXPECT_CALL(mockModel, imageToRemoteImagingLocus(MatchImageCoord(csm::ImageCoord(4.5, 4.5)), ::testing::_, ::testing::_, ::testing::_))
       .Times(1)
       // looking straight down X-Axis
       .WillOnce(::testing::Return(csm::EcefLocus(wgs84.getSemiMajorRadius() + 50000, 0, 0, 0, 1, 0)));
 
-  EXPECT_FALSE(testCam->SetImage(5, 5));
+  EXPECT_FALSE(testCam->SetImage(5, 5, naif));
   EXPECT_THAT(testCam->lookDirectionBodyFixed(), ::testing::ElementsAre(0.0, 1.0, 0.0));
 }
 
 
 TEST_F(CSMCameraDemFixture, SetImage) {
+  auto naif = NaifContext::acquire();
   EXPECT_CALL(mockModel, imageToRemoteImagingLocus(MatchImageCoord(csm::ImageCoord(4.5, 4.5)), ::testing::_, ::testing::_, ::testing::_))
       .Times(1)
       // looking straight down X-Axis
@@ -67,13 +70,15 @@ TEST_F(CSMCameraDemFixture, SetImage) {
       .Times(1)
       .WillOnce(::testing::Return(10.0));
 
-  testCam->SetImage(5, 5);
+  testCam->SetImage(5, 5, naif);
   EXPECT_EQ(testCam->UniversalLatitude(), 0.0);
   EXPECT_EQ(testCam->UniversalLongitude(), 0.0);
 }
 
 
 TEST_F(CSMCameraFixture, SetGround) {
+  auto naif = NaifContext::acquire();
+  
   // Define some things to match/return
   csm::Ellipsoid wgs84;
   csm::ImageCoord imagePt(4.5, 4.5);
@@ -93,13 +98,13 @@ TEST_F(CSMCameraFixture, SetGround) {
 
   iTime refTime("2000-01-01T11:58:55.816");
 
-  EXPECT_TRUE(testCam->SetGround(Latitude(0.0, Angle::Degrees), Longitude(0.0, Angle::Degrees)));
+  EXPECT_TRUE(testCam->SetGround(naif, Latitude(0.0, Angle::Degrees), Longitude(0.0, Angle::Degrees)));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
   EXPECT_EQ((refTime + 10.0).Et(), testCam->time().Et());
   EXPECT_THAT(testCam->lookDirectionBodyFixed(), ::testing::ElementsAre(-1.0, 0.0, 0.0));
 
-  EXPECT_TRUE(testCam->SetGround(SurfacePoint(Latitude(0.0, Angle::Degrees),
+  EXPECT_TRUE(testCam->SetGround(naif, SurfacePoint(naif, Latitude(0.0, Angle::Degrees),
                                  Longitude(0.0, Angle::Degrees),
                                  Distance(wgs84.getSemiMajorRadius(), Distance::Meters))));
   EXPECT_EQ(testCam->Line(), 5.0);
@@ -107,13 +112,13 @@ TEST_F(CSMCameraFixture, SetGround) {
   EXPECT_EQ((refTime + 10.0).Et(), testCam->time().Et());
   EXPECT_THAT(testCam->lookDirectionBodyFixed(), ::testing::ElementsAre(-1.0, 0.0, 0.0));
 
-  EXPECT_TRUE(testCam->SetUniversalGround(0.0, 0.0));
+  EXPECT_TRUE(testCam->SetUniversalGround(naif, 0.0, 0.0));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
   EXPECT_EQ((refTime + 10.0).Et(), testCam->time().Et());
   EXPECT_THAT(testCam->lookDirectionBodyFixed(), ::testing::ElementsAre(-1.0, 0.0, 0.0));
 
-  EXPECT_TRUE(testCam->SetUniversalGround(0.0, 0.0, wgs84.getSemiMajorRadius()));
+  EXPECT_TRUE(testCam->SetUniversalGround(naif, 0.0, 0.0, wgs84.getSemiMajorRadius()));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
   EXPECT_EQ((refTime + 10.0).Et(), testCam->time().Et());
@@ -122,6 +127,8 @@ TEST_F(CSMCameraFixture, SetGround) {
 
 
 TEST_F(CSMCameraDemFixture, SetGround) {
+  auto naif = NaifContext::acquire();
+  
   // Define some things to match/return
   csm::ImageCoord imagePt(4.5, 4.5);
   csm::EcefCoord groundPt(demRadius, 0, 0);
@@ -138,27 +145,29 @@ TEST_F(CSMCameraDemFixture, SetGround) {
       .Times(4)
       .WillRepeatedly(::testing::Return(10.0));
 
-  EXPECT_TRUE(testCam->SetGround(Latitude(0.0, Angle::Degrees), Longitude(0.0, Angle::Degrees)));
+  EXPECT_TRUE(testCam->SetGround(naif, Latitude(0.0, Angle::Degrees), Longitude(0.0, Angle::Degrees)));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
 
-  EXPECT_TRUE(testCam->SetGround(SurfacePoint(Latitude(0.0, Angle::Degrees),
+  EXPECT_TRUE(testCam->SetGround(naif, SurfacePoint(naif, Latitude(0.0, Angle::Degrees),
                                  Longitude(0.0, Angle::Degrees),
                                  Distance(demRadius, Distance::Meters))));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
 
-  EXPECT_TRUE(testCam->SetUniversalGround(0.0, 0.0));
+  EXPECT_TRUE(testCam->SetUniversalGround(naif, 0.0, 0.0));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
 
-  EXPECT_TRUE(testCam->SetUniversalGround(0.0, 0.0, demRadius));
+  EXPECT_TRUE(testCam->SetUniversalGround(naif, 0.0, 0.0, demRadius));
   EXPECT_EQ(testCam->Line(), 5.0);
   EXPECT_EQ(testCam->Sample(), 5.0);
 }
 
 
 TEST_F(CSMCameraSetFixture, Resolution) {
+  auto naif = NaifContext::acquire();
+  
   // Setup to return the ground partials we want
   // The pseudoinverse of:
   // 1 2 3
@@ -175,22 +184,23 @@ TEST_F(CSMCameraSetFixture, Resolution) {
   // Use expect near here because the psuedoinverse calculation is only accurate to ~1e-10
   double expectedLineRes = sqrt(17*17 + 2*2 + 13*13)/18;
   double expectedSampRes = sqrt(8*8 + 2*2 + 4*4)/18;
-  EXPECT_NEAR(testCam->LineResolution(), expectedLineRes, 1e-10);
-  EXPECT_NEAR(testCam->ObliqueLineResolution(), expectedLineRes, 1e-10);
-  EXPECT_NEAR(testCam->SampleResolution(), expectedSampRes, 1e-10);
-  EXPECT_NEAR(testCam->ObliqueSampleResolution(), expectedSampRes, 1e-10);
-  EXPECT_NEAR(testCam->DetectorResolution(), (expectedLineRes+expectedSampRes) / 2.0, 1e-10);
-  EXPECT_NEAR(testCam->ObliqueDetectorResolution(), (expectedLineRes+expectedSampRes) / 2.0, 1e-10);
+  EXPECT_NEAR(testCam->LineResolution(naif), expectedLineRes, 1e-10);
+  EXPECT_NEAR(testCam->ObliqueLineResolution(naif), expectedLineRes, 1e-10);
+  EXPECT_NEAR(testCam->SampleResolution(naif), expectedSampRes, 1e-10);
+  EXPECT_NEAR(testCam->ObliqueSampleResolution(naif), expectedSampRes, 1e-10);
+  EXPECT_NEAR(testCam->DetectorResolution(naif), (expectedLineRes+expectedSampRes) / 2.0, 1e-10);
+  EXPECT_NEAR(testCam->ObliqueDetectorResolution(naif), (expectedLineRes+expectedSampRes) / 2.0, 1e-10);
 }
 
 
 TEST_F(CSMCameraSetFixture, InstrumentBodyFixedPosition) {
+  auto naif = NaifContext::acquire();
   EXPECT_CALL(mockModel, getSensorPosition(MatchImageCoord(imagePt)))
       .Times(1)
       .WillOnce(::testing::Return(imageLocus.point));
 
   double position[3];
-  testCam->instrumentBodyFixedPosition(position);
+  testCam->instrumentBodyFixedPosition(position, naif);
   EXPECT_EQ(position[0], (imageLocus.point.x) / 1000.0);
   EXPECT_EQ(position[1], (imageLocus.point.y) / 1000.0);
   EXPECT_EQ(position[2], (imageLocus.point.z) / 1000.0);
@@ -198,18 +208,22 @@ TEST_F(CSMCameraSetFixture, InstrumentBodyFixedPosition) {
 
 
 TEST_F(CSMCameraSetFixture, SubSpacecraftPoint) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getSensorPosition(MatchImageCoord(imagePt)))
       .Times(1)
       .WillOnce(::testing::Return(imageLocus.point));
 
   double lat, lon;
-  testCam->subSpacecraftPoint(lat, lon);
+  testCam->subSpacecraftPoint(lat, lon, naif);
   EXPECT_EQ(lat, 0.0);
   EXPECT_EQ(lon, 0.0);
 }
 
 
 TEST_F(CSMCameraSetFixture, SlantDistance) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getSensorPosition(MatchImageCoord(imagePt)))
       .Times(1)
       .WillOnce(::testing::Return(imageLocus.point));
@@ -218,11 +232,13 @@ TEST_F(CSMCameraSetFixture, SlantDistance) {
       pow(imageLocus.point.x - groundPt.x, 2) +
       pow(imageLocus.point.y - groundPt.y, 2) +
       pow(imageLocus.point.z - groundPt.z, 2)) / 1000.0;
-  EXPECT_DOUBLE_EQ(testCam->SlantDistance(), expectedDistance);
+  EXPECT_DOUBLE_EQ(testCam->SlantDistance(naif), expectedDistance);
 }
 
 
 TEST_F(CSMCameraSetFixture, TargetCenterDistance) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getSensorPosition(MatchImageCoord(imagePt)))
       .Times(1)
       .WillOnce(::testing::Return(imageLocus.point));
@@ -231,11 +247,13 @@ TEST_F(CSMCameraSetFixture, TargetCenterDistance) {
       pow(imageLocus.point.x, 2) +
       pow(imageLocus.point.y, 2) +
       pow(imageLocus.point.z, 2)) / 1000.0;
-  EXPECT_DOUBLE_EQ(testCam->targetCenterDistance(), expectedDistance);
+  EXPECT_DOUBLE_EQ(testCam->targetCenterDistance(naif), expectedDistance);
 }
 
 
 TEST_F(CSMCameraSetFixture, PhaseAngle) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getSensorPosition(MatchImageCoord(imagePt)))
       .Times(1)
       .WillOnce(::testing::Return(csm::EcefCoord(groundPt.x + 50000, groundPt.y, groundPt.z + 50000)));
@@ -243,25 +261,29 @@ TEST_F(CSMCameraSetFixture, PhaseAngle) {
       .Times(1)
       .WillOnce(::testing::Return(csm::EcefVector(0.0, 0.0, -1.0)));
 
-  EXPECT_DOUBLE_EQ(testCam->PhaseAngle(), 45.0);
+  EXPECT_DOUBLE_EQ(testCam->PhaseAngle(naif), 45.0);
 }
 
 
 TEST_F(CSMCameraSetFixture, IncidenceAngle) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getIlluminationDirection(MatchEcefCoord(groundPt)))
       .Times(1)
       .WillOnce(::testing::Return(csm::EcefVector(0.0, 0.0, -1.0)));
 
-  EXPECT_DOUBLE_EQ(testCam->IncidenceAngle(), 90.0);
+  EXPECT_DOUBLE_EQ(testCam->IncidenceAngle(naif), 90.0);
 }
 
 
 TEST_F(CSMCameraSetFixture, EmissionAngle) {
+  auto naif = NaifContext::acquire();
+  
   EXPECT_CALL(mockModel, getSensorPosition(MatchImageCoord(imagePt)))
       .Times(1)
       .WillOnce(::testing::Return(imageLocus.point));
 
-  EXPECT_DOUBLE_EQ(testCam->EmissionAngle(), 0.0);
+  EXPECT_DOUBLE_EQ(testCam->EmissionAngle(naif), 0.0);
 }
 
 
@@ -479,7 +501,8 @@ TEST_F(CSMCameraFixture, CameraState) {
 TEST_F(CSMCameraFixture, SetTime) {
   try
   {
-    testCam->setTime(iTime("2000-01-01T11:58:55.816"));
+    auto naif = NaifContext::acquire();
+    testCam->setTime(iTime("2000-01-01T11:58:55.816"), naif);
   }
   catch(Isis::IException &e)
   {
@@ -497,8 +520,9 @@ TEST_F(CSMCameraFixture, SetTime) {
 TEST_F(CSMCameraFixture, SubSolarPoint) {
   try
   {
+    auto naif = NaifContext::acquire();
     double lat, lon;
-    testCam->subSolarPoint(lat ,lon);
+    testCam->subSolarPoint(lat, lon, naif);
   }
   catch(Isis::IException &e)
   {
@@ -622,7 +646,8 @@ TEST_F(CSMCameraFixture, InstrumentRotation) {
 TEST_F(CSMCameraFixture, SolarLongitude) {
   try
   {
-    testCam->solarLongitude();
+    auto naif = NaifContext::acquire();
+    testCam->solarLongitude(naif);
   }
   catch(Isis::IException &e)
   {
@@ -658,7 +683,8 @@ TEST_F(CSMCameraFixture, SolarDistance) {
 TEST_F(CSMCameraFixture, RightAscension) {
   try
   {
-    testCam->RightAscension();
+    auto naif = NaifContext::acquire();
+    testCam->RightAscension(naif);
   }
   catch(Isis::IException &e)
   {
@@ -676,7 +702,8 @@ TEST_F(CSMCameraFixture, RightAscension) {
 TEST_F(CSMCameraFixture, Declination) {
   try
   {
-    testCam->Declination();
+    auto naif = NaifContext::acquire();
+    testCam->Declination(naif);
   }
   catch(Isis::IException &e)
   {

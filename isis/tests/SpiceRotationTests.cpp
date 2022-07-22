@@ -44,6 +44,8 @@ class SpiceRotationKernels : public ::testing::Test {
     int targetCode;
 
   void SetUp() {
+    auto naif = NaifContext::acquire();
+    
     startTime = -69382819.0;
     endTime = -69382512.0;
     frameCode = -94031;
@@ -62,13 +64,15 @@ class SpiceRotationKernels : public ::testing::Test {
     kernels.push_back(dir + "ROS_V29.TF");
     kernels.push_back(dir + "CATT_DV_145_02_______00216.BC");
     for (QString& kernel : kernels) {
-      furnsh_c(kernel.toLatin1().data());
+      naif->furnsh_c(kernel.toLatin1().data());
     }
   }
 
   void TearDown() {
+    auto naif = NaifContext::acquire();
+    
     for (QString& kernel : kernels) {
-      unload_c(kernel.toLatin1().data());
+      naif->unload_c(kernel.toLatin1().data());
     }
   }
 };
@@ -102,13 +106,14 @@ class SpiceRotationIsd : public ::testing::Test {
 };
 
 TEST_F(SpiceRotationKernels, FromSpice) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(frameCode);
 
   // Start time
-  rot.SetEphemerisTime(startTime);
+  rot.SetEphemerisTime(startTime, naif);
   EXPECT_DOUBLE_EQ(rot.EphemerisTime(), startTime);
 
-  vector<double> startCJ = rot.Matrix();
+  vector<double> startCJ = rot.Matrix(naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, startCJ,
                       (vector<double>{-0.87506927,  0.25477955, -0.41151081,
                                        0.011442263, 0.86088548, 0.50867009,
@@ -122,9 +127,9 @@ TEST_F(SpiceRotationKernels, FromSpice) {
                       testTolerance);
 
   // Middle time
-  rot.SetEphemerisTime(startTime + (4 * (endTime - startTime) / 9));
+  rot.SetEphemerisTime(startTime + (4 * (endTime - startTime) / 9), naif);
 
-  vector<double> midCJ = rot.Matrix();
+  vector<double> midCJ = rot.Matrix(naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, midCJ,
                       (vector<double>{-0.77359018,  0.32985508, -0.54106734,
                                        0.010977931, 0.86068895,  0.50901279,
@@ -138,9 +143,9 @@ TEST_F(SpiceRotationKernels, FromSpice) {
                       testTolerance);
 
   // End time
-  rot.SetEphemerisTime(endTime);
+  rot.SetEphemerisTime(endTime, naif);
 
-  vector<double> endCJ = rot.Matrix();
+  vector<double> endCJ = rot.Matrix(naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, endCJ,
                       (vector<double>{-0.61729588,  0.4060182,  -0.67386573,
                                        0.010223693, 0.86060645,  0.50916796,
@@ -155,40 +160,40 @@ TEST_F(SpiceRotationKernels, FromSpice) {
 
 
   // Cache it
-  rot.LoadCache(startTime, endTime, 10);
+  rot.LoadCache(startTime, endTime, 10, naif);
 
   // Check start again
-  rot.SetEphemerisTime(startTime);
+  rot.SetEphemerisTime(startTime, naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), startCJ, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), startCJ, testTolerance);
 
   ASSERT_TRUE(rot.HasAngularVelocity());
   EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.AngularVelocity(), startAV, testTolerance);
 
   // Check middle again
-  rot.SetEphemerisTime(startTime + (4 * (endTime - startTime) / 9));
+  rot.SetEphemerisTime(startTime + (4 * (endTime - startTime) / 9), naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), midCJ, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), midCJ, testTolerance);
 
   ASSERT_TRUE(rot.HasAngularVelocity());
   EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.AngularVelocity(), midAV, testTolerance);
 
   // Check end again
-  rot.SetEphemerisTime(endTime);
+  rot.SetEphemerisTime(endTime, naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), endCJ, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), endCJ, testTolerance);
 
   ASSERT_TRUE(rot.HasAngularVelocity());
   EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.AngularVelocity(), endAV, testTolerance);
 
 
   // Fit polynomial
-  rot.SetPolynomial();
+  rot.SetPolynomial(naif);
 
   // Check start again
-  rot.SetEphemerisTime(startTime);
+  rot.SetEphemerisTime(startTime, naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{-0.87506744, 0.25462094, -0.41161286,
                                       0.011738947, 0.86135321,  0.5078709,
                                       0.48385863,  0.43958939, -0.75673113}),
@@ -200,9 +205,9 @@ TEST_F(SpiceRotationKernels, FromSpice) {
                       testTolerance);
 
   // Check middle again
-  rot.SetEphemerisTime(startTime + (4 * (endTime - startTime) / 9));
+  rot.SetEphemerisTime(startTime + (4 * (endTime - startTime) / 9), naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{-0.77358897,  0.32991801, -0.54103069,
                                        0.010878267, 0.86056939,  0.50921703,
                                        0.63359432,  0.3880392,  -0.66931593}),
@@ -214,9 +219,9 @@ TEST_F(SpiceRotationKernels, FromSpice) {
                       testTolerance);
 
   // Check end again
-  rot.SetEphemerisTime(endTime);
+  rot.SetEphemerisTime(endTime, naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{-0.61722064,   0.40639527, -0.67370733,
                                        0.0096837405, 0.86013226,  0.50997914,
                                        0.78673052,   0.30824564, -0.53482681}),
@@ -230,11 +235,12 @@ TEST_F(SpiceRotationKernels, FromSpice) {
 
 
 TEST_F(SpiceRotationKernels, Nadir) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(frameCode, targetCode);
 
-  rot.SetEphemerisTime(startTime);
+  rot.SetEphemerisTime(startTime, naif);
 
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{-0.87397636,  0.25584047, -0.41317186,
                                        0.011529483, 0.86087973,  0.50867786,
                                        0.48583166,  0.43980876, -0.75533824}),
@@ -243,8 +249,9 @@ TEST_F(SpiceRotationKernels, Nadir) {
 
 
 TEST_F(SpiceRotationKernels, Pck) {
+  auto naif = NaifContext::acquire();
   SpiceRotation ioRot(10023); // Use IO because it has nutation/precession
-  ioRot.LoadCache(-15839262.24291, -15839262.24291, 1);
+  ioRot.LoadCache(-15839262.24291, -15839262.24291, 1, naif);
 
   EXPECT_EQ(ioRot.getFrameType(), SpiceRotation::PCK);
 
@@ -323,9 +330,10 @@ TEST_F(SpiceRotationKernels, Pck) {
 
 
 TEST_F(SpiceRotationIsd, FromALE) {
+  auto naif = NaifContext::acquire();
   // Test with just a time dependent rotation
   SpiceRotation aleQuatRot(-94031);
-  aleQuatRot.LoadCache(isd);
+  aleQuatRot.LoadCache(isd, naif);
 
   EXPECT_EQ(aleQuatRot.getFrameType(), SpiceRotation::CK);
   EXPECT_TRUE(aleQuatRot.IsCached());
@@ -337,29 +345,29 @@ TEST_F(SpiceRotationIsd, FromALE) {
   EXPECT_EQ(timeDepChain[1], 10014);
   EXPECT_EQ(timeDepChain[2], 1);
 
-  aleQuatRot.SetEphemerisTime(0.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(),
+  aleQuatRot.SetEphemerisTime(0.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(naif),
                       (vector<double>{-1.0,  0.0, 0.0,
                                        0.0, -1.0, 0.0,
                                        0.0,  0.0, 1.0}),
                       testTolerance);
 
-  aleQuatRot.SetEphemerisTime(1.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(),
+  aleQuatRot.SetEphemerisTime(1.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(naif),
                       (vector<double>{0.0, 1.0, 0.0,
                                      -1.0, 0.0, 0.0,
                                       0.0, 0.0, 1.0}),
                       testTolerance);
 
-  aleQuatRot.SetEphemerisTime(2.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(),
+  aleQuatRot.SetEphemerisTime(2.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(naif),
                       (vector<double>{0.0, 1.0,  0.0,
                                       1.0, 0.0,  0.0,
                                       0.0, 0.0, -1.0}),
                       testTolerance);
 
-  aleQuatRot.SetEphemerisTime(3.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(),
+  aleQuatRot.SetEphemerisTime(3.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatRot.Matrix(naif),
                       (vector<double>{0.0, 0.0, -1.0,
                                      -1.0, 0.0,  0.0,
                                       0.0, 1.0,  0.0}),
@@ -368,68 +376,68 @@ TEST_F(SpiceRotationIsd, FromALE) {
 
   // Test with angular velocity
   SpiceRotation aleQuatAVRot(-94031);
-  aleQuatAVRot.LoadCache(isdAv);
+  aleQuatAVRot.LoadCache(isdAv, naif);
 
   ASSERT_TRUE(aleQuatAVRot.HasAngularVelocity());
 
-  aleQuatAVRot.SetEphemerisTime(0.0);
+  aleQuatAVRot.SetEphemerisTime(0.0, naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatAVRot.AngularVelocity(),
                       (vector<double>{-Isis::PI / 2.0, 0.0,  0.0}), testTolerance);
 
-  aleQuatAVRot.SetEphemerisTime(1.0);
+  aleQuatAVRot.SetEphemerisTime(1.0, naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatAVRot.AngularVelocity(),
                       (vector<double>{0.0, Isis::PI, 0.0}), testTolerance);
 
-  aleQuatAVRot.SetEphemerisTime(2.0);
+  aleQuatAVRot.SetEphemerisTime(2.0, naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatAVRot.AngularVelocity(),
                       (vector<double>{0.0, 0.0, Isis::PI / 2.0}), testTolerance);;
 
-  aleQuatAVRot.SetEphemerisTime(3.0);
+  aleQuatAVRot.SetEphemerisTime(3.0, naif);
   EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatAVRot.AngularVelocity(),
                       (vector<double>{0.0, 0.0, Isis::PI / 2.0}), testTolerance);
 
 
   // Test with a constant rotation
   SpiceRotation aleQuatConstRot(-94031);
-  aleQuatConstRot.LoadCache(isdConst);
+  aleQuatConstRot.LoadCache(isdConst, naif);
 
   vector<int> constChain = aleQuatConstRot.ConstantFrameChain();
   EXPECT_EQ(constChain.size(), 2);
   EXPECT_EQ(constChain[0], -94031);
   EXPECT_EQ(constChain[1], -94030);
 
-  aleQuatConstRot.SetEphemerisTime(0.0);
-  aleQuatRot.SetEphemerisTime(0.0);
-  vector<double> oldCJ = aleQuatRot.Matrix();
+  aleQuatConstRot.SetEphemerisTime(0.0, naif);
+  aleQuatRot.SetEphemerisTime(0.0, naif);
+  vector<double> oldCJ = aleQuatRot.Matrix(naif);
   // The constant rotation should swap Y and Z
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(),
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(naif),
                      (vector<double>{oldCJ[0], oldCJ[1], oldCJ[2],
                                      oldCJ[6], oldCJ[7], oldCJ[8],
                                      oldCJ[3], oldCJ[4], oldCJ[5]}),
                      testTolerance);
 
-  aleQuatConstRot.SetEphemerisTime(1.0);
-  aleQuatRot.SetEphemerisTime(1.0);
-  oldCJ = aleQuatRot.Matrix();
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(),
+  aleQuatConstRot.SetEphemerisTime(1.0, naif);
+  aleQuatRot.SetEphemerisTime(1.0, naif);
+  oldCJ = aleQuatRot.Matrix(naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(naif),
                      (vector<double>{oldCJ[0], oldCJ[1], oldCJ[2],
                                      oldCJ[6], oldCJ[7], oldCJ[8],
                                      oldCJ[3], oldCJ[4], oldCJ[5]}),
                      testTolerance);
 
-  aleQuatConstRot.SetEphemerisTime(2.0);
-  aleQuatRot.SetEphemerisTime(2.0);
-  oldCJ = aleQuatRot.Matrix();
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(),
+  aleQuatConstRot.SetEphemerisTime(2.0, naif);
+  aleQuatRot.SetEphemerisTime(2.0, naif);
+  oldCJ = aleQuatRot.Matrix(naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(naif),
                      (vector<double>{oldCJ[0], oldCJ[1], oldCJ[2],
                                      oldCJ[6], oldCJ[7], oldCJ[8],
                                      oldCJ[3], oldCJ[4], oldCJ[5]}),
                      testTolerance);
 
-  aleQuatConstRot.SetEphemerisTime(3.0);
-  aleQuatRot.SetEphemerisTime(3.0);
-  oldCJ = aleQuatRot.Matrix();
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(),
+  aleQuatConstRot.SetEphemerisTime(3.0, naif);
+  aleQuatRot.SetEphemerisTime(3.0, naif);
+  oldCJ = aleQuatRot.Matrix(naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, aleQuatConstRot.Matrix(naif),
                      (vector<double>{oldCJ[0], oldCJ[1], oldCJ[2],
                                      oldCJ[6], oldCJ[7], oldCJ[8],
                                      oldCJ[3], oldCJ[4], oldCJ[5]}),
@@ -438,36 +446,38 @@ TEST_F(SpiceRotationIsd, FromALE) {
 
 
 TEST_F(SpiceRotationIsd, Cache) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(-94031);
-  rot.LoadCache(isd);
-  Table rotTable = rot.Cache("TestCache");
+  rot.LoadCache(isd, naif);
+  Table rotTable = rot.Cache("TestCache", naif);
 
   SpiceRotation newRot(-94031);
-  newRot.LoadCache(rotTable);
+  newRot.LoadCache(rotTable, naif);
 
-  rot.SetEphemerisTime(0.0);
-  newRot.SetEphemerisTime(0.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), newRot.Matrix(), testTolerance);
+  rot.SetEphemerisTime(0.0, naif);
+  newRot.SetEphemerisTime(0.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 
-  rot.SetEphemerisTime(1.0);
-  newRot.SetEphemerisTime(1.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), newRot.Matrix(), testTolerance);
+  rot.SetEphemerisTime(1.0, naif);
+  newRot.SetEphemerisTime(1.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 
-  rot.SetEphemerisTime(2.0);
-  newRot.SetEphemerisTime(2.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), newRot.Matrix(), testTolerance);
+  rot.SetEphemerisTime(2.0, naif);
+  newRot.SetEphemerisTime(2.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 
-  rot.SetEphemerisTime(3.0);
-  newRot.SetEphemerisTime(3.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(), newRot.Matrix(), testTolerance);
+  rot.SetEphemerisTime(3.0, naif);
+  newRot.SetEphemerisTime(3.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 }
 
 
 TEST_F(SpiceRotationIsd, LineCache) {
+  auto naif = NaifContext::acquire();
   SpiceRotation polyRot(-94031);
-  polyRot.LoadCache(isd);
+  polyRot.LoadCache(isd, naif);
   polyRot.ComputeBaseTime();
-  polyRot.SetPolynomialDegree(1);
+  polyRot.SetPolynomialDegree(naif, 1);
   // The base time is set to 1.5, and the time scale is set to 1.5 so these
   // coefficients are scaled accordingly. The unscaled equations are:
   // angle1 = -pi/2 + pi/2 * t
@@ -478,51 +488,52 @@ TEST_F(SpiceRotationIsd, LineCache) {
   vector<double> angle1Coeffs = {Isis::PI / 4.0, 3.0 * Isis::PI / 4.0};
   vector<double> angle2Coeffs = {-Isis::PI / 4.0, 3.0 * Isis::PI / 4.0};
   vector<double> angle3Coeffs = {Isis::PI / 4.0, -3.0 * Isis::PI / 4.0};
-  polyRot.SetPolynomial(angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunction);
+  polyRot.SetPolynomial(naif, angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunction);
 
   // LineCache converts the SpiceRotation from a polynomial into a cache so save off these now
-  polyRot.SetEphemerisTime(0.0);
-  vector<double> cj0 = polyRot.Matrix();
+  polyRot.SetEphemerisTime(0.0, naif);
+  vector<double> cj0 = polyRot.Matrix(naif);
 
-  polyRot.SetEphemerisTime(1.0);
-  vector<double> cj1 = polyRot.Matrix();
+  polyRot.SetEphemerisTime(1.0, naif);
+  vector<double> cj1 = polyRot.Matrix(naif);
 
-  polyRot.SetEphemerisTime(2.0);
-  vector<double> cj2 = polyRot.Matrix();
+  polyRot.SetEphemerisTime(2.0, naif);
+  vector<double> cj2 = polyRot.Matrix(naif);
 
-  polyRot.SetEphemerisTime(3.0);
-  vector<double> cj3 = polyRot.Matrix();
+  polyRot.SetEphemerisTime(3.0, naif);
+  vector<double> cj3 = polyRot.Matrix(naif);
 
-  Table rotTable = polyRot.LineCache("TestCache");
+  Table rotTable = polyRot.LineCache("TestCache", naif);
   SpiceRotation newRot(-94031);
-  newRot.LoadCache(rotTable);
+  newRot.LoadCache(rotTable, naif);
 
-  polyRot.SetEphemerisTime(0.0);
-  newRot.SetEphemerisTime(0.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), cj0, testTolerance);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(), cj0, testTolerance);
+  polyRot.SetEphemerisTime(0.0, naif);
+  newRot.SetEphemerisTime(0.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), cj0, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(naif), cj0, testTolerance);
 
-  polyRot.SetEphemerisTime(1.0);
-  newRot.SetEphemerisTime(1.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), cj1, testTolerance);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(), cj1, testTolerance);
+  polyRot.SetEphemerisTime(1.0, naif);
+  newRot.SetEphemerisTime(1.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), cj1, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(naif), cj1, testTolerance);
 
-  polyRot.SetEphemerisTime(2.0);
-  newRot.SetEphemerisTime(2.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), cj2, testTolerance);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(), cj2, testTolerance);
+  polyRot.SetEphemerisTime(2.0, naif);
+  newRot.SetEphemerisTime(2.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), cj2, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(naif), cj2, testTolerance);
 
-  polyRot.SetEphemerisTime(3.0);
-  newRot.SetEphemerisTime(3.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), cj3, testTolerance);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(), cj3, testTolerance);
+  polyRot.SetEphemerisTime(3.0, naif);
+  newRot.SetEphemerisTime(3.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), cj3, testTolerance);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, newRot.Matrix(naif), cj3, testTolerance);
 }
 
 TEST_F(SpiceRotationIsd, PolyCache) {
+  auto naif = NaifContext::acquire();
   SpiceRotation polyRot(-94031);
-  polyRot.LoadCache(isd);
+  polyRot.LoadCache(isd, naif);
   polyRot.ComputeBaseTime();
-  polyRot.SetPolynomialDegree(1);
+  polyRot.SetPolynomialDegree(naif, 1);
   // The base time is set to 1.5, and the time scale is set to 1.5 so these
   // coefficients are scaled accordingly. The unscaled equations are:
   // angle1 = -pi/2 + pi/2 * t
@@ -533,69 +544,70 @@ TEST_F(SpiceRotationIsd, PolyCache) {
   vector<double> angle1Coeffs = {Isis::PI / 4.0, 3.0 * Isis::PI / 4.0};
   vector<double> angle2Coeffs = {-Isis::PI / 4.0, 3.0 * Isis::PI / 4.0};
   vector<double> angle3Coeffs = {Isis::PI / 4.0, -3.0 * Isis::PI / 4.0};
-  polyRot.SetPolynomial(angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunction);
+  polyRot.SetPolynomial(naif, angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunction);
 
-  Table rotTable = polyRot.Cache("TestCache");
+  Table rotTable = polyRot.Cache("TestCache", naif);
   SpiceRotation newRot(-94031);
-  newRot.LoadCache(rotTable);
+  newRot.LoadCache(rotTable, naif);
 
   EXPECT_EQ(polyRot.GetSource(), newRot.GetSource());
   EXPECT_NEAR(polyRot.GetBaseTime(), newRot.GetBaseTime(), testTolerance);
   EXPECT_NEAR(polyRot.GetTimeScale(), newRot.GetTimeScale(), testTolerance);
 
-  polyRot.SetEphemerisTime(0.0);
-  newRot.SetEphemerisTime(0.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), newRot.Matrix(), testTolerance);
+  polyRot.SetEphemerisTime(0.0, naif);
+  newRot.SetEphemerisTime(0.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 
-  polyRot.SetEphemerisTime(1.0);
-  newRot.SetEphemerisTime(1.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), newRot.Matrix(), testTolerance);
+  polyRot.SetEphemerisTime(1.0, naif);
+  newRot.SetEphemerisTime(1.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 
-  polyRot.SetEphemerisTime(2.0);
-  newRot.SetEphemerisTime(2.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), newRot.Matrix(), testTolerance);
+  polyRot.SetEphemerisTime(2.0, naif);
+  newRot.SetEphemerisTime(2.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 
-  polyRot.SetEphemerisTime(3.0);
-  newRot.SetEphemerisTime(3.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(), newRot.Matrix(), testTolerance);
+  polyRot.SetEphemerisTime(3.0, naif);
+  newRot.SetEphemerisTime(3.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, polyRot.Matrix(naif), newRot.Matrix(naif), testTolerance);
 }
 
 
 TEST_F(SpiceRotationIsd, PolyOverCache) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(-94031);
-  rot.LoadCache(isd);
+  rot.LoadCache(isd, naif);
   rot.ComputeBaseTime();
-  rot.SetPolynomialDegree(1);
+  rot.SetPolynomialDegree(naif, 1);
   // The base time is set to 1.5, and the time scale is set to 1.5 so these
   // coefficients are scaled to be -90 at 0, 0 at 1, 90 at 2, and 180 at 3.
   vector<double> angle1Coeffs = {Isis::PI / 4, 3 * Isis::PI / 4};
   vector<double> angle2Coeffs = {0.0, 0.0};
   vector<double> angle3Coeffs = {0.0, 0.0};
-  rot.SetPolynomial(angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunctionOverSpice);
+  rot.SetPolynomial(naif, angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunctionOverSpice);
 
-  rot.SetEphemerisTime(0.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  rot.SetEphemerisTime(0.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{0.0, 1.0, 0.0,
                                      -1.0, 0.0, 0.0,
                                       0.0, 0.0, 1.0}),
                       testTolerance);
 
-  rot.SetEphemerisTime(1.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  rot.SetEphemerisTime(1.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{0.0, 1.0, 0.0,
                                      -1.0, 0.0, 0.0,
                                       0.0, 0.0, 1.0}),
                       testTolerance);
 
-  rot.SetEphemerisTime(2.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  rot.SetEphemerisTime(2.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{-1.0, 0.0,  0.0,
                                        0.0, 1.0,  0.0,
                                        0.0, 0.0, -1.0}),
                       testTolerance);
 
-  rot.SetEphemerisTime(3.0);
-  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(),
+  rot.SetEphemerisTime(3.0, naif);
+  EXPECT_PRED_FORMAT3(AssertVectorsNear, rot.Matrix(naif),
                       (vector<double>{0.0,  0.0, -1.0,
                                       1.0,  0.0,  0.0,
                                       0.0, -1.0,  0.0}),
@@ -604,46 +616,48 @@ TEST_F(SpiceRotationIsd, PolyOverCache) {
 
 
 TEST_F(SpiceRotationIsd, VectorRotation) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(-94031);
-  rot.LoadCache(isd);
+  rot.LoadCache(isd, naif);
 
   vector<double> unitX = {1.0, 0.0, 0.0};
   vector<double> unitY = {0.0, 1.0, 0.0};
   vector<double> unitZ = {0.0, 0.0, 1.0};
 
-  rot.SetEphemerisTime(1.0);
+  rot.SetEphemerisTime(1.0, naif);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.J2000Vector(unitX),
+                      rot.J2000Vector(unitX, naif),
                       unitY, testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.J2000Vector(unitY),
+                      rot.J2000Vector(unitY, naif),
                       (vector<double>{-1.0, 0.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.J2000Vector(unitZ),
+                      rot.J2000Vector(unitZ, naif),
                       unitZ, testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ReferenceVector(unitX),
+                      rot.ReferenceVector(unitX, naif),
                       (vector<double>{0.0, -1.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ReferenceVector(unitY),
+                      rot.ReferenceVector(unitY, naif),
                       unitX, testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ReferenceVector(unitZ),
+                      rot.ReferenceVector(unitZ, naif),
                       unitZ, testTolerance);
 }
 
 
 TEST_F(SpiceRotationIsd, PolynomialPartials) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(-94031);
-  rot.LoadCache(isd);
+  rot.LoadCache(isd, naif);
   rot.ComputeBaseTime();
-  rot.SetPolynomialDegree(1);
+  rot.SetPolynomialDegree(naif, 1);
   // The base time is set to 1.5, and the time scale is set to 1.5 so these
   // coefficients are scaled accordingly. The unscaled equations are:
   // angle1 = -pi/2 + pi/2 * t
@@ -654,13 +668,13 @@ TEST_F(SpiceRotationIsd, PolynomialPartials) {
   vector<double> angle1Coeffs = {Isis::PI / 4.0, 3.0 * Isis::PI / 4.0};
   vector<double> angle2Coeffs = {-Isis::PI / 4.0, 3.0 * Isis::PI / 4.0};
   vector<double> angle3Coeffs = {Isis::PI / 4.0, -3.0 * Isis::PI / 4.0};
-  rot.SetPolynomial(angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunction);
+  rot.SetPolynomial(naif, angle1Coeffs, angle2Coeffs, angle3Coeffs, SpiceRotation::PolyFunction);
 
   // At t = 1.0, the angles are:
   // angle1 = 0.0
   // angle2 = -pi/2
   // angle3 = pi/2
-  rot.SetEphemerisTime(1.0);
+  rot.SetEphemerisTime(1.0, naif);
 
   // Test each unit vector which should map to the columns of the jacobian for
   // ToReferencePartial and the rows of the Jacobian for ToJ2000Partial.
@@ -676,42 +690,42 @@ TEST_F(SpiceRotationIsd, PolynomialPartials) {
   //  0 -1  0
   // -1  0  0
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_RightAscension, 0),
+                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_RightAscension, 0, naif),
                       (vector<double>{0.0, 0.0, -1.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_RightAscension, 1),
+                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_RightAscension, 1, naif),
                       (vector<double>{0.0, 0.0, 1.0 / 3.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_RightAscension, 0),
+                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_RightAscension, 0, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_RightAscension, 1),
+                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_RightAscension, 1, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_RightAscension, 0),
+                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_RightAscension, 0, naif),
                       (vector<double>{0.0, -1.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_RightAscension, 1),
+                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_RightAscension, 1, naif),
                       (vector<double>{0.0, 1.0 / 3.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_RightAscension, 0),
+                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_RightAscension, 0, naif),
                       (vector<double>{0.0, -1.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_RightAscension, 1),
+                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_RightAscension, 1, naif),
                       (vector<double>{0.0, 1.0 / 3.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_RightAscension, 0),
+                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_RightAscension, 0, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_RightAscension, 1),
+                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_RightAscension, 1, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_RightAscension, 0),
+                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_RightAscension, 0, naif),
                       (vector<double>{-1.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_RightAscension, 1),
+                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_RightAscension, 1, naif),
                       (vector<double>{1.0 / 3.0, 0.0, 0.0}), testTolerance);
 
 
@@ -721,42 +735,42 @@ TEST_F(SpiceRotationIsd, PolynomialPartials) {
   //  0  0  0
   //  0  0 -1
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Declination, 0),
+                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Declination, 0, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Declination, 1),
+                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Declination, 1, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Declination, 0),
+                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Declination, 0, naif),
                       (vector<double>{0.0, -1.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Declination, 1),
+                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Declination, 1, naif),
                       (vector<double>{0.0, 1.0 / 3.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Declination, 0),
+                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Declination, 0, naif),
                       (vector<double>{-1.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Declination, 1),
+                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Declination, 1, naif),
                       (vector<double>{1.0 / 3.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Declination, 0),
+                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Declination, 0, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Declination, 1),
+                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Declination, 1, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Declination, 0),
+                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Declination, 0, naif),
                       (vector<double>{0.0, 0.0, -1.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Declination, 1),
+                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Declination, 1, naif),
                       (vector<double>{0.0, 0.0, 1.0 / 3.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Declination, 0),
+                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Declination, 0, naif),
                       (vector<double>{0.0, 0.0, -1.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Declination, 1),
+                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Declination, 1, naif),
                       (vector<double>{0.0, 0.0, 1.0 / 3.0}), testTolerance);
 
 
@@ -766,54 +780,55 @@ TEST_F(SpiceRotationIsd, PolynomialPartials) {
   //  0  0  1
   //  0  0  0
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Twist, 0),
+                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Twist, 0, naif),
                       (vector<double>{-1.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Twist, 1),
+                      rot.ToReferencePartial(unitX, SpiceRotation::WRT_Twist, 1, naif),
                       (vector<double>{1.0 / 3.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Twist, 0),
+                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Twist, 0, naif),
                       (vector<double>{-1.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Twist, 1),
+                      rot.toJ2000Partial(unitX, SpiceRotation::WRT_Twist, 1, naif),
                       (vector<double>{1.0 / 3.0, 0.0, 0.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Twist, 0),
+                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Twist, 0, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Twist, 1),
+                      rot.ToReferencePartial(unitY, SpiceRotation::WRT_Twist, 1, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Twist, 0),
+                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Twist, 0, naif),
                       (vector<double>{0.0, 0.0, 1.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Twist, 1),
+                      rot.toJ2000Partial(unitY, SpiceRotation::WRT_Twist, 1, naif),
                       (vector<double>{0.0, 0.0, -1.0 / 3.0}), testTolerance);
 
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Twist, 0),
+                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Twist, 0, naif),
                       (vector<double>{0.0, 1.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Twist, 1),
+                      rot.ToReferencePartial(unitZ, SpiceRotation::WRT_Twist, 1, naif),
                       (vector<double>{0.0, -1.0 / 3.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Twist, 0),
+                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Twist, 0, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
   EXPECT_PRED_FORMAT3(AssertVectorsNear,
-                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Twist, 1),
+                      rot.toJ2000Partial(unitZ, SpiceRotation::WRT_Twist, 1, naif),
                       (vector<double>{0.0, 0.0, 0.0}), testTolerance);
 }
 
 TEST(SpiceRotation, WrapAngle) {
+  auto naif = NaifContext::acquire();
   SpiceRotation rot(-94031);
 
-  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, 4.0 * Isis::PI / 3.0),
+  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, 4.0 * Isis::PI / 3.0, naif),
               -2.0 * Isis::PI / 3.0, testTolerance);
-  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, -1.0 * Isis::PI / 18.0),
+  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, -1.0 * Isis::PI / 18.0, naif),
               -1.0 * Isis::PI / 18.0, testTolerance);
-  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, -1.0 * Isis::PI),
+  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, -1.0 * Isis::PI, naif),
               Isis::PI, testTolerance);
-  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, Isis::PI / 2.0),
+  EXPECT_NEAR(rot.WrapAngle(Isis::PI / 6.0, Isis::PI / 2.0, naif),
               Isis::PI / 2.0, testTolerance);
 }

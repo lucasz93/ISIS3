@@ -375,8 +375,8 @@ namespace Isis {
       Camera *cam;
       cam = iCube->camera();
       iTime startTime(t);
-      cam->setTime(startTime);
-      return cam->sunToBodyDist();
+      cam->setTime(startTime, naif);
+      return cam->sunToBodyDist(naif);
     }
     catch(IException &e) {
       // Failed to instantiate a camera, try furnishing kernels directly
@@ -388,10 +388,10 @@ namespace Isis {
         FileName fname2 = (FileName)"$base/kernels/spk/de405.bsp";
         QString tempfname1 = fname1.expanded();
         QString tempfname2 = fname2.expanded();
-        furnsh_c(tempfname1.toLatin1().data());
-        furnsh_c(tempfname2.toLatin1().data());
-        utc2et_c(t.toLatin1().data(), &et);
-        spkezp_c(10, et, "J2000", "LT+S", 499, sunv, &lt);
+        naif->furnsh_c(tempfname1.toLatin1().data());
+        naif->furnsh_c(tempfname2.toLatin1().data());
+        naif->utc2et_c(t.toLatin1().data(), &et);
+        naif->spkezp_c(10, et, "J2000", "LT+S", 499, sunv, &lt);
         return sqrt(sunv[0] * sunv[0] + sunv[1] * sunv[1] + sunv[2] * sunv[2]);
         naif->CheckErrors();
       }

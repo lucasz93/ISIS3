@@ -30,7 +30,7 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 
 namespace Isis {
-  void translateLabels(Pvl &fitsLabel, Cube *ocube);
+  void translateLabels(Pvl &fitsLabel, Cube *ocube, NaifContextPtr naif);
 
   void mvic2isis(UserInterface &ui, Pvl *log) {
     auto naif = NaifContext::acquire();
@@ -118,7 +118,7 @@ namespace Isis {
     CubeAttributeOutput &att = ui.GetOutputAttribute("TO");
     Cube *output = importFits.SetOutputCube(ui.GetFileName("TO"), att);
 
-    translateLabels(primaryLabel, output); // Results are put directly into the cube label (output)
+    translateLabels(primaryLabel, output, naif); // Results are put directly into the cube label (output)
 
     // Save the input FITS label in the output cube original labels
     OriginalLabel originals(primaryLabel);
@@ -206,7 +206,7 @@ namespace Isis {
     }
   }
 
-  void translateLabels(Pvl &fitslabel, Cube *ocube) {
+  void translateLabels(Pvl &fitslabel, Cube *ocube, NaifContextPtr naif) {
 
     // Get the path where the New Horizons translation tables are.
     QString transDir = "$ISISROOT/appdata/translations/";

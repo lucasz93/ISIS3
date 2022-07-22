@@ -167,7 +167,7 @@ namespace Isis {
     m_newLookB = true;
 
     // Check for a ground intersection
-    if(!target()->shape()->intersectSurface(obsPosition, locusVec)) {
+    if(!target()->shape()->intersectSurface(naif, obsPosition, locusVec)) {
       return false;
     }
 
@@ -207,8 +207,8 @@ namespace Isis {
    *
    * @returns @b bool If the ground point was set successfully
    */
-  bool CSMCamera::SetUniversalGround(const double latitude, const double longitude, double radius) {
-    return SetGround(naif, SurfacePoint(
+  bool CSMCamera::SetUniversalGround(NaifContextPtr naif, const double latitude, const double longitude, double radius) {
+    return SetGround(naif, SurfacePoint(naif,
         Latitude(latitude, Angle::Degrees),
         Longitude(longitude, Angle::Degrees),
         Distance(radius, Distance::Meters)));
@@ -230,7 +230,7 @@ namespace Isis {
     Distance localRadius;
 
     if (shape->name() != "Plane") { // this is the normal behavior
-      localRadius = LocalRadius(latitude, longitude);
+      localRadius = LocalRadius(naif, latitude, longitude);
     }
     else {
       localRadius = Distance(latitude.degrees(),Distance::Kilometers);
@@ -242,7 +242,7 @@ namespace Isis {
       return false;
     }
 
-    return SetGround(naif, SurfacePoint(latitude, longitude, localRadius));
+    return SetGround(naif, SurfacePoint(naif, latitude, longitude, localRadius));
   }
 
 
@@ -393,7 +393,7 @@ namespace Isis {
    */
   double CSMCamera::ObliqueLineResolution(NaifContextPtr naif) {
     // CSM resolution is always the oblique resolution so just return it
-    return LineResolution();
+    return LineResolution(naif);
   }
 
 
@@ -408,7 +408,7 @@ namespace Isis {
    */
   double CSMCamera::ObliqueSampleResolution(NaifContextPtr naif) {
     // CSM resolution is always the oblique resolution so just return it
-    return SampleResolution();
+    return SampleResolution(naif);
   }
 
 
@@ -423,7 +423,7 @@ namespace Isis {
    */
   double CSMCamera::ObliqueDetectorResolution(NaifContextPtr naif) {
     // CSM resolution is always the oblique resolution so just return it
-    return DetectorResolution();
+    return DetectorResolution(naif);
   }
 
 
@@ -508,7 +508,7 @@ namespace Isis {
    *                 360 domain degrees
    */
   void CSMCamera::subSpacecraftPoint(double &lat, double &lon, NaifContextPtr naif) {
-    subSpacecraftPoint(lat, lon, parentLine(), parentSample());
+    subSpacecraftPoint(lat, lon, parentLine(), parentSample(), naif);
   }
 
 
@@ -525,7 +525,7 @@ namespace Isis {
   void CSMCamera::subSpacecraftPoint(double &lat, double &lon, double line, double sample, NaifContextPtr naif) {
     // Get s/c position from CSM because it is vector from center of body to that
     vector<double> sensorPosition = sensorPositionBodyFixed(line, sample);
-    SurfacePoint surfacePoint(
+    SurfacePoint surfacePoint(naif,
         Displacement(sensorPosition[0], Displacement::Kilometers),
         Displacement(sensorPosition[1], Displacement::Kilometers),
         Displacement(sensorPosition[2], Displacement::Kilometers));
@@ -734,8 +734,9 @@ namespace Isis {
    *
    * @returns @b SurfacePointthe ISIS ground coordinate
    */
-  SurfacePoint CSMCamera::csmToIsisGround(const csm::EcefCoord &groundPt) const {
-    return SurfacePoint(Displacement(groundPt.x, Displacement::Meters),
+  SurfacePoint CSMCamera::csmToIsisGround(NaifContextPtr naif, const csm::EcefCoord &groundPt) const {
+    return SurfacePoint(naif,
+                        Displacement(groundPt.x, Displacement::Meters),
                         Displacement(groundPt.y, Displacement::Meters),
                         Displacement(groundPt.z, Displacement::Meters));
   }
@@ -756,7 +757,7 @@ namespace Isis {
         (groundPt.x - sunEcefVec.x) / 1000.0,
         (groundPt.y - sunEcefVec.y) / 1000.0,
         (groundPt.z - sunEcefVec.z) / 1000.0};
-    return target()->shape()->phaseAngle(sensorPositionBodyFixed(), sunVec);
+    return target()->shape()->phaseAngle(naif, sensorPositionBodyFixed(), sunVec);
   }
 
 
@@ -766,7 +767,7 @@ namespace Isis {
    * @returns @b double The emission angle in degrees
    */
   double CSMCamera::EmissionAngle(NaifContextPtr naif) const {
-    return target()->shape()->emissionAngle(sensorPositionBodyFixed());
+    return target()->shape()->emissionAngle(naif, sensorPositionBodyFixed());
   }
 
 
@@ -785,7 +786,7 @@ namespace Isis {
         (groundPt.x - sunEcefVec.x) / 1000.0,
         (groundPt.y - sunEcefVec.y) / 1000.0,
         (groundPt.z - sunEcefVec.z) / 1000.0};
-    return target()->shape()->incidenceAngle(sunVec);
+    return target()->shape()->incidenceAngle(naif, sunVec);
   }
 
 
@@ -1022,7 +1023,7 @@ namespace Isis {
    *
    * @param[out] p The position of the sun
    */
-  void CSMCamera::sunPosition(double p[3], NaifContextPtr naif) const {
+  void CSMCamera::sunPosition(double p[3]) const {
     QString msg = "Sun position is not supported for CSM camera models";
     throw IException(IException::Programmer, msg, _FILEINFO_);
   }

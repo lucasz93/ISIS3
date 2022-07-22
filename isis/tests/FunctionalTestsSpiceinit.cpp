@@ -531,6 +531,8 @@ TEST(Spiceinit, TestSpiceinitPadding) {
 }
 
 TEST_F(DefaultCube, TestSpiceinitCsmCleanup) {
+  auto naif = NaifContext::acquire();
+  
   // Add stuff from csminit
   testCube->putGroup(PvlGroup("CsmInfo"));
   Blob testBlob("CSMState", "String");
@@ -538,13 +540,15 @@ TEST_F(DefaultCube, TestSpiceinitCsmCleanup) {
 
   QVector<QString> args(0);
   UserInterface options(APP_XML, args);
-  spiceinit(testCube, options);
+  spiceinit(naif, testCube, options);
 
   EXPECT_FALSE(testCube->hasGroup("CsmInfo"));
   EXPECT_FALSE(testCube->hasBlob("CSMState", "String"));
 }
 
 TEST_F(DefaultCube, TestSpiceinitCsmNoCleanup) {
+  auto naif = NaifContext::acquire();
+  
   // Add stuff from csminit
   testCube->putGroup(PvlGroup("CsmInfo"));
   Blob testBlob("CSMState", "String");
@@ -555,7 +559,7 @@ TEST_F(DefaultCube, TestSpiceinitCsmNoCleanup) {
 
   QVector<QString> args(0);
   UserInterface options(APP_XML, args);
-  ASSERT_ANY_THROW(spiceinit(testCube, options));
+  ASSERT_ANY_THROW(spiceinit(naif, testCube, options));
 
   EXPECT_TRUE(testCube->hasGroup("CsmInfo"));
   EXPECT_TRUE(testCube->hasBlob("CSMState", "String"));
@@ -650,6 +654,8 @@ TEST_F(DemCube, FunctionalTestSpiceinitWebAndShapeModel) {
   End
   )");
 
+  auto naif = NaifContext::acquire();
+  
   Pvl label;
   labelStrm >> label;
 
@@ -661,7 +667,7 @@ TEST_F(DemCube, FunctionalTestSpiceinitWebAndShapeModel) {
 
   QVector<QString> args = {"web=true", "shape=user", "model=" + demCube->fileName()};
   UserInterface options(APP_XML, args);
-  spiceinit(&testCube, options);
+  spiceinit(naif, &testCube, options);
 
   PvlGroup kernels = testCube.label()->findGroup("Kernels", Pvl::Traverse);
   EXPECT_PRED_FORMAT2(AssertQStringsEqual, kernels.findKeyword("ShapeModel"), demCube->fileName());
@@ -669,6 +675,8 @@ TEST_F(DemCube, FunctionalTestSpiceinitWebAndShapeModel) {
 
 
 TEST_F(SmallCube, FunctionalTestSpiceinitCsminitRestorationOnFail) {
+  auto naif = NaifContext::acquire();
+  
   // csminit the cube
 
   // Create an ISD
@@ -704,7 +712,7 @@ TEST_F(SmallCube, FunctionalTestSpiceinitCsminitRestorationOnFail) {
   QVector<QString> spiceinitArgs = {"from="+cubeFile};
 
   UserInterface spiceinitOptions(APP_XML, spiceinitArgs);
-  ASSERT_ANY_THROW(spiceinit(spiceinitOptions));
+  ASSERT_ANY_THROW(spiceinit(naif, spiceinitOptions));
 
   Cube outputCube(cubeFile);
 

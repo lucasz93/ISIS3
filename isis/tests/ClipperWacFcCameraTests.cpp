@@ -11,11 +11,13 @@
 using namespace Isis;
 
 void TestLineSamp(Camera *cam, double samp, double line) {
-  bool success = cam->SetImage(samp, line);
+  auto naif = NaifContext::acquire();
+  
+  bool success = cam->SetImage(samp, line, naif);
   EXPECT_TRUE(success);
 
   if(success) {
-    success = cam->SetUniversalGround(cam->UniversalLatitude(), cam->UniversalLongitude());
+    success = cam->SetUniversalGround(naif, cam->UniversalLatitude(), cam->UniversalLongitude());
   }
   EXPECT_TRUE(success);
 
@@ -26,10 +28,11 @@ void TestLineSamp(Camera *cam, double samp, double line) {
 }
 
 void TestImageToGroundToImage(Camera *cam, double samp, double line, double lat, double lon){
-  ASSERT_TRUE(cam->SetImage(samp, line));
+  auto naif = NaifContext::acquire();
+  ASSERT_TRUE(cam->SetImage(samp, line, naif));
   EXPECT_DOUBLE_EQ(cam->UniversalLatitude(), lat);
   EXPECT_DOUBLE_EQ(cam->UniversalLongitude(), lon);
-  ASSERT_TRUE(cam->SetUniversalGround(cam->UniversalLatitude(), cam->UniversalLongitude()));
+  ASSERT_TRUE(cam->SetUniversalGround(naif, cam->UniversalLatitude(), cam->UniversalLongitude()));
   EXPECT_NEAR(cam->Sample(), samp, 0.001);
   EXPECT_NEAR(cam->Line(), line, 0.001);
 }

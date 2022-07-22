@@ -24,7 +24,7 @@ namespace Isis {
   void changeBand(int band, GroundGrid *&latLonGrid, UniversalGroundMap *gmap, int ticks, 
                   bool extendGrid, bool walkBoundary, int numSamples, int numLines, Latitude minLat, 
                   Latitude maxLat, Longitude minLon, Longitude maxLon, Latitude baseLat, 
-                  Longitude baseLon, Angle latInc, Angle lonInc);
+                  Longitude baseLon, Angle latInc, Angle lonInc, NaifContextPtr naif);
   bool groundDrawPoint(int samp, int line, int lineWidth, GroundGrid *latLonGrid, 
                        bool latGrid = true);
 
@@ -299,7 +299,7 @@ namespace Isis {
         }
       }
 
-      latLonGrid->CreateGrid(baseLat, baseLon, latInc, lonInc, &progress);
+      latLonGrid->CreateGrid(naif, baseLat, baseLon, latInc, lonInc, &progress);
 
       bool walkBoundary = false;
       if (ui.GetBoolean("BOUNDARY")) {
@@ -314,7 +314,7 @@ namespace Isis {
           currentBand = in.Band(); 
           changeBand(currentBand, latLonGrid, gmap, ticks, extendGrid, walkBoundary, 
                   inputSamples, inputLines, minLat, maxLat, minLon, maxLon, baseLat, 
-                  baseLon, latInc, lonInc);
+                  baseLon, latInc, lonInc, naif);
         }
 
         for (int samp = 1; samp <= in.SampleDimension(); samp++) {
@@ -451,14 +451,14 @@ namespace Isis {
   void changeBand(int band, GroundGrid *&latLonGrid, UniversalGroundMap *gmap, int ticks, 
                   bool extendGrid, bool walkBoundary, int numSamples, int numLines, Latitude minLat, 
                   Latitude maxLat, Longitude minLon, Longitude maxLon, Latitude baseLat, 
-                  Longitude baseLon, Angle latInc, Angle lonInc) {
+                  Longitude baseLon, Angle latInc, Angle lonInc, NaifContextPtr naif) {
     Progress progress;
 
     // change band of UniversalGroundMap
-    gmap->SetBand(band);
+    gmap->SetBand(band, naif);
 
     // update latLonGrid to use new UniversalGroundMap
-    latLonGrid = new GroundGrid(gmap, ticks, extendGrid, numSamples, numLines);
+    latLonGrid = new GroundGrid(naif, gmap, ticks, extendGrid, numSamples, numLines);
 
     // re-set old ground limits from GUI
     latLonGrid->SetGroundLimits(minLat, minLon, maxLat, maxLon);
@@ -498,7 +498,7 @@ namespace Isis {
     progress.SetText(progressMessage);
 
     // re-set lat/lon base/in from GUI
-    latLonGrid->CreateGrid(baseLat, baseLon, latInc, lonInc, &progress);
+    latLonGrid->CreateGrid(naif, baseLat, baseLon, latInc, lonInc, &progress);
 
     if (walkBoundary) {
       latLonGrid->WalkBoundary(naif);

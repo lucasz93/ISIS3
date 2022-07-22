@@ -301,11 +301,13 @@ TEST_F(CSMCubeFixture, FunctionalTestCamptCSMCamera) {
   EXPECT_CALL(mockModel, getIlluminationDirection)
       .WillRepeatedly(::testing::Return(csm::EcefVector(0.0, 0.0, -1.0)));
 
+  auto naif = NaifContext::acquire();
+  
   QVector<QString> args = {"sample=5", "line=5"};
   UserInterface options(APP_XML, args);
   Pvl appLog;
 
-  campt(testCube, options, &appLog);
+  campt(naif, testCube, options, &appLog);
   PvlGroup groundPoint = appLog.findGroup("GroundPoint");
 
   // Check that invalid values are all set to null

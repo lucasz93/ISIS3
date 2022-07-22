@@ -92,7 +92,7 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
 
   protected:
-    int k_open(NaifContextPtr naif, const QString &kfile, const int &comsize = 512) {
+    int k_open(NaifContextPtr naif, const QString &kfile, const int &comsize = 512) override {
       FileName kf(kfile);
       if ( kf.fileExists() ) {
         QString full_kf = kf.expanded();
@@ -108,7 +108,7 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
     QString k_header(NaifContextPtr naif, const QString &comfile = "") const;
 
-    void k_write(NaifContextPtr naif, const SpiceInt &handle, const SpkKernel &kernels) {
+    void k_write(NaifContextPtr naif, const SpiceInt &handle, const SpkKernel &kernels) override {
       if ( _spkType == 9 ) {
         kernels.Accept(naif, WriteSpk9<SpkSegment>(handle));
       }
@@ -121,7 +121,7 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
       return;
     }
 
-    void  k_close(SpiceInt &handle) {
+    void  k_close(NaifContextPtr naif, SpiceInt &handle) override {
       if ( handle != 0 ) {
         naif->CheckErrors();
         naif->spkcls_c(handle);

@@ -667,7 +667,7 @@ QString loadCalibrationVariables(NaifContextPtr naif, const QString &config, Cub
   try{
     Camera *cam; 
     cam = iCube->camera();
-    cam->SetImage (0.5, 0.5);
+    cam->SetImage (0.5, 0.5, naif);
     obsStartTime = cam->time().Et();
   }
   catch(IException &e) {
