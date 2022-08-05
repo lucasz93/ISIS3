@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar92isis" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+
+  <brief>
+    Convert Mariner9 images to Isis cubes.
+  </brief>
+
+  <description>
+    Converts raw mariner9 images to Isis cubes. This includes converting labels 
+    and adding the group reseaus, and which encounter the image is specific to.
+  </description>
+
+  <category>
+    <missionItem>Mariner</missionItem>
+  </category>
+
+  <seeAlso>
+    <applications>
+      <item>mar102isis</item>
+    </applications>
+  </seeAlso>
+
+  <history>
+    <change name="Lucas Zadrozny" date="2022-08-04">
+      Original version, forked from mar102isis.
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>filename</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input file to be converted to an Isis cube
+        </brief>
+        <description>
+          The raw Mariner9 image to be converted to an Isis cube with complete 
+          labels.
+        </description>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          The resultant cube containing the Mariner9 image.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+
+  <examples>
+    <example>
+      <brief> 
+        Mariner9 image imported 
+      </brief>
+      <description>
+        This example shows the simple process of importing a Mariner9 image.
+      </description>
+      <terminalInterface>
+        <commandLine> 
+          from=03930825.lbl to=imported.cub
+        </commandLine>
+        <description>
+          The command line argument needed to execute an import of a Mariner9 
+          image.
+        </description>
+      </terminalInterface>
+    </example>
+  </examples>
+
+</application>

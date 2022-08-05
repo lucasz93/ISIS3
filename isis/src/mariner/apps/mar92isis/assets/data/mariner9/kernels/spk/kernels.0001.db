@@ -1,0 +1,114 @@
+# The times in this file come from the listing in mariner9.0001.tsc.
+
+Object = SpacecraftPosition
+  RunTime = 2010-03-03T16:26:09
+
+  Group = Dependencies
+    SpacecraftClockKernel = $mariner9/kernels/sclk/mariner9.0001.tsc
+    LeapsecondKernel      = $base/kernels/lsk/naif0009.tls
+  End_Group
+
+  Group = Selection
+    Time = ("1971 NOV 11 08:33:19.750 TDB", "1971 NOV 13 16:06:41.895 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1971 NOV 14 12:45:53.665 TDB", "1971 NOV 15 14:25:52.162 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1971 NOV 16 14:30:38.306 TDB", "1971 DEC 30 12:22:54.543 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1971 DEC 31 11:41:26.187 TDB", "1971 DEC 31 23:59:54.841 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JAN 1 11:37:49.774 TDB", "1972 MAR 16 23:45:46.314 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 MAR 21 17:48:58.147 TDB", "1972 MAR 23 22:26:38.326 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 8 21:09:24.963 TDB", "1972 JUN 9 10:14:05.609 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 11 21:12:33.299 TDB", "1972 JUN 12 10:11:37.946 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 15 21:07:59.234 TDB", "1972 JUN 16 10:14:45.879 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 18 21:06:57.642 TDB", "1972 JUN 19 10:13:44.287 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 22 21:10:01.974 TDB", "1972 JUN 23 10:04:54.622 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 25 21:10:25.441 TDB", "1972 JUN 26 09:58:18.090 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 29 20:50:25.092 TDB", "1972 JUN 30 10:01:23.737 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUL 7 08:59:04.227 TDB", "1972 JUL 10 11:47:26.145 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 AUG 3 20:25:02.690 TDB", "1972 AUG 6 08:25:05.583 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 OCT 12 07:31:22.127 TDB", "1972 OCT 12 23:14:14.742 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 OCT 16 07:37:56.410 TDB", "1972 OCT 17 00:53:13.007 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Smithed
+  End_Group
+
+End_Object
+End
