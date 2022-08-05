@@ -1,0 +1,252 @@
+KPL/SCLK
+ 
+
+Mariner 9 SCLK File
+===========================================================================
+
+   This file is a SPICE spacecraft clock (SCLK) kernel containing
+   information required for the Mariner 9 spacecraft on-board clock (Data
+   Acquisition System -- DAS -- clock) to Ephemeris Time (ET) conversion.
+   
+   
+Version and Date
+--------------------------------------------------------
+
+   Version 1.0 -- September 23, 1999 -- Boris Semenov, NAIF/JPL
+
+      Initial release.
+
+ 
+Production/History of this SCLK file
+--------------------------------------------------------
+
+   This file is solely based on the correlation between GMT and DAS
+   times extracted from Mariner 9 Camera SEDR database. Since no
+   information regarding accuracy of the original correlation was
+   available at the time when this file was created, it was assumed
+   that original DAS time conversion to UTC was correct.
+   
+   The DAS-ET time correlation information stored in this file was
+   derived using the procedure described below.
+   
+   An ET time corresponding to each DAS time was computed from SEDR GMT.
+   The actual SEDR DAS time was compared with the ideal DAS time (DAS counter
+   running at constant 1.2 seconds per DAS tick rate) and plotted as
+   a function of ET seconds since the first ET time registered in the SEDR.
+   This plot shows that though the DAS clock seems to have been running at
+   a fairly constant rate, about 1.19999605 seconds per tick, it 
+   was reset multiple times during SEDR time span. All resets
+   seemed to have happened between series of times corresponding to
+   individual orbit data collection sessions and, therefore, the actual
+   reset time couldn't be determined from that function. To make sure
+   that mapping contained in the SCLK file would not provide bogus
+   results for the intervals around resets, these intervals were
+   excluded from consideration. Then a linear function was fit to
+   each of the data intervals between resets (between the first point
+   after previous reset and the last point before the next reset)
+   and the function and valid conversion interval information was stored
+   in this file.
+   
+   The DAS clock mapping contained in this file is consistent with
+   respect to the original SEDR time mapping to about 0.1 second for
+   most of the mission and is better that 0.05 sec for the main mission
+   (1971-320 ... 1972-076) where SEDR time correlation data was much
+   more dense and consistent.
+
+
+Valid Conversion Intervals
+--------------------------------------------------------
+
+   This SCLK file will provide time conversion between DAS and ET 
+   time for the following DAS ranges ONLY:
+   
+           START DAS    STOP DAS
+          -----------  ----------
+             1491192     1657861   
+             1672706     1749705   
+             1779190     4940814   
+             4986238     5023162   
+             5058058    10494473   
+            10563119    10721003   
+            11442909    11482143   
+            11619965    11658919   
+            11796786    11836125   
+            11973784    12013123   
+            12150187    12188931   
+            12326056    12364450   
+            12499155    12538704   
+            12685638    12910057   
+            12985387    13165390   
+            13313240    13360384   
+            13460068    13511832 
+   
+   Those same intervals but given in terms of UTC time:
+   
+                   START UTC                STOP UTC
+            ----------------------   ----------------------
+            1971-315//08:33:19.750   1971-317//16:06:41.895
+            1971-318//12:45:53.665   1971-319//14:25:52.162
+            1971-320//14:30:38.306   1971-364//12:22:54.543
+            1971-365//11:41:26.187   1971-365//23:59:54.841
+            1972-001//11:37:49.774   1972-076//23:45:46.314
+            1972-081//17:48:58.147   1972-083//22:26:38.326
+            1972-160//21:09:24.963   1972-161//10:14:05.609
+            1972-163//21:12:33.299   1972-164//10:11:37.946
+            1972-167//21:07:59.234   1972-168//10:14:45.879
+            1972-170//21:06:57.642   1972-171//10:13:44.287
+            1972-174//21:10:01.974   1972-175//10:04:54.622
+            1972-177//21:10:25.441   1972-178//09:58:18.090
+            1972-181//20:50:25.092   1972-182//10:01:23.737 
+            1972-189//08:59:04.227   1972-192//11:47:26.145
+            1972-216//20:25:02.690   1972-219//08:25:05.583
+            1972-286//07:31:22.127   1972-286//23:14:14.742
+            1972-290//07:37:56.410   1972-291//00:53:13.007
+            
+   For any DAS or UTC outside the intervals listed above the SPICE System 
+   will not support time conversion and SCLK routines will signal an error
+   stating that the input SCLK or ET time was outside of the ranges supported 
+   by this SCLK file.
+   
+   An important exception exists for the following exact DAS values, for 
+   which an error will not be signaled but conversion will be incorrect 
+   and will result in completely bogus ET value:
+
+              DAS values that yield 
+           incorrect conversion to ET
+           --------------------------
+                  1657862
+                  1749706
+                  4940815
+                  5023163
+                 10494474
+                 10721004
+                 11482144
+                 11658920
+                 11836126
+                 12013124
+                 12188932
+                 12364451
+                 12538705
+                 12910058
+                 13165391
+                 13360385
+                 13511833
+            
+   The reason for incorrect conversion for these times, which are ends of 
+   the SCLK partitions defined by this file, is the fact that 
+   non-continuous Mariner 9 DAS time mapping was "packaged" into the SCLK 
+   type 1 structure that by definition represents continuous clocks. In 
+   this SCLK Type 1 concept the last tick of partition "i" corresponds to 
+   exact same time moment as the first tick of partition "i+1", which is not 
+   true for DAS time mapping in which these points are disjoint.
+
+
+Usage
+--------------------------------------------------------
+
+   This file must be loaded into the user's program by a call to the
+   LDPOOL subroutine
+
+               CALL LDPOOL( 'this_file_name' )
+
+   in order to use the SPICELIB SCLK family of subroutines to convert
+   Mariner 9 DAS clock to ET and vice versa.
+
+ 
+References
+--------------------------------------------------------
+ 
+   1.   SCLK Required Reading Document
+  
+ 
+Inquiries
+--------------------------------------------------------
+ 
+   If you have any questions regarding this file contact NAIF at JPL
+
+      Charles H. Acton, Jr., NAIF Manager
+      (818) 354-3869
+      Chuck.Acton@jpl.nasa.gov
+
+      Boris V. Semenov, NAIF Team Member
+      (818) 354-8136
+      Boris.Semenov@jpl.nasa.gov
+ 
+ 
+ 
+Kernel DATA
+--------------------------------------------------------
+ 
+\begindata
+
+SCLK_KERNEL_ID           = ( @1999-09-22/12:15:00 )
+
+SCLK_DATA_TYPE_9         = ( 1 )
+SCLK01_TIME_SYSTEM_9     = ( 1 )
+SCLK01_N_FIELDS_9        = ( 1 )
+SCLK01_MODULI_9          = ( 20000000 )
+SCLK01_OFFSETS_9         = ( 0 )
+SCLK01_OUTPUT_DELIM_9    = ( 1 )
+
+SCLK_PARTITION_START_9   = ( 
+                               1491192,
+                               1672706,
+                               1779190,
+                               4986238,
+                               5058058,
+                              10563119,
+                              11442909,
+                              11619965,
+                              11796786,
+                              11973784,
+                              12150187,
+                              12326056,
+                              12499155,
+                              12685638,
+                              12985387,
+                              13313240,
+                              13460068
+                           )
+
+SCLK_PARTITION_END_9     = ( 
+                               1657862,
+                               1749706,
+                               4940815,
+                               5023163,
+                              10494474,
+                              10721004,
+                              11482144,
+                              11658920,
+                              11836126,
+                              12013124,
+                              12188932,
+                              12364451,
+                              12538705,
+                              12910058,
+                              13165391,
+                              13360385,
+                              13511833
+                           )
+
+SCLK01_COEFFICIENTS_9    = (
+                                     0,   -888031559.067,   1.19999607,
+                                166670,   -887757205.152,   1.19999607,
+                                243670,   -887578120.511,   1.199996027,
+                               3405295,   -883700272.629,   1.19999607,
+                               3442220,   -883614088.042,   1.199996053,
+                               8878636,   -876679819.667,   1.19999607,
+                               9036521,   -869842192.852,   1.19999607,
+                               9075756,   -869582804.516,   1.19999607,
+                               9114711,   -869237478.581,   1.19999607,
+                               9154051,   -868978340.173,   1.19999607,
+                               9193391,   -868632555.841,   1.19999607,
+                               9232136,   -868373332.374,   1.19999607,
+                               9270531,   -868028932.723,   1.19999607,
+                               9310081,   -867380412.589,   1.19999607,
+                               9534501,   -865006454.126,   1.19999607,
+                               9714505,   -859004874.690,   1.19999607,
+                               9761650,   -858658880.407,   1.19999607
+
+                           )
+
+\begintext

@@ -1,0 +1,11 @@
+Group = MARINER_9/M9_VIDICON_A 
+  Version = 1
+  Library = Mariner9Camera
+  Routine = Mariner9CameraPlugin
+EndGroup
+Group = MARINER_9/M9_VIDICON_B 
+  Version = 1
+  Library = Mariner9Camera
+  Routine = Mariner9CameraPlugin
+EndGroup
+

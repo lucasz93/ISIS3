@@ -1,0 +1,6 @@
+Object = SpacecraftClock
+  Group = Selection
+    File = ("mariner9", "kernels/sclk/mariner9.????.tsc")
+  EndGroup
+EndObject
+
