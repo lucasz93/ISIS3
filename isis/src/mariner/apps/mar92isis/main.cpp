@@ -247,6 +247,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   // Place start time and exposure duration in intrument group
   inst += PvlKeyword("StartTime", fullTime);
   inst += PvlKeyword("ExposureDuration", exposure, "milliseconds");
+  inst += PvlKeyword("ImageNumber", exposure, "milliseconds");
 
   // Open nominal positions pvl named by QString encounter
   Pvl nomRx("$ISISDATA/mariner9/reseaus/mar9Nominal.pvl");
@@ -265,6 +266,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
 
   // Kernels group
   PvlGroup kernels("Kernels");
+  kernels += PvlKeyword("SpacecraftClock", das);
 
   // Camera dependent information
   QString camera = "";
