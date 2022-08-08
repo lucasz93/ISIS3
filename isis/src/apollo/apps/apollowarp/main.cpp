@@ -55,8 +55,8 @@ void IsisMain() {
 
   // Get the final output image dimensions
   PvlGroup dimensions = Pvl(reseaus["Master"]).findGroup("Dimensions");
-  int onl = dimensions["UndistortedSamples"],
-      ons = dimensions["UndistortedLines"];
+  int ons = dimensions["UndistortedSamples"],
+      onl = dimensions["UndistortedLines"];
 
   // Create the basis function for transforming
   int degree = ui.GetInteger("DEGREE");

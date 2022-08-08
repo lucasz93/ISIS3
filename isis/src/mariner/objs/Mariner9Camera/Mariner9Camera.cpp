@@ -91,8 +91,8 @@ namespace Isis {
       throw IException(IException::User, msg, _FILEINFO_);
     }
 
-    QString fname = FileName("$mariner9/reseaus/mar9" + cam
-                             + "MasterReseaus.pvl").expanded();
+    PvlGroup &rx = lab.findGroup("Reseaus", Pvl::Traverse);
+    QString fname = FileName(rx["Master"]).expanded();
 
     try {
       new ReseauDistortionMap(this, lab, fname);
