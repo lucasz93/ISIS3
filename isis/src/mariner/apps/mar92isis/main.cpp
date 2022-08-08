@@ -260,6 +260,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   PvlKeyword valid("Valid");
   PvlKeyword templ("Template");
   PvlKeyword status("Status");
+  PvlKeyword master("Master");
 
   // All cubes will stay this way until indexOfrx is run on them
   status = "Nominal";
@@ -275,11 +276,13 @@ void UpdateLabels(Cube *cube, const QString &labels) {
     templ = "$ISISDATA/mariner9/reseaus/mar9a.template.cub";
     camera = "M9_VIDICON_A_RESEAUS";
     camera_number_reseaus = "M9_VIDICON_A_NUMBER_RESEAUS";
+    master = "$ISISDATA/mariner9/reseaus/mar9aMasterReseaus.pvl";
   }
   else {
     templ = "$ISISDATA/mariner9/reseaus/mar9b.template.cub";
     camera = "M9_VIDICON_B_RESEAUS";
     camera_number_reseaus = "M9_VIDICON_B_NUMBER_RESEAUS";
+    master = "$ISISDATA/mariner9/reseaus/mar9bMasterReseaus.pvl";
   }
 
   // Find the correct PvlKeyword corresponding to the camera for nominal positions
@@ -308,6 +311,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   rx += valid;
   rx += templ;
   rx += status;
+  rx += master;
 
   // Get the labels and add the updated labels to them
   Pvl *cubeLabels = cube->label();
