@@ -72,8 +72,6 @@ namespace Isis {
 
     focalMap->SetDetectorOrigin(sampleBoresight, lineBoresight);
 
-    // Setup distortion map which is dependent on encounter, use start time
-    // MOON:  1973-11-08T03:16:26.350
     QString spacecraft = (QString)inst["SpacecraftName"];
     QString instId = (QString)inst["InstrumentId"];
     QString cam;
