@@ -208,6 +208,7 @@ Group = DataDirectory
   Kaguya       = $ISISDATA/kaguya
   Lo           = $ISISDATA/lo
   Lro          = $ISISDATA/lro
+  Mariner9     = $ISISDATA/mariner9
   Mariner10    = $ISISDATA/mariner10
   Mer          = $ISISDATA/mer
   Mex          = $ISISDATA/mex

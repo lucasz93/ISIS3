@@ -1,0 +1,6 @@
+Object = Frame
+  Group = Selection
+    File = ("mariner9", "kernels/fk/mariner9.????.tf")
+  EndGroup
+EndObject
+
