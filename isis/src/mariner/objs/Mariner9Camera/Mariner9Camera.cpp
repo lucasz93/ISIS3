@@ -44,7 +44,7 @@ namespace Isis {
 
     //  Turn off the aberration corrections for instrument position object
     instrumentPosition()->SetAberrationCorrection("NONE");
-    instrumentRotation()->SetFrame(-76000);
+    instrumentRotation()->SetFrame(-9000);
 
     // Set camera parameters
     SetFocalLength();

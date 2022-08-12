@@ -247,10 +247,10 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   // Place start time and exposure duration in intrument group
   inst += PvlKeyword("StartTime", fullTime);
   inst += PvlKeyword("ExposureDuration", exposure, "milliseconds");
-  inst += PvlKeyword("ImageNumber", exposure, "milliseconds");
+  inst += PvlKeyword("ImageNumber", das);
 
   // Open nominal positions pvl named by QString encounter
-  Pvl nomRx("$ISISDATA/mariner9/reseaus/mar9Nominal.pvl");
+  Pvl nomRx("$mariner9/reseaus/mar9Nominal.pvl");
 
   // Allocate all keywords within reseaus groups well as the group its self
   PvlGroup rx("Reseaus");
@@ -267,23 +267,28 @@ void UpdateLabels(Cube *cube, const QString &labels) {
 
   // Kernels group
   PvlGroup kernels("Kernels");
-  kernels += PvlKeyword("SpacecraftClock", das);
+  PvlKeyword naif("NaifFrameCode");
 
   // Camera dependent information
   QString camera = "";
   QString camera_number_reseaus = "";
   if(QString("M9_VIDICON_A") == inst["InstrumentId"][0]) {
-    templ = "$ISISDATA/mariner9/reseaus/mar9a.template.cub";
+    templ = "$mariner9/reseaus/mar9a.template.cub";
+    naif += "-9110";
     camera = "M9_VIDICON_A_RESEAUS";
     camera_number_reseaus = "M9_VIDICON_A_NUMBER_RESEAUS";
-    master = "$ISISDATA/mariner9/reseaus/mar9aMasterReseaus.pvl";
+    master = "$mariner9/reseaus/mar9aMasterReseaus.pvl";
   }
   else {
-    templ = "$ISISDATA/mariner9/reseaus/mar9b.template.cub";
+    templ = "$mariner9/reseaus/mar9b.template.cub";
+    naif += "-9120";
     camera = "M9_VIDICON_B_RESEAUS";
     camera_number_reseaus = "M9_VIDICON_B_NUMBER_RESEAUS";
-    master = "$ISISDATA/mariner9/reseaus/mar9bMasterReseaus.pvl";
+    master = "$mariner9/reseaus/mar9bMasterReseaus.pvl";
   }
+
+  // Add naif frame code
+  kernels += naif;
 
   // Find the correct PvlKeyword corresponding to the camera for nominal positions
   PvlKeyword resnom = nomRx[camera];
@@ -364,18 +369,22 @@ QString EbcdicToAscii(unsigned char *header) {
   return QString((const char *)header);
 }
 
-// Mariner 10 labels provide the number of days since the beginning of the year
-// 1974 in the GMT keyword, but not always a start time.  In order to derive an
+// Mariner 9 labels provide the number of days since the beginning of the year
+// 1971 in the GMT keyword, but not always a start time.  In order to derive an
 // estimated start time, with an actual date attached, a conversion must be
 // performed.
 QString DaysToDate(int days) {
   int currentMonth = 12;
   int currentDay = 31;
-  int currentYear = 1973;
+  int currentYear = 1970;
   while(days > 0) {
-    // The Mariner 10 mission took place in the years 1973 through 1975,
-    // none of which were Leap Years, thus February always had 28 days
-    if(currentDay == 28 && currentMonth == 2) {
+    // The Mariner 9 mission took place in the years 1971 through 1972.
+    // 1972 was a leap year, so February had 29 days.
+    if(currentYear == 1972 && currentDay == 29 && currentMonth == 2) {
+      currentMonth = 3;
+      currentDay = 1;
+    }
+    else if(currentYear == 1971 && currentDay == 28 && currentMonth == 2) {
       currentMonth = 3;
       currentDay = 1;
     }

@@ -1,0 +1,16 @@
+   \begindata
+
+	LSK_FILE_NAME          = '/home/mechsoft/data/base/kernels/lsk/naif0008.tls'
+	SCLK_FILE_NAME         = '/home/mechsoft/data/mariner9/kernels/sclk/mariner9.0001.tsc'
+	FRAMES_FILE_NAME       = '/home/mechsoft/data/mariner9/kernels/fk/mariner9.0001.tf'
+	CK_TYPE                = 3
+	INSTRUMENT_ID          = -9000
+	REFERENCE_FRAME_NAME   = 'B1950'
+	ANGULAR_RATE_PRESENT   = 'NO'
+	INPUT_TIME_TYPE        = 'SCLK'
+	INPUT_DATA_TYPE        = 'MATRICES'
+	INCLUDE_INTERVAL_TABLE = 'YES'
+	CHECK_TIME_ORDER       = 'YES'
+	PRODUCER_ID            = 'Lucas Zadrozny'
+	
+	\begintext

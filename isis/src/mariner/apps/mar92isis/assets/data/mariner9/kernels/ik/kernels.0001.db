@@ -1,0 +1,8 @@
+#
+# Most of the information in the instrument kernel is now in the
+# frame kernel (fk)
+#
+
+Object = Instrument
+EndObject
+

@@ -67,8 +67,6 @@ int main(void) {
 
       // Test kernel IDs
       cout << "Kernel IDs: " << endl;
-      cout << "CK Frame ID = " << cam->CkFrameId() << endl;
-      cout << "CK Reference ID = " << cam->CkReferenceId() << endl;
       cout << "SPK Target ID = " << cam->SpkTargetId() << endl;
       cout << "SPK Reference ID = " << cam->SpkReferenceId() << endl << endl;
 
