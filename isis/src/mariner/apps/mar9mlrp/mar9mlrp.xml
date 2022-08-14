@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9mlrp" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+   Mariner 9 missing line repair program
+  </brief>
+
+  <description>
+    <p>
+      M9MLRP repairs missing lines in Mariner 9 images by searching for saturated
+      pixels in the first two samples of each line.  The previous line is simply
+      copied onto the missing line.  In most cases, missing lines in Mariner 9
+      images are flagged by two saturated pixels followed by two zeros.  If this
+      marker is not found, the output line simply equals the input line.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner 9</missionItem>
+  </category>
+
+  <history>
+    <change name="Ken Herkenhoff" date="1986-06-26">
+      Original version
+    </change>
+    <change name="Tracie Stoewe" date="1987-11-16">
+       Added NIMS documentation
+    </change>
+    <change name="Janet Barrett" date="2000-10-16">
+      Port to Unix
+    </change>
+    <change name="Lucas Zadrozny" date="2022-08-14">
+      Port to ISIS3
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input file to be restored
+        </brief>
+        <description>
+          An input file which needs reconstruction.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          Reconstructed cube.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+
+</application>
+
