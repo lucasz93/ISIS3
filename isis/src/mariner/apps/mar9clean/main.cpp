@@ -20,13 +20,13 @@ using namespace Isis;
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
 
-  // Check that it is a Mariner10 cube.
+  // Check that it is a Mariner9 cube.
   Cube iCube;
   iCube.open(ui.GetFileName("FROM"));
   Pvl * labels = iCube.label();
-  if ("Mariner_10" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
+  if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
     QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
-        " to be a Mariner10 cube";
+        " to be a Mariner9 cube";
     throw IException(IException::User, msg, _FILEINFO_);
   }
 
@@ -40,7 +40,7 @@ void IsisMain() {
   cout << "Valid pixels: "<< stats->ValidPixels() << endl;
   if (stats->ValidPixels() == 7) {
     QString msg = "The cube [" + ui.GetFileName("FROM") + "] needs" +
-      " reconstruction, try mar10restore instead";
+      " reconstruction, try mar9restore instead";
     throw IException(IException::User, msg, _FILEINFO_);
   }
   else if (stats->ValidPixels() == 0) {
@@ -54,12 +54,12 @@ void IsisMain() {
   }
 
   // Open the input cube
-  Pipeline p("mar10clean");
+  Pipeline p("mar9clean");
   p.SetInputFile("FROM");
   p.SetOutputFile("TO");
   p.KeepTemporaryFiles(!ui.GetBoolean("REMOVE"));
 
-  // Run mar9nonoise to remove noise
+  // Run marnonoise to remove noise
   p.AddToPipeline("marnonoise");
   p.Application("marnonoise").SetInputParameter("FROM", true);
   p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
@@ -74,6 +74,11 @@ void IsisMain() {
   p.Application("remrx").SetOutputParameter("TO", "remrx");
   p.Application("remrx").AddParameter("SDIM", "SDIM");
   p.Application("remrx").AddParameter("LDIM", "LDIM");
+
+  // Run mar9mlrp to remove missing lines.
+  p.AddToPipeline("mar9mlrp");
+  p.Application("mar9mlrp").SetInputParameter("FROM", true);
+  p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
 
   // Run a low pass filter on the null data in the cube
   p.AddToPipeline("lowpass", "pass1");
@@ -100,6 +105,14 @@ void IsisMain() {
   p.Application("trim").AddConstParameter("TOP", "5");
   p.Application("trim").AddConstParameter("LEFT", "11");
   p.Application("trim").AddConstParameter("RIGHT", "8");
+
+  //
+  // TODO: mar9res
+  //
+
+  //
+  // TODO: mar9cal
+  //
 
   cout << p;
   p.Run();

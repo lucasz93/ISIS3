@@ -1,4 +1,4 @@
-APPNAME = mar10nonoise
+APPNAME = marnonoise
 
 include $(ISISROOT)/make/isismake.tsts
 
