@@ -76,6 +76,8 @@ void IsisMain() {
 // Converts labels into standard pvl format and adds necessary
 // information not included in original labels
 void UpdateLabels(Cube *cube, const QString &labels) {
+  Pvl sedr("$mariner9/metadata/sedr.pvl");
+
   // First, we parse out as much valid information as possible from the
   // original labels
   QString key;
@@ -88,47 +90,22 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   if (keyPosition == -1)
     throw IException(IException::User, "Not a Mariner 9 EDR", _FILEINFO_);
 
-  // Which of the two cameras took the image
-  key = "***";
-  keyPosition = labels.indexOf(key);
-  consumeChars = 1;
-  QString ccamera(labels.mid(keyPosition + key.length(), consumeChars));
-  ccamera = ccamera.trimmed();
-
-  // Year the image was taken
-  key = "YR ";
-  keyPosition = labels.indexOf(key);
-  consumeChars = labels.indexOf("DAY") - keyPosition - key.length();
-  QString yr(labels.mid(keyPosition + key.length(), consumeChars));
-  yr = yr.trimmed();
-
-  // Day the image was taken
-  key = "DAY ";
-  keyPosition = labels.indexOf(key);
-  consumeChars = labels.indexOf("GMT") - keyPosition - key.length();
-  QString day(labels.mid(keyPosition + key.length(), consumeChars));
-  day = day.trimmed();
-
-  // Greenwich Mean Time
-  key = "GMT ";
-  keyPosition = labels.indexOf(key);
-  consumeChars = labels.indexOf("DAS TIME") - keyPosition - key.length();
-  QString gmt(labels.mid(keyPosition + key.length(), consumeChars));
-  gmt = gmt.trimmed();
-
-  // Greenwich Mean Time
+  // Get the time this image was received by Earth.
   key = "DAS TIME ";
   keyPosition = labels.indexOf(key);
   consumeChars = labels.indexOf("CPICTURE") - keyPosition - key.length();
-  QString das(labels.mid(keyPosition + key.length(), consumeChars));
-  das = das.trimmed();
+  QString dasErt(labels.mid(keyPosition + key.length(), consumeChars));
+  dasErt = dasErt.trimmed();
 
-  // Filter number
-  key = "FILTER POS ";
-  keyPosition = labels.indexOf(key);
-  consumeChars = 1;
-  QString filterNum(labels.mid(keyPosition + key.length(), consumeChars));
-  filterNum = filterNum.trimmed();
+  const auto& metadata = sedr.findGroup(dasErt);
+  QString das = metadata.findKeyword("DAS");
+  QString gmt = metadata.findKeyword("MeasurementTime");
+  QString ccamera = metadata.findKeyword("Instrument");
+  QString filterNum = metadata.findKeyword("FilterNum");
+  QString mdr = metadata.findKeyword("MDR");
+  QString description = metadata.findKeyword("Description");
+
+  ccamera = ccamera.mid(3, 1);
 
   // Center wavelength
   // These were all pulled from the paper "Mariner 9 Television Reconnaissance of Mars and Its Satellites: Preliminary Results".
@@ -213,23 +190,27 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   inst += PvlKeyword("InstrumentId", "M9_VIDICON_" + ccamera);
 
   // Get the date
-  int days = toInt(day);
-  QString date = DaysToDate(days);
+  QString fullTime;
+  {
+    std::istringstream igmt(gmt.toStdString());
+    std::string year, day, time;
+    std::getline(igmt, year, ':');
+    std::getline(igmt, day, ':');
+    std::getline(igmt, time);
 
-  // Get the time - reformat from HHMMSS to HH:MM:SS.
-  QString time = gmt.mid(0, 2) + ":" + gmt.mid(2, 2) + ":" + gmt.mid(4, 2);
+    int days = toInt(QString(day.c_str()));
+    QString date = DaysToDate(days);
 
-  // Construct the Start Time in yyyy-mm-ddThh:mm:ss format
-  QString fullTime = date + "T" + time + ".000";
-  iTime startTime(fullTime);
+    // Construct the Start Time in yyyy-mm-ddThh:mm:ss format
+    fullTime = date + "T" + QString(time.c_str());
+    iTime startTime(fullTime);
+  }
 
   // Create the archive group
   PvlGroup archive("Archive");
-
-  int year = toInt(yr);
-  year += 1900;
-  QString fullGMT = toString(year) + ":" + day + ":" + time;
-  archive += PvlKeyword("GMT", fullGMT);
+  archive += PvlKeyword("GMT", gmt);
+  archive += PvlKeyword("MDR", mdr);
+  archive += PvlKeyword("Description", description);
 
   // Create the band bin group
   PvlGroup bandBin("BandBin");
