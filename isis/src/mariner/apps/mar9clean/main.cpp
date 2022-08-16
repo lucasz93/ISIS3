@@ -107,10 +107,6 @@ void IsisMain() {
   p.Application("trim").AddConstParameter("RIGHT", "8");
 
   //
-  // TODO: mar9res
-  //
-
-  //
   // TODO: mar9cal
   //
 
