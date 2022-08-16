@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9res" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+   Mariner 9 missing line repair program
+  </brief>
+
+  <description>
+    <p>
+      Subtracts residual component from Mariner 9 images using preflight 
+      calibration data as well as inflight data.  The previous image must 
+      immediately precede the input file (DAS count is 70 less), and should
+      have had noise and reseaux removed.  Both input and output files are 
+      8-bit.
+      The Mariner 9 cameras were known to produce residual images (due to
+      incomplete erasure of previous image) before flight and extensive
+      calibration data was gathered.  These data were compressed into 
+      several calibration files, one for each filter/camera combination.
+      Data files for camera A, orange, green and 60 degree polarizing filters
+      and for camera B have been created to date.  The input and previous DN
+      values are used to interpolate between (or extrapolate from) calibration
+      data values at each pixel to find the residual, which is then subtracted
+      from the input image.  For more information see Herkenhoff et al., 1988
+      in Icarus (in press).
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner 9</missionItem>
+  </category>
+
+  <history>
+    <change name="Ken Herkenhoff" date="1986-06-26">
+      Original version
+    </change>
+    <change name="Janet Barrett" date="2000-10-16">
+      Port to Unix
+    </change>
+    <change name="Lucas Zadrozny" date="2022-08-14">
+      Port to ISIS3
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input image file name
+        </brief>
+        <description>
+          The input Mariner 9 image must be 8-bit, and should have had
+          reseaux and noise removed. If the file extension is omitted,
+          then ".cub" will be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+      
+      <parameter name="PREVIOUS">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Previous image file name
+        </brief>
+        <description>
+          The previous frame (if it exists) must have a DAS count
+          (spacecraft time) that is exactly 70 less than that of the
+          input image.  The previous image must also be 8-bit and
+          should have had reseaux and noise removed. If the file
+          extension is omitted, then ".cub" will be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output file name
+        </brief>
+        <description>
+          The output image file will be 8-bit, with residual image
+          removed. If the file extension is omitted, then ".cub" will
+          be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+
+</application>
+
