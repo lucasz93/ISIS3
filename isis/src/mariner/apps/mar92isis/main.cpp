@@ -32,7 +32,7 @@ using namespace Isis;
 void UpdateLabels(Cube *cube, const QString &labels);
 void TranslateIsis2Labels(FileName &labelFile, Cube *oCube);
 QString EbcdicToAscii(unsigned char *header);
-QString DaysToDate(int days);
+QString DaysToDate(int currentYear, int days);
 
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
@@ -198,8 +198,9 @@ void UpdateLabels(Cube *cube, const QString &labels) {
     std::getline(igmt, day, ':');
     std::getline(igmt, time);
 
+    int years = toInt(QString(year.c_str()));
     int days = toInt(QString(day.c_str()));
-    QString date = DaysToDate(days);
+    QString date = DaysToDate(years, days);
 
     // Construct the Start Time in yyyy-mm-ddThh:mm:ss format
     fullTime = date + "T" + QString(time.c_str());
@@ -350,14 +351,14 @@ QString EbcdicToAscii(unsigned char *header) {
   return QString((const char *)header);
 }
 
-// Mariner 9 labels provide the number of days since the beginning of the year
-// 1971 in the GMT keyword, but not always a start time.  In order to derive an
+// Mariner 9 labels provide the number of days since the beginning of the given year,
+// but not always a start time.  In order to derive an
 // estimated start time, with an actual date attached, a conversion must be
 // performed.
-QString DaysToDate(int days) {
+QString DaysToDate(int currentYear, int days) {
+  currentYear--;
   int currentMonth = 12;
   int currentDay = 31;
-  int currentYear = 1970;
   while(days > 0) {
     // The Mariner 9 mission took place in the years 1971 through 1972.
     // 1972 was a leap year, so February had 29 days.
