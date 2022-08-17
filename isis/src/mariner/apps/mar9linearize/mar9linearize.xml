@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9linearize" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Linearize Mariner 9 images
+  </brief>
+
+  <description>
+    <p>
+      Linearizes Mariner 9 images, using dark current frames and calibration
+      parameters described in et al. (1988).  Output image is 16-bit, input file must
+      be 8-bit.  DN values in output image are proportional to observed
+      brightness, calculated as follows for each pixel:
+      	OUTPUT = DNT + A*(DNT**3 - 128 DNT**2) where
+      	DNT = SCALE*(INPUT - 128*B*INPUT/(INPUT + D)) and A depends upon
+      the line L and sample S location in the frame:
+      	A = C(1)*L*L + C(2)*L + C(3)*S + C(4)*L*S + C(5)
+      The constants A, B, D and SCALE are different for each camera, and the
+      five C coefficients were found using preflight calibrations data.  An
+      estimate of the uncertainty in linearization is given in the reference.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner 9</missionItem>
+  </category>
+
+  <history>
+    <change name="Ken Herkenhoff" date="1986-06-26">
+      Original version
+    </change>
+    <change name="Tracie Stoewe" date="1987-11-16">
+      Original version
+    </change>
+    <change name="Added NIMS documentation" date="2000-01-05">
+      Port to Unix
+    </change>
+    <change name="Lucas Zadrozny" date="2022-08-17">
+      Port to ISIS3
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input image file name
+        </brief>
+        <description>
+          The input Mariner 9 image must be 8-bit, and should have had
+          reseaux and noise removed. If the file extension is omitted,
+          then ".cub" will be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output image file name
+        </brief>
+        <description>
+          The output image will be 16-bit, ranging from 0 to about 350
+          DN maximum.  DN values in the output image are proportional
+          to the observed brightness only at the center of the image.
+          If the file extension is omitted, then ".cub" will be
+          assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+
+</application>
+
