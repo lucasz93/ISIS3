@@ -24,9 +24,9 @@ static FileName calpath;
 static std::ifstream CLUN;
 static int D_ROW = 0;
 
-static short N1[6][166];
-static short N2[6][166];
-static short IRES[6][6][166];
+static short N1[6][166]{};
+static short N2[6][166]{};
+static short IRES[6][6][166]{};
 
 void IsisMain() {
 
@@ -168,16 +168,15 @@ static void resred(vector<Buffer *> &in, vector<Buffer *> &out)
   static int NSD1 = 0;
   for (int IS = 0; IS < 829; ++IS)
   {
-    static int ISD = IS/5;// + 1;
-    static int IDX1 = 0;//1;
-    static int IDX2 = 0;//1;
+    static int ISD = IS/5;
+    static int IDX1 = 0;
+    static int IDX2 = 0;
     static short IN1, IN2;
     static short IRES1, IRES3, IRES4;
     static double T, U, RES;
 
     for (int I = 0; I < 5; ++I)
     {
-      // !!! INDEX WARNING - not sure this +1 is necessary !!!
       if (CUR[IS] > N2[I][ISD]) IDX2 = I + 1;
       if (PRE[IS] > N1[I][ISD]) IDX1 = I + 1;
     }
