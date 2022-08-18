@@ -95,7 +95,10 @@ void IsisMain() {
   ProcessByLine p;
   p.AddInputCube(&cube, false);
   p.AddInputCube(&dc, false);
-  p.SetOutputCube("TO");
+
+  CubeAttributeOutput outputProperties;
+  outputProperties.setPixelType(SignedWord);
+  p.SetOutputCube(ui.GetFileName("TO"), outputProperties);
 
   p.ProcessCubes(linearize, false);
 }

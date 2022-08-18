@@ -101,80 +101,95 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   QString das = metadata.findKeyword("DAS");
   QString gmt = metadata.findKeyword("MeasurementTime");
   QString ccamera = metadata.findKeyword("Instrument");
-  QString filterNum = metadata.findKeyword("FilterNum");
+  QString filterId = metadata.findKeyword("FilterID");
   QString mdr = metadata.findKeyword("MDR");
   QString description = metadata.findKeyword("Description");
 
   ccamera = ccamera.mid(3, 1);
 
-  // Center wavelength
-  // These were all pulled from the paper "Mariner 9 Television Reconnaissance of Mars and Its Satellites: Preliminary Results".
-  // Available here: https://collections.nlm.nih.gov/ext/document/101584906X949/PDF/101584906X949.pdf
+  // This table was constructed using the SEDR and paper "Verification of Performance of the Mariner 9 Television Cameras".
   double filterCenter = 0.;
-  QString filterName;
+  QString filterName, filterPos;
   if (ccamera == "A") {
     // I've only even seen these asterix appear on the B camera.
     // Sanity check here.
-    if (filterNum == "*")
-      throw IException(IException::Programmer, "Filter A, DAS TIME [" + das + "] has an unknown filter", _FILEINFO_);
+    if (filterId == "*")
+      throw IException(IException::Programmer, "Camera A, DAS TIME [" + das + "] has an unknown filter", _FILEINFO_);
 
-    int fnum = toInt(filterNum);
-    // There seem to be 14 filters listed in the SEDR.
+    int fnum = toInt(filterId);
     switch(fnum) {
-      // No useful descriptions. All other filters are accounted for. I'm going to assume these are the yellow filter.
-      case 0:   // 3 images.
-      case 3:   // 2 images.
-      case 5:   // 3 images.
-      case 6:   // 3 images.
-      case 9:   // 1 image.
-      case 10:  // 1 image.
-      case 12:  // 1 image.
-      case 15:  // 1 image.
+      case 0:
+        throw IException(IException::Programmer, "Camera A is trying to process filter ID 0, but the SEDR says that was only used on Camera B images!", _FILEINFO_);
+      
+      case 1:   // 11 images total.
         filterCenter = 0.560;
         filterName = "Yellow";
+        filterPos = "1";
         break;
 
-      case 1:
-      case 14:
-        filterCenter = .477;  // These are both labelled with a description of BLUE in the SEDR.
-        filterName = "Blue";
-        break;
-
-      case 2:
-        filterCenter = .61;   // Orange.
+      case 2:   // 2 is the actual filter. 1227 images total.
+      case 3:   // Only 1 image. It's taken between 2 orange images. Assuming this is also an orange image.
+      case 6:   // Only 1 image. Taken as the first in a sequence of ORANGE images. Camera was inactive for 11 hours before this sequence.
+        filterCenter = .61;
         filterName = "Orange";
+        filterPos = "2";
         break;
 
-      case 4:
-        filterCenter = .545;  // Green.
+      case 4:   // 103 images total.
+        filterCenter = .545;
         filterName = "Green";
-        break;
-   
-      case 8:
-        filterCenter = .414;  // Violet.
-        filterName = "Violet";
+        filterPos = "4";
         break;
 
-      // The above paper says Mariner 9 had 3 polarisation filters.
-      case 7:                 // Polarization (120 degrees).
-      case 11:                // Polarization (0   degrees).
-      case 13:                // Polarization (60  degrees).
+      case 5:
+        throw IException(IException::Programmer, "Camera A is trying to process filter ID 5, but the SEDR says that was only used on Camera B images!", _FILEINFO_);
+
+      // 'case 6' is Orange, above.
+
+      case 7:   // 19 total images.
         filterCenter = .565;
-        filterName = "Polarization";
+        filterName = "Polaroid 120";
+        filterPos = "7";
         break;
 
-      default:
+      case 8:   // 369 total images.
+      case 10:  // 2 total images. Both exist in a sequennce of Violet.
+        filterCenter = .414;
+        filterName = "Violet";
+        filterPos = "8";
+        break;
+
+      case 11:  // 19 total images.
+        filterCenter = .565;
+        filterName = "Polaroid 0";
+        filterPos = "3";
+        break;
+
+      case 12:  // 1 image. Taken between POL 60 images.
+      case 13:  // 1730 total images.
+      case 15:  // 1 image. Taken between POL 60 images.
+        filterCenter = .565;
+        filterName = "Polaroid 60";
+        filterPos = "5";
+        break;
+
+      case 14:  // 94 total images.
+        filterCenter = .477; 
+        filterName = "Blue";
+        filterPos = "6";
         break;
     }
   }
   else {
     // I've only even seen these asterix appear on the B camera.
     // Sanity check here.
-    if (filterNum != "*")
-      throw IException(IException::Programmer, "Filter B, DAS TIME [" + das + "] has an unknown filter [" + filterNum + "]", _FILEINFO_);
+    if (filterId != "*")
+      throw IException(IException::Programmer, "Filter B, DAS TIME [" + das + "] has an unknown filter [" + filterId + "]", _FILEINFO_);
 
     // The above paper says the B camera only had a single filter.
     filterCenter = .558;
+    filterName = "*";
+    filterPos = "*";
   }
 
   // Exposure duration
@@ -216,8 +231,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   // Create the band bin group
   PvlGroup bandBin("BandBin");
   bandBin += PvlKeyword("FilterName", filterName);
-  QString number = filterNum;
-  bandBin += PvlKeyword("FilterNumber", number);
+  bandBin += PvlKeyword("FilterNumber", filterPos);
   bandBin += PvlKeyword("OriginalBand", "1");
   QString center = toString(filterCenter);
   bandBin += PvlKeyword("Center", center);

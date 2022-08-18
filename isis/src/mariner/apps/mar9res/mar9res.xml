@@ -92,6 +92,18 @@
           *.cub
         </filter>
       </parameter>
+
+      <parameter name="FORCE">
+        <type>boolean</type>
+        <default><item>False</item></default>
+        <brief>
+          Force mar9res to use the previous image.
+        </brief>
+        <description>
+           mar9res checks to see if PREVIOUS is at most 70 clock counts
+           less than FROM. FORCE disables this check.
+        </description>
+      </parameter>
     </group>
   </groups>
 

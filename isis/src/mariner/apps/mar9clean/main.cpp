@@ -20,11 +20,11 @@ using namespace Isis;
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
 
+  Cube fromCube;
+  fromCube.open(ui.GetFileName("FROM"));
+
   // Check that it is a Mariner9 cube.
-  Cube iCube;
-  iCube.open(ui.GetFileName("FROM"));
-  Pvl * labels = iCube.label();
-  if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
+  if ("Mariner_9" != (QString)fromCube.label()->findKeyword("SpacecraftName", Pvl::Traverse)) {
     QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
         " to be a Mariner9 cube";
     throw IException(IException::User, msg, _FILEINFO_);
@@ -34,16 +34,11 @@ void IsisMain() {
   // wasn't a "compressed" cube and that it hasn't been cleaned.
   Chip cp(5, 5);
   cp.TackCube(2.5, 2.5);
-  cp.Load(iCube);
+  cp.Load(fromCube);
   Statistics *stats = NULL;
   stats = cp.Statistics();
   cout << "Valid pixels: "<< stats->ValidPixels() << endl;
-  if (stats->ValidPixels() == 7) {
-    QString msg = "The cube [" + ui.GetFileName("FROM") + "] needs" +
-      " reconstruction, try mar9restore instead";
-    throw IException(IException::User, msg, _FILEINFO_);
-  }
-  else if (stats->ValidPixels() == 0) {
+  if (stats->ValidPixels() == 0) {
     QString msg = "The cube [" + ui.GetFileName("FROM") + "]" +
       " appears to have already been cleaned";
     throw IException(IException::User, msg, _FILEINFO_);
@@ -105,10 +100,6 @@ void IsisMain() {
   p.Application("trim").AddConstParameter("TOP", "5");
   p.Application("trim").AddConstParameter("LEFT", "11");
   p.Application("trim").AddConstParameter("RIGHT", "8");
-
-  //
-  // TODO: mar9cal
-  //
 
   cout << p;
   p.Run();
