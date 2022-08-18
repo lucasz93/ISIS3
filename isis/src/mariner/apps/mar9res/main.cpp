@@ -39,6 +39,9 @@ void IsisMain() {
   ProcessByLine p;
   p.AddInputCube(&from, false);
   p.AddInputCube(&previous, false);
+
+  CubeAttributeOutput outputProperties;
+  outputProperties.setPixelType(Real);
   p.SetOutputCube("TO");
   
   // Check that it is a Mariner9 cube.
@@ -295,7 +298,7 @@ static void resred(vector<Buffer *> &in, vector<Buffer *> &out)
     T = double(PRE[IS] - IN1) / double(N1[IDX1][ISD] - IN1);
     U = double(CUR[IS] - IN2) / double(N2[IDX2][ISD] - IN2);
     RES = (1.-T)*(1.-U)*double(IRES4) + T*(1.-U)*double(IRES3) + T*U*double(IRES[IDX2][IDX1][ISD]) + (1.-T)*U*double(IRES1);
-    OUT[IS] = CUR[IS] - std::round(RES/16.);
+    OUT[IS] = CUR[IS] - RES/16.;
   }
 
   ++D_ROW;
