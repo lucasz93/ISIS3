@@ -105,7 +105,7 @@ static void radiom(vector<Buffer *> &in, vector<Buffer *> &out)
 
   for (int IS = 0; IS < D_IPLANE.SampleDimension(); ++IS)
   {
-    D_OPLANE[IS] = std::floor(D_IPLANE[IS]*SF*BBUF2[IS]);
+    D_OPLANE[IS] = D_IPLANE[IS]*SF*BBUF2[IS];
   }
 
   ++D_ROW;

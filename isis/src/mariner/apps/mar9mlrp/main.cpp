@@ -25,7 +25,7 @@ void IsisMain() {
   ProcessByLine p;
 
   UserInterface &ui = Application::GetUserInterface();
-  p.SetInputCube(ui.GetFileName("FROM"));
+  p.SetInputCube("FROM");
   p.SetOutputCube("TO");
   
   Cube cube;
