@@ -54,6 +54,14 @@ void IsisMain() {
       " to be a Mariner9 cube";
     throw IException(IException::User, msg, _FILEINFO_);
   }
+
+  int das = fromLabels->findKeyword("ImageNumber", Pvl::Traverse);
+  int prevDas = previousLabels->findKeyword("ImageNumber", Pvl::Traverse);
+  if (!ui.WasEntered("FORCE") && (das - prevDas <= 0 || das - prevDas > 70))
+  {
+    QString msg = "PREVIOUS DAS must be 70 DAS counts less than FROM";
+    throw IException(IException::User, msg, _FILEINFO_);
+  }
   
   const auto fil = GetCalibrationFilePrefix(*fromLabels, *previousLabels);
   calpath = QString("$mariner9/calibration/") + fil + "ri.cal";
