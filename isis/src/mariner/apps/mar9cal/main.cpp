@@ -44,6 +44,7 @@ void IsisMain() {
   // Radiometric calibration.
   p.AddToPipeline("mar9radiom");
   p.Application("mar9radiom").SetInputParameter("FROM", true);
+  p.Application("mar9radiom").AddParameter("FALLBACK", "FALLBACK");
   p.Application("mar9radiom").SetOutputParameter("TO", "mar9radiom");
 
   cout << p;

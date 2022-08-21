@@ -19,6 +19,7 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
+static char GetFilterCalibration(int IF);
 static void radiom(vector<Buffer *> &in, vector<Buffer *> &out);
 
 int D_ROW = 0;
@@ -49,10 +50,12 @@ void IsisMain() {
   const int IF = CAMERA == "M9_VIDICON_A"
     ? (int)labels->findKeyword("FilterNumber", Pvl::Traverse)
     : 9;
+  if (!ui.GetBoolean("FALLBACK") && IF != 2 && IF != 5 && IF != 9)
+  {
+    throw IException(IException::User, QString("Calibration file doesn't exist for filter ") + FILTER + QString(". Use FALLBACK=YES to user use an existing filter of the closest wavelength. Results may vary."), _FILEINFO_);
+  }
 
-  const std::string CALPATH = CAMERA == "M9_VIDICON_A"
-    ? "$mariner9/calibration/" + std::to_string(IF) + "shading.cub"
-    : "$mariner9/calibration/bshading.cub";
+  const std::string CALPATH = std::string("$mariner9/calibration/") + GetFilterCalibration(IF) + "shading.cub";
   const FileName CALFILE(QString(CALPATH.c_str()));
 
   std::cout << " EXPOSURE TIME: " << std::setw(5) << std::setprecision(3) << EXPTL << " SEC." << std::endl;
@@ -97,6 +100,33 @@ void IsisMain() {
   p.ProcessCubes(radiom, false);
 }
 
+static char GetFilterCalibration(int IF)
+{
+  switch (IF)
+  {
+    case 1: // -0.005 nm
+    case 4: // -0.020 nm
+    case 6: // -0.088 nm
+    case 8: // -0.151nm
+      return '5';
+
+    case 2:
+      return '2';
+
+    // All polaroids use the same wavelength.
+    case 3:
+    case 5:
+    case 7:
+      return '5';
+
+    case 9:
+      return 'b';
+
+    default:
+      throw IException(IException::User, "Unknown FilterNumber", _FILEINFO_);
+  }
+}
+
 static void radiom(vector<Buffer *> &in, vector<Buffer *> &out)
 {
   const auto& D_IPLANE = *in[0];
@@ -105,7 +135,7 @@ static void radiom(vector<Buffer *> &in, vector<Buffer *> &out)
 
   for (int IS = 0; IS < D_IPLANE.SampleDimension(); ++IS)
   {
-    D_OPLANE[IS] = D_IPLANE[IS]*SF*BBUF2[IS];
+    D_OPLANE[IS] = std::floor(D_IPLANE[IS]*SF*BBUF2[IS]);
   }
 
   ++D_ROW;
