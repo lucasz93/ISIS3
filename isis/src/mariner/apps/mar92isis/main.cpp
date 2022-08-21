@@ -181,11 +181,6 @@ void UpdateLabels(Cube *cube, const QString &labels) {
     }
   }
   else {
-    // I've only even seen these asterix appear on the B camera.
-    // Sanity check here.
-    if (filterId != "*")
-      throw IException(IException::Programmer, "Filter B, DAS TIME [" + das + "] has an unknown filter [" + filterId + "]", _FILEINFO_);
-
     // The above paper says the B camera only had a single filter.
     filterCenter = .558;
     filterName = "*";

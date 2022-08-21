@@ -89,6 +89,16 @@
         <default><item>TRUE</item></default>
       </parameter>
 
+      <parameter name="FALLBACK">
+        <type>boolean</type>
+        <default><item>false</item></default>
+        <brief>Fallback to a different filter calibration file if necessary.</brief>
+        <description>
+            Use the closest matching filter calibration file if one doesn't exist.
+            For example: use the polaroid calibration file on the yellow filter. Center wavelength difference is 0.005 nm.
+        </description>
+      </parameter>
+
     </group>
   </groups>
 
