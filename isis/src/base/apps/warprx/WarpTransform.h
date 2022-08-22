@@ -22,14 +22,14 @@ namespace Isis {
  *
  * @internal
  */
-class WarpTransform : public Transform {
+class RxWarpTransform : public Transform {
     public:
-      WarpTransform(Isis::BasisFunction &basisLine,
+      RxWarpTransform(Isis::BasisFunction &basisLine,
            Isis::BasisFunction &basisSamp, bool weighted,
            std::vector<double> &inputLine, std::vector<double> &inputSample,
            std::vector<double> &outputLine, std::vector<double> &outputSample,
            int inputLines, int inputSamples, int outputLines, int outputSamples);
-      ~WarpTransform();
+      ~RxWarpTransform();
 
       // Implementations for parent's pure virtual members
       bool Xform (double &inSample, double &inLine,

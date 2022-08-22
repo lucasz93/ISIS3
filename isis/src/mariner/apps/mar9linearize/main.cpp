@@ -97,7 +97,7 @@ void IsisMain() {
   p.AddInputCube(&dc, false);
 
   CubeAttributeOutput outputProperties;
-  outputProperties.setPixelType(SignedWord);
+  outputProperties.setPixelType(Real);
   p.SetOutputCube(ui.GetFileName("TO"), outputProperties);
 
   p.ProcessCubes(linearize, false);
