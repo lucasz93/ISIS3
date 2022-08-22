@@ -12,7 +12,7 @@ find files of those names at the top level of this repository. **/
 #include "WarpTransform.h"
 
 namespace Isis {
-  WarpTransform::WarpTransform(BasisFunction &basisLine,
+  RxWarpTransform::RxWarpTransform(BasisFunction &basisLine,
        BasisFunction &basisSamp, bool weighted, std::vector<double> &inputLine,
        std::vector<double> &inputSample, std::vector<double> &outputLine,
        std::vector<double> &outputSample, int inputLines, int inputSamples,
@@ -43,14 +43,14 @@ namespace Isis {
     }
   }
 
-  WarpTransform::~WarpTransform() {
+  RxWarpTransform::~RxWarpTransform() {
     if (p_lsqInputLine != NULL) delete p_lsqInputLine;
     if (p_lsqInputSamp != NULL) delete p_lsqInputSamp;
   }
 
 
   // Convert the requested output samp/line to an input samp/line
-  bool WarpTransform::Xform (double &inSample, double &inLine,
+  bool RxWarpTransform::Xform (double &inSample, double &inLine,
                         const double outSample, const double outLine) {
     if (p_weighted) {
       for (int i=0; i<(int) p_outputLine.size(); i++) {
@@ -77,7 +77,7 @@ namespace Isis {
     return true;
   }
 
-  PvlGroup WarpTransform::Residuals () {
+  PvlGroup RxWarpTransform::Residuals () {
     PvlGroup errs("Residuals");
     for (int i=0; i<p_lsqInputLine->Knowns(); i++) {
       PvlKeyword p("POINT"+toString(i+1));

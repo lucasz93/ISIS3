@@ -38,7 +38,8 @@ void IsisMain() {
   Statistics *stats = NULL;
   stats = cp.Statistics();
   cout << "Valid pixels: "<< stats->ValidPixels() << endl;
-  if (stats->ValidPixels() == 0) {
+  const bool alreadyCleaned = stats->ValidPixels() == 0;
+  if (alreadyCleaned && !ui.GetBoolean("REPEAT")) {
     QString msg = "The cube [" + ui.GetFileName("FROM") + "]" +
       " appears to have already been cleaned";
     throw IException(IException::User, msg, _FILEINFO_);
@@ -59,21 +60,19 @@ void IsisMain() {
   p.Application("marnonoise").SetInputParameter("FROM", true);
   p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
 
-  // Run findrx on the cube to find the actual position of the reseaus
-  p.AddToPipeline("findrx");
-  p.Application("findrx").SetInputParameter("FROM", false);
+  if (!alreadyCleaned)
+  {
+    // Run findrx on the cube to find the actual position of the reseaus
+    p.AddToPipeline("findrx");
+    p.Application("findrx").SetInputParameter("FROM", false);
 
-  // Run remrx on the cube to remove the reseaus
-  p.AddToPipeline("remrx");
-  p.Application("remrx").SetInputParameter("FROM", true);
-  p.Application("remrx").SetOutputParameter("TO", "remrx");
-  p.Application("remrx").AddParameter("SDIM", "SDIM");
-  p.Application("remrx").AddParameter("LDIM", "LDIM");
-
-  // Run mar9mlrp to remove missing lines.
-  p.AddToPipeline("mar9mlrp");
-  p.Application("mar9mlrp").SetInputParameter("FROM", true);
-  p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
+    // Run remrx on the cube to remove the reseaus
+    p.AddToPipeline("remrx");
+    p.Application("remrx").SetInputParameter("FROM", true);
+    p.Application("remrx").SetOutputParameter("TO", "remrx");
+    p.Application("remrx").AddParameter("SDIM", "SDIM");
+    p.Application("remrx").AddParameter("LDIM", "LDIM");
+  }
 
   // Run a low pass filter on the null data in the cube
   p.AddToPipeline("lowpass", "pass1");
@@ -97,9 +96,16 @@ void IsisMain() {
   p.AddToPipeline("trim");
   p.Application("trim").SetInputParameter("FROM", true);
   p.Application("trim").SetOutputParameter("TO", "trim");
-  p.Application("trim").AddConstParameter("TOP", "5");
+  p.Application("trim").AddConstParameter("TOP", "12");
   p.Application("trim").AddConstParameter("LEFT", "11");
   p.Application("trim").AddConstParameter("RIGHT", "8");
+
+  if (!alreadyCleaned)
+  {
+    p.AddToPipeline("mar9mlrp");
+    p.Application("mar9mlrp").SetInputParameter("FROM", true);
+    p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
+  }
 
   cout << p;
   p.Run();

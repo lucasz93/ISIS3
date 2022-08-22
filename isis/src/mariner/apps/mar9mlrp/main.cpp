@@ -12,50 +12,83 @@ find files of those names at the top level of this repository. **/
 #include "IException.h"
 #include "UserInterface.h"
 #include "ProcessByLine.h"
+#include "Pipeline.h"
 
 using namespace std;
 using namespace Isis;
 
-std::unique_ptr<Buffer> lastLine;
-
-void BlitMissingLines(Buffer &in, Buffer &out);
+void NullMissingLines(Buffer &in, Buffer &out);
 
 void IsisMain() {
 
-  ProcessByLine p;
-
   UserInterface &ui = Application::GetUserInterface();
-  p.SetInputCube("FROM");
-  p.SetOutputCube("TO");
-  
-  Cube cube;
-  cube.open(ui.GetFileName("FROM"));
-  
-  // Check that it is a Mariner10 cube.
-  Pvl * labels = cube.label();
-  if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
-    QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
-      " to be a Mariner9 cube";
-    throw IException(IException::User, msg, _FILEINFO_);
+
+  const FileName from(ui.GetFileName("FROM"));
+  const FileName tempFile(from.path() + "/" + from.baseName() + ".mar9mlrp." + from.extension());
+
+  //
+  // NULL the bad lines.
+  //
+  {    
+    Cube cube;
+    cube.open(ui.GetFileName("FROM"));
+    
+    // Check that it is a Mariner10 cube.
+    Pvl * labels = cube.label();
+    if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
+      QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
+        " to be a Mariner9 cube";
+      throw IException(IException::User, msg, _FILEINFO_);
+    }
+
+    ProcessByLine p;
+
+    CubeAttributeOutput tempAtt(ui.GetFileName("FROM"));
+
+    p.SetInputCube("FROM");
+    p.SetOutputCube(tempFile.expanded(), tempAtt, cube.sampleCount(), cube.lineCount(), cube.bandCount());
+
+    p.ProcessCube(NullMissingLines);
   }
 
-  p.ProcessCube(BlitMissingLines, false);
+  //
+  // Fill the gaps.
+  //
+  {
+    // Open the input cube
+    Pipeline p("mar9clean");
+    p.SetInputFile(tempFile);
+    p.SetOutputFile("TO");
+    p.KeepTemporaryFiles(false);
+
+    // Run marnonoise to remove noise
+    p.AddToPipeline("fillgap");
+    p.Application("fillgap").SetInputParameter("FROM", true);
+    p.Application("fillgap").SetOutputParameter("TO", "fillgap");
+    p.Application("fillgap").AddConstParameter("DIRECTION", "SAMPLE");
+    p.Application("fillgap").AddConstParameter("INTERP", "AKIMA");
+
+    p.Run();
+  }
+
+  QFile::remove(tempFile.expanded());
 }
 
-void BlitMissingLines(Buffer &in, Buffer &out)
+void NullMissingLines(Buffer &in, Buffer &out)
 {
-  bool lineIsValid = !IsHighPixel(in[0]) || !IsHighPixel(in[1]) || !IsNullPixel(in[2]) || !IsNullPixel(in[3]);
-  Buffer& src = lastLine && !lineIsValid
-    ? *lastLine
-    : in;
-  
-  for (int i = 0; i < src.size(); ++i)
-  {
-    out[i] = src[i];
-  }
-
+  const bool lineIsValid = !IsHighPixel(in[0]) || !IsHighPixel(in[1]) || !IsNullPixel(in[2]) || !IsNullPixel(in[3]);
   if (lineIsValid)
   {
-    lastLine = std::make_unique<Buffer>(in);
+    for (int i = 0; i < in.size(); ++i)
+    {
+      out[i] = in[i];
+    }
+  }
+  else
+  {
+    for (int i = 0; i < in.size(); ++i)
+    {
+      out[i] = NULL8;
+    }
   }
 }

@@ -301,6 +301,16 @@ TEST_F(DefaultCube, FunctionalTestNoprojSpecs) {
         DetectorLines = 1000
       End_Group
 
+      Group = "MARINER_9/M9_VIDICON_A"
+        DetectorSamples = 832
+        DetectorLines = 700
+      End_Group
+
+      Group = "MARINER_9/M9_VIDICON_B"
+        DetectorSamples = 832
+        DetectorLines = 700
+      End_Group
+
       Group = "MARINER_10/M10_VIDICON_A"
         DetectorSamples = 832
         DetectorLines = 700

@@ -98,6 +98,8 @@ Group = InstrumentName
   Translation   = (Minirf, MRFLRO)
 
   # Mariner
+  Translation   = (VidiconA, M9_VIDICON_A)
+  Translation   = (VidiconB, M9_VIDICON_B)
   Translation   = (VidiconA, M10_VIDICON_A)
   Translation   = (VidiconB, M10_VIDICON_B)
 

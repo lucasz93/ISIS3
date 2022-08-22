@@ -233,6 +233,20 @@ namespace Isis {
   //  Construct the output mapping group with statistics
     PvlGroup mapping("Mapping");
     double avgPixRes( (scaleStat.Minimum() + scaleStat.Maximum() ) / 2.0);
+    double pixRes;
+
+    if (ui.GetString("PIXRES").toLower() == "average") {
+      pixRes = avgPixRes;
+    }
+    else if (ui.GetString("PIXRES").toLower() == "min") {
+      pixRes = scaleStat.Minimum();
+    }
+    else if (ui.GetString("PIXRES").toLower() == "max") {
+      pixRes = scaleStat.Maximum();
+    }
+    else {
+      throw IException(IException::User, "Unknown PIXRES", _FILEINFO_);
+    }
 
     
     //double avgObliquePixRes( (obliqueScaleStat.Minimum() + obliqueScaleStat.Maximum() ) / 2.0);
@@ -251,7 +265,7 @@ namespace Isis {
     mapping += PvlKeyword("LatitudeType", lattype);
     mapping += PvlKeyword("LongitudeDirection", londir);
     mapping += PvlKeyword("LongitudeDomain", londom);
-    mapping += PvlKeyword("PixelResolution", toString(SetRound(avgPixRes, digits)), "meters/pixel");
+    mapping += PvlKeyword("PixelResolution", toString(SetRound(pixRes, digits)), "meters/pixel");
 
     
     //mapping += PvlKeyword("ObliquePixelResolution", toString(SetRound(avgObliquePixRes, digits)),

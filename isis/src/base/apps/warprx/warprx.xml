@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<application name="apollowarp" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+<application name="warprx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
 
   <brief>
       Warp an image to another using control points
   </brief>
 
   <description>
-      This program warps Apollo images using the reseau information. (note:
-      apollofindrx must be run first).
+      This program warps images using the reseau information. (note:
+      apollofindrx or findrx must be run first).
   </description>
 
   <history>
@@ -21,6 +21,9 @@
 
   <category>
     <missionItem>Apollo</missionItem>
+    <missionItem>Mariner</missionItem>
+    <missionItem>Viking</missionItem>
+    <missionItem>Voyager</missionItem>
   </category>
 
   <groups>
