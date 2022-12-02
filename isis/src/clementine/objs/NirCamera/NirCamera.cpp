@@ -27,7 +27,7 @@
 #include "CameraSkyMap.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "RadialDistortionMap.h"
 
 using namespace std;
@@ -46,12 +46,14 @@ namespace Isis {
    *                          models.
    */
   NirCamera::NirCamera(Cube &cube) : FramingCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "Near Infrared Camera";
     m_instrumentNameShort = "NIR";
     m_spacecraftNameLong = "Clementine 1";
     m_spacecraftNameShort = "Clementine1";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Get the camera characteristics
 
     Pvl &lab = *cube.label();
@@ -78,7 +80,7 @@ namespace Isis {
       SetFocalLength(2487.8694 * 0.038);
     }
 
-    SetPixelPitch();
+    SetPixelPitch(naif);
 
     // Get the start time in et
     PvlGroup inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -104,12 +106,12 @@ namespace Isis {
     new CameraDetectorMap(this);
 
     // Setup focal plane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     focalMap->SetDetectorOrigin(
-      Spice::getDouble("INS" + toString(naifIkCode()) +
+      Spice::getDouble(naif, "INS" + toString(naifIkCode()) +
                        "_BORESIGHT_SAMPLE"),
-      Spice::getDouble("INS" + toString(naifIkCode()) +
+      Spice::getDouble(naif, "INS" + toString(naifIkCode()) +
                        "_BORESIGHT_LINE"));
 
     // Setup distortion map
@@ -119,9 +121,9 @@ namespace Isis {
     new CameraGroundMap(this);
     new CameraSkyMap(this);
 
-    setTime(centerTime);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(centerTime, naif);
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   /**

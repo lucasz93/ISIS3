@@ -25,9 +25,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include <QString>
 
@@ -38,7 +36,7 @@
 #include "IString.h"
 #include "iTime.h"
 #include "FileName.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Pvl.h"
 #include "ReseauDistortionMap.h"
 
@@ -57,7 +55,9 @@ namespace Isis {
    *
    */
   Mariner10Camera::Mariner10Camera(Cube &cube) : FramingCamera(cube) {
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+
+    naif->CheckErrors();
     
     m_spacecraftNameLong = "Mariner 10";
     m_spacecraftNameShort = "Mariner10";
@@ -67,8 +67,8 @@ namespace Isis {
     instrumentRotation()->SetFrame(-76000);
 
     // Set camera parameters
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -77,18 +77,18 @@ namespace Isis {
 
     iTime startTime;
     startTime.setUtc((QString)inst["StartTime"]);
-    setTime(startTime);
+    setTime(startTime, naif);
 
     // Setup detector map
     new CameraDetectorMap(this);
 
     // Setup focal plane map, and detector origin
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     QString ikernKey = "INS" + toString((int)naifIkCode()) + "_BORESIGHT_SAMPLE";
-    double sampleBoresight = getDouble(ikernKey);
+    double sampleBoresight = getDouble(naif, ikernKey);
     ikernKey = "INS" + toString((int)naifIkCode()) + "_BORESIGHT_LINE";
-    double lineBoresight = getDouble(ikernKey);
+    double lineBoresight = getDouble(naif, ikernKey);
 
     focalMap->SetDetectorOrigin(sampleBoresight, lineBoresight);
 
@@ -128,8 +128,8 @@ namespace Isis {
     new CameraGroundMap(this);
     new CameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   

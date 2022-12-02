@@ -29,7 +29,7 @@
 #include <sstream>
 #include <vector>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "Constants.h"
 #include "Displacement.h"
@@ -37,7 +37,7 @@
 #include "IException.h"
 #include "IString.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
 #include "PvlKeyword.h"
@@ -103,6 +103,7 @@ namespace Isis {
    * 
    */
   TProjection::TProjection(Pvl &label) : Projection::Projection(label) {
+    auto naif = NaifContext::acquire();
     try {
       // Mapping group is read by the parent
       // Get the radii from the EquatorialRadius and PolarRadius keywords
@@ -113,7 +114,7 @@ namespace Isis {
       }
       // Get the radii
       try {
-         PvlGroup radii = Target::radiiGroup(label, m_mappingGrp);
+         PvlGroup radii = Target::radiiGroup(naif, label, m_mappingGrp);
          m_equatorialRadius = radii["EquatorialRadius"];
          m_polarRadius = radii["PolarRadius"];
       }

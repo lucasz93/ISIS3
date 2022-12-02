@@ -94,6 +94,8 @@ namespace Isis {
     p_startProcessSwaps = 0;
     p_BatchlistPass = 0;
 
+    p_naif_reference = new NaifContextReference;
+
     // try to use US locale for numbers so we don't end up printing "," instead
     //   of "." where it might count.
     setlocale(LC_ALL, "en_US");
@@ -177,6 +179,8 @@ namespace Isis {
 
   //! Destroys the Application object
   Application::~Application() {
+    delete p_naif_reference;
+    
     if (p_ui) {
       delete p_ui;
       p_ui = NULL;

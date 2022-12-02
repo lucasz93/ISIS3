@@ -1,7 +1,7 @@
 /**
  * @file
- * $Revision: 1.2 $
- * $Date: 2009/12/28 20:18:06 $
+ * $Revision: 1.0 $
+ * $Date: 2021/08/21 20:02:37 $
  *
  *   Unless noted otherwise, the portions of Isis written by the USGS are public
  *   domain. See individual third-party library and package descriptions for
@@ -19,19 +19,72 @@
  *   http://isis.astrogeology.usgs.gov, and the USGS privacy and disclaimers on
  *   http://www.usgs.gov/privacy.html.
  */
-#include "NaifStatus.h"
-
-#include <iostream>
-
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "IException.h"
 #include "IString.h"
 #include "Pvl.h"
 #include "PvlToPvlTranslationManager.h"
 
+#include "cspice_state.h"
+
+extern "C" {
+#include <SpiceZpr.h>
+#include <SpiceZfc.h>
+}
+
+#include <boost/make_shared.hpp>
+
 namespace Isis {
-  bool NaifStatus::initialized = false;
+
+  thread_local NaifContext* tls_naif_context = nullptr;
+  thread_local int          tls_refcount = 0;
+
+  void NaifContext::incrementRefcount() {
+    if (!tls_refcount)
+      tls_naif_context = new NaifContext();
+    tls_refcount++;
+  }
+
+  void NaifContext::decrementRefcount() {
+    if (tls_refcount == 0)
+      throw std::logic_error("NaifContext refcount already at zero!");
+
+    tls_refcount--;
+    if (!tls_refcount) {
+      delete tls_naif_context;
+      tls_naif_context = nullptr;
+    }
+  }
+
+  NaifContext* NaifContext::acquire() {    
+    return tls_naif_context;
+  }
+
+  void NaifContext::attach(boost::shared_ptr<Internal> internal) {
+    if (tls_refcount)
+      throw std::runtime_error("Thread already has a NaifContext. Detach it or remove all references.");
+
+    tls_naif_context = internal->m_context;
+    tls_refcount = internal->m_refcount;
+
+    // Zero the imported data so it doesn't get deleted when going out of scope.
+    internal->m_context = nullptr;
+    internal->m_refcount = 0;
+  }
+
+  boost::shared_ptr<NaifContext::Internal> NaifContext::detach() {
+    auto internal = boost::make_shared<Internal>();
+    internal->m_context = tls_naif_context;
+    internal->m_refcount = tls_refcount;
+
+    tls_refcount = 0;
+    tls_naif_context = nullptr;
+
+    return internal;
+  }
+
+  NaifContext::NaifContext() : m_naif(cspice_alloc(), &cspice_free) {}
 
   /**
    * This method looks for any naif errors that might have occurred. It
@@ -40,18 +93,20 @@ namespace Isis {
    *
    * @param resetNaif True if the NAIF error status should be reset (naif calls valid)
    */
-  void NaifStatus::CheckErrors(bool resetNaif) {
-    if(!initialized) {
+  void NaifContext::CheckErrors(bool resetNaif) {
+    auto n = m_naif.get();
+
+    if(!naifStatusInitialized()) {
       SpiceChar returnAct[32] = "RETURN";
       SpiceChar printAct[32] = "NONE";
-      erract_c("SET", sizeof(returnAct), returnAct);   // Reset action to return
-      errprt_c("SET", sizeof(printAct), printAct);     // ... and print nothing
-      initialized = true;
+      ::erract_c(n, "SET", sizeof(returnAct), returnAct);   // Reset action to return
+      ::errprt_c(n, "SET", sizeof(printAct), printAct);     // ... and print nothing
+      set_naifStatusInitialized(true);
     }
 
     // Do nothing if NAIF didn't fail
-    //getmsg_c("", 0, NULL);
-    if(!failed_c()) return;
+    //getmsg_c(n, "", 0, NULL);
+    if(!::failed_c(n)) return;
 
     // This method has been documented with the information provided
     //   from the NAIF documentation at:
@@ -69,7 +124,7 @@ namespace Isis {
     // to use them in a test to determine which type of error has occurred.
     const int SHORT_DESC_LEN = 26;
     SpiceChar naifShort[SHORT_DESC_LEN];
-    getmsg_c("SHORT", SHORT_DESC_LEN, naifShort);
+    ::getmsg_c(n, "SHORT", SHORT_DESC_LEN, naifShort);
 
     // This message may be up to 1840 characters long. The CSPICE error handling
     // mechanism makes no use of its contents. Its purpose is to provide human-readable
@@ -77,7 +132,7 @@ namespace Isis {
     // contain data relevant to the specific error they describe.
     const int LONG_DESC_LEN = 1841;
     SpiceChar naifLong[LONG_DESC_LEN];
-    getmsg_c("LONG", LONG_DESC_LEN, naifLong);
+    ::getmsg_c(n, "LONG", LONG_DESC_LEN, naifLong);
 
     // Search for known naif errors...
     QString errMsg;
@@ -105,7 +160,7 @@ namespace Isis {
 
     // Now process the error
     if(resetNaif) {
-      reset_c();
+      ::reset_c(n);
     }
 
     errMsg += " The short explanation ";
@@ -114,4 +169,41 @@ namespace Isis {
 
     throw IException(IException::Unknown, errMsg, _FILEINFO_);
   }
+
+  int NaifContext:: bodeul_(integer *body, doublereal *et, doublereal *ra, doublereal *dec, doublereal *w, doublereal *lamda) {
+    return ::bodeul_(m_naif.get(), body, et, ra, dec, w, lamda);
+  }
+
+  int NaifContext::ckfrot_(integer *inst, doublereal *et, doublereal *rotate, integer *ref, logical *found) {
+    return ::ckfrot_(m_naif.get(), inst, et, rotate, ref, found);
+  }
+
+  int NaifContext::drotat_(doublereal *angle, integer *iaxis, doublereal *dmout) {
+    return ::drotat_(m_naif.get(), angle, iaxis, dmout);
+  }
+
+  int NaifContext::frmchg_(integer *frame1, integer *frame2, doublereal *et, doublereal *rotate) {
+    return ::frmchg_(m_naif.get(), frame1, frame2, et, rotate);
+  }
+
+  int NaifContext::getlms_(char *msg, ftnlen msg_len) {
+    return ::getlms_(m_naif.get(), msg, msg_len);
+  }
+
+  int NaifContext::invstm_(doublereal *mat, doublereal *invmat) {
+    return ::invstm_(m_naif.get(), mat, invmat);
+  }
+
+  int NaifContext::refchg_(integer *frame1, integer *frame2, doublereal *et, doublereal *rotate) {
+    return ::refchg_(m_naif.get(), frame1, frame2, et, rotate);
+  }
+
+  int NaifContext::tkfram_(integer *id, doublereal *rot, integer *frame, logical *found) {
+    return ::tkfram_(m_naif.get(), id, rot, frame, found);
+  }
+
+  int NaifContext::zzdynrot_(integer *infram,  integer *center, doublereal *et, doublereal *rotate, integer *basfrm) {
+    return ::zzdynrot_(m_naif.get(), infram, center, et, rotate, basfrm);
+  }
+
 }

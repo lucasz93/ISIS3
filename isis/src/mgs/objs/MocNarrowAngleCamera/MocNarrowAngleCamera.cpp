@@ -29,7 +29,7 @@
 #include "LineScanCameraDetectorMap.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -42,23 +42,25 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   MocNarrowAngleCamera::MocNarrowAngleCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "Mars Orbiter Camera Narrow Angle";
     m_instrumentNameShort = "MOC-NA";
     m_spacecraftNameLong = "Mars Global Surveyor";
     m_spacecraftNameShort = "MGS";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Set up the camera info from ik/iak kernels
     //      LoadEulerMounting();
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
     instrumentRotation()->SetTimeBias(-1.15);
 
     // Get the start time from labels
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
     QString stime = inst["SpacecraftClockCount"];
-    double etStart = getClockTime(stime).Et();
+    double etStart = getClockTime(naif, stime).Et();
 
     // Get other info from labels
     double csum = inst["CrosstrackSumming"];
@@ -76,7 +78,7 @@ namespace Isis {
 
     // Setup focal plane map
     CameraFocalPlaneMap *focalMap =
-      new CameraFocalPlaneMap(this, naifIkCode());
+      new CameraFocalPlaneMap(naif, this, naifIkCode());
     focalMap->SetDetectorOrigin(1024.5, 0.0);
     focalMap->SetDetectorOffset(0.0, 0.0);
 
@@ -87,8 +89,8 @@ namespace Isis {
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 }
 

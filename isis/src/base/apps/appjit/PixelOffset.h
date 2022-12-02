@@ -26,9 +26,7 @@
 
 #include <QString>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "PolynomialUnivariate.h"
 
@@ -79,9 +77,9 @@ namespace Isis {
 
       void SetEphemerisTime(const double et);
 
-      std::vector<double> SetEphemerisTimeHPF(const double et);
+      std::vector<double> SetEphemerisTimeHPF(const double et, NaifContextPtr naif);
 
-      double WrapAngle(double compareAngle, double angle);
+      double WrapAngle(double compareAngle, double angle, NaifContextPtr naif);
 //      std::vector<double> &Matrix() { return p_TC; };
 
 

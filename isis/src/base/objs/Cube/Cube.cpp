@@ -111,9 +111,9 @@ namespace Isis {
    * @param access Defines how the cube will be opened. Either read-only
    *     "r" or read-write "rw".
    */
-  void Cube::fromIsd(const FileName &fileName, Pvl &label, nlohmann::json &isd, QString access) {
+  void Cube::fromIsd(NaifContextPtr naif, const FileName &fileName, Pvl &label, nlohmann::json &isd, QString access) {
     fromLabel(fileName, label, access);
-    attachSpiceFromIsd(isd);
+    attachSpiceFromIsd(naif, isd);
 
     close();
     open(fileName.toString(), access);
@@ -129,7 +129,7 @@ namespace Isis {
    * @param access Defines how the cube will be opened. Either read-only
    *     "r" or read-write "rw".
    */
-  void Cube::fromIsd(const FileName &fileName, FileName &labelFile, FileName &isdFile, QString access) {
+  void Cube::fromIsd(NaifContextPtr naif, const FileName &fileName, FileName &labelFile, FileName &isdFile, QString access) {
     std::ifstream isdStream(isdFile.expanded().toStdString());
     std::ifstream labelStream(labelFile.expanded().toStdString());
     
@@ -139,7 +139,7 @@ namespace Isis {
     isdStream >> isd;
     labelStream >> label;
     
-    fromIsd(fileName, label, isd, access);
+    fromIsd(naif, fileName, label, isd, access);
     reopen("rw");  
   }
 
@@ -1241,7 +1241,7 @@ namespace Isis {
   }
 
 
-  void Cube::attachSpiceFromIsd(nlohmann::json isd) {
+  void Cube::attachSpiceFromIsd(NaifContextPtr naif, nlohmann::json isd) {
     PvlKeyword lkKeyword("LeapSecond");
     PvlKeyword pckKeyword("TargetAttitudeShape");
     PvlKeyword targetSpkKeyword("TargetPosition");
@@ -1254,7 +1254,7 @@ namespace Isis {
     PvlKeyword exkKeyword("Extra");
 
     Spice spice(*this->label(), isd);
-    Table ckTable = spice.instrumentRotation()->Cache("InstrumentPointing");
+    Table ckTable = spice.instrumentRotation()->Cache("InstrumentPointing", naif);
     ckTable.Label() += PvlKeyword("Kernels");
 
     for (int i = 0; i < ckKeyword.size(); i++)
@@ -1262,14 +1262,14 @@ namespace Isis {
 
     this->write(ckTable);
 
-    Table spkTable = spice.instrumentPosition()->Cache("InstrumentPosition");
+    Table spkTable = spice.instrumentPosition()->Cache("InstrumentPosition", naif);
     spkTable.Label() += PvlKeyword("Kernels");
     for (int i = 0; i < spkKeyword.size(); i++)
       spkTable.Label()["Kernels"].addValue(spkKeyword[i]);
 
     this->write(spkTable);
 
-    Table bodyTable = spice.bodyRotation()->Cache("BodyRotation");
+    Table bodyTable = spice.bodyRotation()->Cache("BodyRotation", naif);
     bodyTable.Label() += PvlKeyword("Kernels");
     for (int i = 0; i < targetSpkKeyword.size(); i++)
       bodyTable.Label()["Kernels"].addValue(targetSpkKeyword[i]);
@@ -1278,10 +1278,10 @@ namespace Isis {
       bodyTable.Label()["Kernels"].addValue(pckKeyword[i]);
 
     bodyTable.Label() += PvlKeyword("SolarLongitude",
-        toString(spice.solarLongitude().degrees()));
+        toString(spice.solarLongitude(naif).degrees()));
     this->write(bodyTable);
 
-    Table sunTable = spice.sunPosition()->Cache("SunPosition");
+    Table sunTable = spice.sunPosition()->Cache("SunPosition", naif);
     sunTable.Label() += PvlKeyword("Kernels");
     for (int i = 0; i < targetSpkKeyword.size(); i++)
       sunTable.Label()["Kernels"].addValue(targetSpkKeyword[i]);
@@ -2283,7 +2283,7 @@ namespace Isis {
  * @param[out] minLongitude minimum longitude present in the cube
  * @param[out] maxLongitude maximum longitude present in the cube
  */
-  void Cube::latLonRange(double &minLatitude, double &maxLatitude, double &minLongitude, double &
+  void Cube::latLonRange(NaifContextPtr naif, double &minLatitude, double &maxLatitude, double &minLongitude, double &
                          maxLongitude) {
     Camera *cam;
     TProjection *proj;
@@ -2328,7 +2328,7 @@ namespace Isis {
           isGood = proj->SetWorld(sample, line);
         }
         else {
-          isGood = cam->SetImage(sample, line);
+          isGood = cam->SetImage(sample, line, naif);
         }
 
         double lat, lon;

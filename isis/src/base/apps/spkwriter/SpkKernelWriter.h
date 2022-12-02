@@ -92,7 +92,7 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
 
   protected:
-    int k_open(const QString &kfile, const int &comsize = 512) {
+    int k_open(NaifContextPtr naif, const QString &kfile, const int &comsize = 512) {
       FileName kf(kfile);
       if ( kf.fileExists() ) {
         QString full_kf = kf.expanded();
@@ -100,20 +100,20 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
       }
       SpiceInt  myHandle;
 
-      NaifStatus::CheckErrors();
-      spkopn_c(kf.expanded().toLatin1().data(), "USGS_SPK_FILE", comsize, &myHandle);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
+      naif->spkopn_c(kf.expanded().toLatin1().data(), "USGS_SPK_FILE", comsize, &myHandle);
+      naif->CheckErrors();
       return (myHandle);
     }
 
-    QString k_header(const QString &comfile = "") const;
+    QString k_header(NaifContextPtr naif, const QString &comfile = "") const;
 
-    void k_write(const SpiceInt &handle, const SpkKernel &kernels) {
+    void k_write(NaifContextPtr naif, const SpiceInt &handle, const SpkKernel &kernels) {
       if ( _spkType == 9 ) {
-        kernels.Accept(WriteSpk9<SpkSegment>(handle));
+        kernels.Accept(naif, WriteSpk9<SpkSegment>(handle));
       }
       else if ( _spkType == 13 ) {
-        kernels.Accept(WriteSpk13<SpkSegment>(handle));
+        kernels.Accept(naif, WriteSpk13<SpkSegment>(handle));
       }
       else {
         setType(_spkType);
@@ -121,8 +121,8 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
       return;
     }
 
-    void  k_close(SpiceInt &handle) {
-      if ( handle > 0 ) { spkcls_c(handle); }
+    void  k_close(NaifContextPtr naif, SpiceInt &handle) {
+      if ( handle > 0 ) { naif->spkcls_c(handle); }
       handle = 0;
     }
 
@@ -136,7 +136,7 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
       typedef typename K::SMatrix SMatrix;
       WriteSpk9(SpiceInt handle) : _handle(handle) {  }
       virtual ~WriteSpk9() { }
-      void operator()(const K &segment) const {
+      void operator()(NaifContextPtr naif, const K &segment) const {
         SpiceInt body   = segment.BodyCode();
         SpiceInt center = segment.CenterCode();
         QString   frame  = segment.ReferenceFrame();
@@ -147,14 +147,14 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
         int degree = segment.Degree();
 
         int nrecs = segment.size();
-        segment.LoadKernelType("FK");
-        NaifStatus::CheckErrors();
+        segment.LoadKernelType(naif, "FK");
+        naif->CheckErrors();
 
-        spkw09_c(_handle, body, center, frame.toLatin1().data(), epochs[0], epochs[nrecs-1],
-                 segId.toLatin1().data(), degree, nrecs, states[0], &epochs[0]);
+        naif->spkw09_c(_handle, body, center, frame.toLatin1().data(), epochs[0], epochs[nrecs-1],
+                       segId.toLatin1().data(), degree, nrecs, (ConstSpiceDouble (*)[6])states[0], &epochs[0]);
 
-        NaifStatus::CheckErrors();
-        segment.UnloadKernelType("FK");
+        naif->CheckErrors();
+        segment.UnloadKernelType(naif, "FK");
         return;
       }
       private:
@@ -168,7 +168,7 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
 
       WriteSpk13(SpiceInt handle) : _handle(handle) { }
       virtual ~WriteSpk13() { }
-      void operator()(const K &segment) const {
+      void operator()(NaifContextPtr naif, const K &segment) const {
         // Collect frames
         SpiceInt body   = segment.BodyCode();
         SpiceInt center = segment.CenterCode();
@@ -182,12 +182,12 @@ class SpkKernelWriter : public KernelWriter<SpkKernel> {
         int nrecs = segment.size();
 
         // Ensure the FK is loaded
-        segment.LoadKernelType("FK");
-        NaifStatus::CheckErrors();
-        spkw13_c(_handle, body, center, frame.toLatin1().data(), epochs[0], epochs[nrecs-1],
-                 segId.toLatin1().data(), degree, nrecs, states[0], &epochs[0]);
-        NaifStatus::CheckErrors();
-        segment.UnloadKernelType("FK");
+        segment.LoadKernelType(naif, "FK");
+        naif->CheckErrors();
+        naif->spkw13_c(_handle, body, center, frame.toLatin1().data(), epochs[0], epochs[nrecs-1],
+                       segId.toLatin1().data(), degree, nrecs, (ConstSpiceDouble (*)[6])states[0], &epochs[0]);
+        naif->CheckErrors();
+        segment.UnloadKernelType(naif, "FK");
         return;
       }
 

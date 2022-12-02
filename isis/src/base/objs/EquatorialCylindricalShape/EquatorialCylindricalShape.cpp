@@ -9,9 +9,7 @@
 #include <cmath>
 #include <vector>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Cube.h"
 #include "IException.h"
@@ -19,7 +17,7 @@
 #include "Latitude.h"
 // #include "LinearAlgebra.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "SpecialPixel.h"
 #include "SurfacePoint.h"
 #include "Table.h"
@@ -86,7 +84,8 @@ namespace Isis {
    *
    * @return @b bool Indicates whether this shape model found a valid surface intersection.
    */
-  bool EquatorialCylindricalShape::intersectSurface(vector<double> observerBodyFixedPos,
+  bool EquatorialCylindricalShape::intersectSurface(NaifContextPtr naif,
+                                                    vector<double> observerBodyFixedPos,
                                                     vector<double> observerLookVectorToTarget) {
 
     // try to intersect the surface using the DemShape method
@@ -94,7 +93,7 @@ namespace Isis {
     //
     // otherwise, (i.e. DemShape::intersectSurface() fails) we will attempt to
     // intersect using the following iterative method...
-    if (!DemShape::intersectSurface(observerBodyFixedPos, observerLookVectorToTarget)) {
+    if (!DemShape::intersectSurface(naif, observerBodyFixedPos, observerLookVectorToTarget)) {
 
       SpiceDouble a = targetRadii()[0].kilometers();
 
@@ -115,7 +114,7 @@ namespace Isis {
       ulookB[0] = observerLookVectorToTarget[0];
       ulookB[1] = observerLookVectorToTarget[1];
       ulookB[2] = observerLookVectorToTarget[2];
-      vhat_c(ulookB, ulookB);
+      naif->vhat_c(ulookB, ulookB);
 
       // Calculate the limb viewing angle to see if the line of sight is
       // pointing away from the planet
@@ -125,9 +124,9 @@ namespace Isis {
       observer[2] = observerBodyFixedPos[2];
 
       SpiceDouble negobserver[3];
-      vminus_c(observer, negobserver);
+      naif->vminus_c(observer, negobserver);
 
-      double psi0 = vsep_c(negobserver, ulookB); // find separation angle between -obsPos and look
+      double psi0 = naif->vsep_c(negobserver, ulookB); // find separation angle between -obsPos and look
 
       // If psi0 is greater than 90 degrees, then reject data as looking
       // away from the planet and no proper tangent point exists in the
@@ -170,13 +169,13 @@ namespace Isis {
 
       // Calculate the vector to the surface point
       SpiceDouble tvec[3];
-      double observerdist = vnorm_c(observer);
+      double observerdist = naif->vnorm_c(observer);
       double cospsi0 = cos(psi0);
       tvec[0] = observer[0] + observerdist * cospsi0 * ulookB[0];
       tvec[1] = observer[1] + observerdist * cospsi0 * ulookB[1];
       tvec[2] = observer[2] + observerdist * cospsi0 * ulookB[2];
 
-      double tlen = vnorm_c(tvec);
+      double tlen = naif->vnorm_c(tvec);
 
       // Calculate distance along look vector to first and last test point
       double radiusDiff = maxRadiusMetersSquared - tlen * tlen;
@@ -200,18 +199,18 @@ namespace Isis {
       g1[1] = observer[1] + d0 * ulookB[1];
       g1[2] = observer[2] + d0 * ulookB[2];
 
-      double g1len = vnorm_c(g1);
+      double g1len = naif->vnorm_c(g1);
       SpiceDouble g1lat, g1lon, g1radius;
-      reclat_c(g1, &g1radius, &g1lon, &g1lat);
+      naif->reclat_c(g1, &g1radius, &g1lon, &g1lat);
       g1lat *= RAD2DEG;
       g1lon *= RAD2DEG;
 
       if (g1lon < 0.0) g1lon += 360.0;
 
       SpiceDouble negg1[3];
-      vminus_c(g1, negg1);
+      naif->vminus_c(g1, negg1);
 
-      double psi1 = vsep_c(negg1, ulookB);
+      double psi1 = naif->vsep_c(negg1, ulookB);
 
       // Set dalpha to be half the grid spacing for nyquist sampling
       //double dalpha = (PI/180.0)/(2.0*p_demScale);
@@ -220,7 +219,8 @@ namespace Isis {
 
       // Previous Sensor version used local version of this method with lat and lon doubles.  Steven said
       // it didn't make a significant difference in speed.
-      double r1 = (localRadius(Latitude(g1lat, Angle::Degrees),
+      double r1 = (localRadius(naif,
+                               Latitude(g1lat, Angle::Degrees),
                                Longitude(g1lon, Angle::Degrees))).kilometers();
 
       if (Isis::IsSpecial(r1)) {
@@ -267,11 +267,11 @@ namespace Isis {
         g2[1] = observer[1] + d * ulookB[1];
         g2[2] = observer[2] + d * ulookB[2];
 
-        double g2len = vnorm_c(g2);
+        double g2len = naif->vnorm_c(g2);
 
         // Determine lat,lon,radius at this point
         SpiceDouble g2lat, g2lon, g2radius;
-        reclat_c(g2, &g2radius, &g2lon, &g2lat);
+        naif->reclat_c(g2, &g2radius, &g2lon, &g2lat);
 
         g2lat *= RAD2DEG;
         g2lon *= RAD2DEG;
@@ -280,7 +280,8 @@ namespace Isis {
 
         // Previous Sensor version used local version of this method with lat and lon doubles to save
         // According to Steven the savings was negligible.
-        double r2 = (localRadius(Latitude(g2lat, Angle::Degrees),
+        double r2 = (localRadius(naif,
+                                 Latitude(g2lat, Angle::Degrees),
                                  Longitude(g2lon, Angle::Degrees))).kilometers();
 
 
@@ -312,8 +313,8 @@ namespace Isis {
               pB[0] = g1[0] + v * dd * ulookB[0];
               pB[1] = g1[1] + v * dd * ulookB[1];
               pB[2] = g1[2] + v * dd * ulookB[2];
-              plen = vnorm_c(pB);
-              reclat_c(pB, &pradius, &plon, &plat);
+              plen = naif->vnorm_c(pB);
+              naif->reclat_c(pB, &pradius, &plon, &plat);
               plat *= RAD2DEG;
               plon *= RAD2DEG;
               if (plon < 0.0) plon += 360.0;
@@ -321,7 +322,8 @@ namespace Isis {
               if (plon > 360.0) plon -= 360.0;
 
               // Previous Sensor version used local version of this method with lat and lon doubles. ..Why Jeff???
-              pradius = (localRadius(Latitude(plat, Angle::Degrees),
+              pradius = (localRadius(naif,
+                                     Latitude(plat, Angle::Degrees),
                                      Longitude(plon, Angle::Degrees))).kilometers();
 
               if (Isis::IsSpecial(pradius)) {
@@ -390,10 +392,10 @@ namespace Isis {
       SpiceDouble intersectionPoint[3];
       SpiceBoolean found;
 
-      NaifStatus::CheckErrors();
-      surfpt_c(&observerBodyFixedPos[0], &observerLookVectorToTarget[0], plen, plen, plen,
-               intersectionPoint, &found);
-      NaifStatus::CheckErrors();
+      naif->CheckErrors();
+      naif->surfpt_c(&observerBodyFixedPos[0], &observerLookVectorToTarget[0], plen, plen, plen,
+                     intersectionPoint, &found);
+      naif->CheckErrors();
 
       surfaceIntersection()->FromNaifArray(intersectionPoint);
 

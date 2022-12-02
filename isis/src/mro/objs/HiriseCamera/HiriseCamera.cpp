@@ -33,7 +33,7 @@
 #include "LineScanCameraDetectorMap.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -45,15 +45,17 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   HiriseCamera::HiriseCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "High Resolution Imaging Science Experiment";
     m_instrumentNameShort = "HiRISE";
     m_spacecraftNameLong = "Mars Reconnaissance Orbiter";
     m_spacecraftNameShort = "MRO";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Setup camera characteristics from instrument and frame kernel
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
     //LoadFrameMounting("MRO_SPACECRAFT", "MRO_HIRISE_OPTICAL_AXIS");
     instrumentRotation()->SetFrame(-74690);
 
@@ -80,7 +82,7 @@ namespace Isis {
     SpiceDouble et;
     // The -74999 is the code to select the transformation from
     // high-precision MRO SCLK to ET
-    et = getClockTime(stime, -74999).Et();
+    et = getClockTime(naif, stime, -74999).Et();
 
     // Adjust the start time so that it is the effective time for
     // the first line in the image file.  Note that on 2006-03-29, this
@@ -117,22 +119,22 @@ namespace Isis {
     // focal plane x/y.  This will read the appropriate CCD
     // transformation coefficients from the instrument kernel
     CameraFocalPlaneMap *focalMap =
-      new CameraFocalPlaneMap(this, -74600 - ccd);
+      new CameraFocalPlaneMap(naif, this, -74600 - ccd);
     focalMap->SetDetectorOrigin(1024.5, 0.0);
     focalMap->SetDetectorOffset(0.0, ccdLine_c);
 
     // Setup distortion map.  This will read the optical distortion
     // coefficients from the instrument kernel
     CameraDistortionMap *distortionMap = new CameraDistortionMap(this);
-    distortionMap->SetDistortion(naifIkCode());
+    distortionMap->SetDistortion(naif, naifIkCode());
 
     // Setup the ground and sky map to transform undistorted focal
     // plane x/y to lat/lon or ra/dec respectively.
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   //! Destroys the HiriseCamera object

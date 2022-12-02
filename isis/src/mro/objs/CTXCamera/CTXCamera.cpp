@@ -30,7 +30,7 @@
 #include "LineScanCameraDetectorMap.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -43,21 +43,23 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   CTXCamera::CTXCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "Context Camera";
     m_instrumentNameShort = "CTX";
     m_spacecraftNameLong = "Mars Reconnaissance Orbiter";
     m_spacecraftNameShort = "MRO";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Set up the camera info from ik/iak kernels
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     Pvl &lab = *cube.label();
     // Get the start time from labels
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
     QString stime = inst["SpacecraftClockCount"];
-    double etStart = getClockTime(stime).Et();
+    double etStart = getClockTime(naif, stime).Et();
 
     // Get other info from labels
     double csum = inst["SpatialSumming"];
@@ -73,28 +75,28 @@ namespace Isis {
     detectorMap->SetStartingDetectorSample(ss);
 
     // Setup focal plane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     //  Retrieve boresight location from instrument kernel (IK) (addendum?)
     QString ikernKey = "INS" + toString((int)naifIkCode()) + "_BORESIGHT_SAMPLE";
-    double sampleBoreSight = getDouble(ikernKey);
+    double sampleBoreSight = getDouble(naif, ikernKey);
 
     ikernKey = "INS" + toString((int)naifIkCode()) + "_BORESIGHT_LINE";
-    double lineBoreSight = getDouble(ikernKey);
+    double lineBoreSight = getDouble(naif, ikernKey);
 
     focalMap->SetDetectorOrigin(sampleBoreSight, lineBoreSight);
     focalMap->SetDetectorOffset(0.0, 0.0);
 
     // Setup distortion map
     CameraDistortionMap *distMap = new CameraDistortionMap(this);
-    distMap->SetDistortion(naifIkCode());
+    distMap->SetDistortion(naif, naifIkCode());
 
     // Setup the ground and sky map
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 }
 

@@ -47,6 +47,7 @@ namespace Isis {
   class Gui;
   class IException;
   class Progress;
+  class NaifContextReference;
 
   /**
    *  @author ????-??-?? Unknown
@@ -204,6 +205,8 @@ namespace Isis {
       pid_t p_pid;                                //!<
       std::map<QString, void *> p_guiHelpers; //!<
       static QString p_appName;                   //!<
+
+      NaifContextReference *p_naif_reference;
 
   };
 

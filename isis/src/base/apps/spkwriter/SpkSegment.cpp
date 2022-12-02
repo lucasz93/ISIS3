@@ -30,14 +30,14 @@
 #include <string>
 #include <vector>
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "Camera.h"
 #include "Cube.h"
 #include "FileName.h"
 #include "IException.h"
 #include "IString.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "SpkSegment.h"
 #include "Table.h"
 
@@ -52,17 +52,18 @@ SpkSegment::SpkSegment() : SpkSpiceSegment() {
 
 /** Constructor from ISIS cube file by name of the cube */
 SpkSegment::SpkSegment(const QString &fname, const int spkType) : SpkSpiceSegment() {
+  auto naif = NaifContext::acquire();
   init(spkType);
   Cube cube;
   cube.open(fname);
-  SpkSpiceSegment::init(cube);
-  import(cube);
+  SpkSpiceSegment::init(cube, naif);
+  import(cube, naif);
 }
 
 /** Constructor from ISIS cube object */
 SpkSegment::SpkSegment(Cube &cube, const int spkType) : SpkSpiceSegment(cube) {
   init(spkType);
-  import(cube);
+  import(cube, NaifContext::acquire());
 }
 
 /**
@@ -86,31 +87,31 @@ SpkSegment::SpkSegment(Cube &cube, const int spkType) : SpkSpiceSegment(cube) {
  *                           to make this option available for testing.
  *                           This will need to be an option in the future.
  */
-void SpkSegment::import(Cube &cube) {
+void SpkSegment::import(Cube &cube, NaifContextPtr naif) {
   //typedef std::vector<QString>  StrList;
 
   //  Extract ISIS SPK blob and transform to requested content
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
   try {
 
     Camera *camera(cube.camera());
     Kernels kernels = getKernels();
 
     // Load necessary kernels and id frames
-    kernels.Load("PCK,LSK,FK,SPK,EXTRA");
+    kernels.Load(naif, "PCK,LSK,FK,SPK,EXTRA");
     m_body = camera->SpkTargetId();
     m_center = camera->SpkCenterId();
-    m_refFrame = getNaifName(camera->SpkReferenceId());
-    m_bodyFrame = getNaifName(m_body);
-    m_centerFrame = getNaifName(m_center);
+    m_refFrame = getNaifName(camera->SpkReferenceId(), naif);
+    m_bodyFrame = getNaifName(m_body, naif);
+    m_centerFrame = getNaifName(m_center, naif);
 
     //  Get the SPICE data
     Table spkCache("SpkSegment");
     if ( 9 == m_spkType ) {
-      spkCache = camera->instrumentPosition()->LineCache("SpkSegment");
+      spkCache = camera->instrumentPosition()->LineCache("SpkSegment", naif);
     }
     else if ( 13 == m_spkType ) {
-      spkCache = camera->instrumentPosition()->LoadHermiteCache("SpkSegment");
+      spkCache = camera->instrumentPosition()->LoadHermiteCache("SpkSegment", naif);
     }
     else {
       QString mess = "Unsupported SPK kernel type (" +
@@ -118,7 +119,7 @@ void SpkSegment::import(Cube &cube) {
       throw IException(IException::User, mess, _FILEINFO_);
     }
 
-    getStates(*camera, load(spkCache), m_states, m_epochs, m_hasVV);
+    getStates(naif, *camera, load(spkCache), m_states, m_epochs, m_hasVV);
 
     // Save current time
     SpicePosition *ipos(camera->instrumentPosition());
@@ -137,19 +138,19 @@ void SpkSegment::import(Cube &cube) {
     // Add record to top of states
     SVector stateT(ndim2, m_states[1]);  // Map to to first record
     double sTime = m_epochs[1] - Epsilon;
-    SVector s0 = makeState(ipos, m_epochs[1], stateT, sTime);
+    SVector s0 = makeState(naif, ipos, m_epochs[1], stateT, sTime);
     SVector(ndim2, m_states[0]).inject(s0);
     m_epochs[0] = sTime;
 
     // Add record to bottom of states
     stateT = SVector(ndim2, m_states[ndim1-2]);
     sTime = m_epochs[ndim1-2] + Epsilon;
-    s0 = makeState(ipos, m_epochs[ndim1-2], stateT, sTime);
+    s0 = makeState(naif, ipos, m_epochs[ndim1-2], stateT, sTime);
     SVector(ndim2, m_states[ndim1-1]).inject(s0);
     m_epochs[ndim1-1] = sTime;
 
     //  Restore saved time and determine degree of NAIF interpolation
-    ipos->SetEphemerisTime(currentTime);
+    ipos->SetEphemerisTime(currentTime, naif);
     m_degree = std::min((int) MaximumDegree, m_states.dim1()-1);
 
     //  Ensure the degree is odd and less that the even value
@@ -165,8 +166,8 @@ void SpkSegment::import(Cube &cube) {
       cout << " " << setw(26) << setprecision(13) << m_epochs[i] << "\n";
     }
 #endif
-    setStartTime(m_epochs[0]);
-    setEndTime(m_epochs[size(m_epochs)-1]);
+    setStartTime(m_epochs[0], naif);
+    setEndTime(m_epochs[size(m_epochs)-1], naif);
 
   } catch ( IException &ie  ) {
     ostringstream mess;
@@ -202,7 +203,7 @@ void SpkSegment::import(Cube &cube) {
  * @param states Matrix containing "nrecs" states vectors
  * @param times  TBD epoch times for each record
  */
-void SpkSegment::getStates(Camera &camera, const SMatrix &spice,
+void SpkSegment::getStates(NaifContextPtr naif, Camera &camera, const SMatrix &spice,
                            SMatrix &states, SVector &epochs, bool &hasVV)
                            const {
   int nrecs = size(spice);
@@ -225,16 +226,16 @@ void SpkSegment::getStates(Camera &camera, const SMatrix &spice,
   }
 
   //  Compute state rotations relative to the reference frame
-  QString j2000 = getNaifName(1);  // ISIS stores in J2000
+  QString j2000 = getNaifName(1, naif);  // ISIS stores in J2000
   if (j2000 != m_refFrame) {
     // cout << "FromFrame = " << j2000 << ", TOFrame = " << _refFrame << "\n";
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     for (int n = 0 ; n < nrecs ; n++) {
       SpiceDouble xform[6][6];
-      sxform_c(j2000.toLatin1().data(), m_refFrame.toLatin1().data(), epochs[n], xform);
-      mxvg_c(xform, states[n], 6, 6, states[n]);
+      naif->sxform_c(j2000.toLatin1().data(), m_refFrame.toLatin1().data(), epochs[n], xform);
+      naif->mxvg_c(xform, states[n], 6, 6, states[n]);
     }
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
   }
 
   return;
@@ -259,13 +260,13 @@ void SpkSegment::getStates(Camera &camera, const SMatrix &spice,
  * @history 2011-06-03 Debbie A. Cook Put extrapolation code back
  *                                    in use since it gives the best results.
  */
-SpkSegment::SVector SpkSegment::makeState(SpicePosition *position, const double &time0,
+SpkSegment::SVector SpkSegment::makeState(NaifContextPtr naif, SpicePosition *position, const double &time0,
                                           const SVector &state0, const double &timeT) const {
 
 
   SVector stateT = state0.copy();
   // The code below seems to be working well for fixing the ends so I am putting it back in DAC
-  position->SetEphemerisTime(time0);
+  position->SetEphemerisTime(time0, naif);
   std::vector<double> tstate = position->Extrapolate(timeT);
   int nElems = std::min((int) tstate.size(), state0.dim1());
   for ( int i = 0 ; i < nElems ; i++ ) {

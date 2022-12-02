@@ -33,7 +33,7 @@
 #include "IString.h"
 #include "Latitude.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Pvl.h"
 #include "ShapeModel.h"
 #include "Target.h"
@@ -175,7 +175,8 @@ namespace Isis {
    *
    * @return @b bool If an intercept was found
    */
-  bool EmbreeShapeModel::intersectSurface(std::vector<double> observerPos,
+  bool EmbreeShapeModel::intersectSurface(NaifContextPtr naif,
+                                          std::vector<double> observerPos,
                                           std::vector<double> lookDirection) {
     // Remove any previous intersection
     clearSurfacePoint();
@@ -416,7 +417,8 @@ namespace Isis {
    *
    * @return @b Distance Radius value of the intercept grid point
    */
-  Distance EmbreeShapeModel::localRadius(const Latitude &lat,
+  Distance EmbreeShapeModel::localRadius(NaifContextPtr naif,
+                                         const Latitude &lat,
                                          const Longitude &lon) {
 
     // Create a ray from the origin to the surface point
@@ -462,7 +464,8 @@ namespace Isis {
    * @param observerPos The position of the observer
    * @param lookDirection The look direction of the observer
    */
-  bool EmbreeShapeModel::isVisibleFrom(const std::vector<double> observerPos,
+  bool EmbreeShapeModel::isVisibleFrom(NaifContextPtr naif,
+                                       const std::vector<double> observerPos,
                                        const std::vector<double> lookDirection)  {
     //TODO check if there is a saved intersection
     // Create a ray from the observer in the look direction
@@ -514,7 +517,8 @@ namespace Isis {
    *
    * @param neighborPoints Input body-fixed points to compute normal for
    */
-  void EmbreeShapeModel::calculateLocalNormal(QVector<double *> neighborPoints) {
+  void EmbreeShapeModel::calculateLocalNormal(NaifContextPtr naif,
+                                              QVector<double *> neighborPoints) {
     // Sanity check
     if ( !hasIntersection() ) { // hasIntersection()  <==>  hasNormall()
       QString mess = "Intercept point does not exist - cannot provide normal vector";
@@ -528,18 +532,18 @@ namespace Isis {
   /** 
    * Return the surface normal of the ellipsoid as the default.
    */
-  void EmbreeShapeModel::calculateDefaultNormal() {
+  void EmbreeShapeModel::calculateDefaultNormal(NaifContextPtr naif) {
     // ShapeModel (parent class) throws error if no intersection
-     calculateSurfaceNormal();
+     calculateSurfaceNormal(naif);
   }
 
 
   /** 
    * Return the surface normal of the ellipsoid
    */
-  void EmbreeShapeModel::calculateSurfaceNormal() {
+  void EmbreeShapeModel::calculateSurfaceNormal(NaifContextPtr naif) {
     // ShapeModel (parent class) throws error if no intersection
-    setNormal(ellipsoidNormal().toStdVector());// this takes care of setHasNormal(true);
+    setNormal(ellipsoidNormal(naif).toStdVector());// this takes care of setHasNormal(true);
     return;
   }
 
@@ -558,7 +562,7 @@ namespace Isis {
    * @return QVector<double> Normal vector at the intercept point relative to
    *                             the ellipsoid (not the plate model)
    */
-  QVector<double> EmbreeShapeModel::ellipsoidNormal()  {
+  QVector<double> EmbreeShapeModel::ellipsoidNormal(NaifContextPtr naif)  {
 
     // Sanity check on state
     if ( !hasIntersection() ) {
@@ -584,10 +588,10 @@ namespace Isis {
     QVector<double> norm(3);
     // need a case for target == NULL
     QVector<Distance> radii = QVector<Distance>::fromStdVector(targetRadii());
-    NaifStatus::CheckErrors();
-    surfnm_c(radii[0].kilometers(), radii[1].kilometers(), radii[2].kilometers(),
-             pB, &norm[0]);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
+    naif->surfnm_c(radii[0].kilometers(), radii[1].kilometers(), radii[2].kilometers(),
+                   pB, &norm[0]);
+    naif->CheckErrors();
 
     return (norm);
   }
@@ -609,7 +613,7 @@ namespace Isis {
    *
    * @return @b double Incidence angle, in degrees.
    */
-  double EmbreeShapeModel::incidenceAngle(const std::vector<double> &illuminatorBodyFixedPosition) {
+  double EmbreeShapeModel::incidenceAngle(NaifContextPtr naif, const std::vector<double> &illuminatorBodyFixedPosition) {
 
     // If there is already a normal save it, because it's probably the local normal
     std::vector<double> localNormal;
@@ -619,10 +623,10 @@ namespace Isis {
     }
 
     // Calculate the ellipsoid surface normal
-    calculateDefaultNormal();
+    calculateDefaultNormal(naif);
     
     // Use ShapeModel to calculate the ellipsoid incidence angle
-    double ellipsoidEmission = ShapeModel::incidenceAngle(illuminatorBodyFixedPosition);
+    double ellipsoidEmission = ShapeModel::incidenceAngle(naif, illuminatorBodyFixedPosition);
 
     // If there's a saved normal, reset it
     if ( hadNormal ) {

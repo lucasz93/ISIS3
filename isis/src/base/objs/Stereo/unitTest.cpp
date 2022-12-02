@@ -20,7 +20,9 @@ using namespace Isis;
  * 
  */
 int main(int argc, char *argv[]) {
-  Isis::Preference::Preferences(true);
+  Preference::Preferences(true);
+  NaifContextReference naif_reference;
+  auto naif = NaifContext::acquire();
 
   try {
     cout << "UnitTest for Stereo" << endl;
@@ -32,11 +34,11 @@ int main(int argc, char *argv[]) {
     Cube rightCube;
     rightCube.open("$mariner10/testData/0166613_clean_equi.cub");
 
-    leftCube.camera()->SetImage(1054.19, 624.194);
-    rightCube.camera()->SetImage(1052.19, 624.194);
+    leftCube.camera()->SetImage(1054.19, 624.194, naif);
+    rightCube.camera()->SetImage(1052.19, 624.194, naif);
 
     double radius, lat, lon, sepang, error;
-    Stereo::elevation(*(leftCube.camera()), *(rightCube.camera()),
+    Stereo::elevation(naif, *(leftCube.camera()), *(rightCube.camera()),
                       radius, lat, lon, sepang, error);
 
     cout << "Radius = " << radius << endl;
@@ -46,14 +48,14 @@ int main(int argc, char *argv[]) {
     cout << "Longitude = " << lon << endl;
 
     double x, y, z;
-    Stereo::spherical(lat, lon, radius, x, y, z);
+    Stereo::spherical(naif, lat, lon, radius, x, y, z);
     cout << "Spherical to Rectangular conversion:" << endl;
     cout << "X = " << x << endl;
     cout << "Y = " << y << endl;
     cout << "Z = " << z << endl;
 
     double newLat, newLon, newRad;
-    Stereo::rectangular(x, y, z, newLat, newLon, newRad);
+    Stereo::rectangular(naif, x, y, z, newLat, newLon, newRad);
     cout << "Rectangular to spherical conversion:" << endl;
     cout << "Latitude = " << newLat << endl;
     cout << "Longitude = " << newLon << endl;

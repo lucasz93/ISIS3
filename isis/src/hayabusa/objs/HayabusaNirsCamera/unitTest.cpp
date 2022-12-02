@@ -32,10 +32,12 @@
 using namespace std;
 using namespace Isis;
 
-void TestLineSamp(Camera *cam, double samp, double line);
+void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif);
 
 int main(void) {
   Preference::Preferences(true);
+  NaifContextReference naif_reference;
+  auto naif = NaifContext::acquire();
 
   cout << "Unit Test for HayabusaNirsCamera..." << endl;
   try {
@@ -67,22 +69,22 @@ int main(void) {
 
     // Test all four corners to make sure the conversions are right
     cout << "For upper left corner ..." << endl;
-    TestLineSamp(cam, 0.5, 0.5);
+    TestLineSamp(cam, 0.5, 0.5, naif);
 
     cout << "For upper right corner ..." << endl;
-    TestLineSamp(cam, 1.5, 0.5);
+    TestLineSamp(cam, 1.5, 0.5, naif);
 
     cout << "For lower left corner ..." << endl;
-    TestLineSamp(cam, 0.5, 1.5);
+    TestLineSamp(cam, 0.5, 1.5, naif);
 
     cout << "For lower right corner ..." << endl;
-    TestLineSamp(cam, 1.5, 1.5);
+    TestLineSamp(cam, 1.5, 1.5, naif);
 
     double samp = 1;
     double line = 1;
     cout << "For center pixel position ..." << endl;
 
-    if(!cam->SetImage(samp, line)) {
+    if(!cam->SetImage(samp, line, naif)) {
       cout << "ERROR" << endl;
       return 0;
     }
@@ -106,11 +108,11 @@ int main(void) {
   }
 }
 
-void TestLineSamp(Camera *cam, double samp, double line) {
-  bool success = cam->SetImage(samp, line);
+void TestLineSamp(Camera *cam, double samp, double line, NaifContextPtr naif) {
+  bool success = cam->SetImage(samp, line, naif);
 
-  if(success) {
-    success = cam->SetUniversalGround(cam->UniversalLatitude(), cam->UniversalLongitude());
+  if (success) {
+    success = cam->SetUniversalGround(naif, cam->UniversalLatitude(), cam->UniversalLongitude());
   }
 
   if(success) {

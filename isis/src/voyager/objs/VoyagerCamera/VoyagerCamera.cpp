@@ -22,7 +22,7 @@
 
 #include "VoyagerCamera.h"
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include <QString>
 
@@ -33,7 +33,7 @@
 #include "FileName.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "ReseauDistortionMap.h"
 #include "Spice.h"
 
@@ -63,11 +63,13 @@ namespace Isis {
    *                          ShutterOpenCloseTimes() method.
    */
   VoyagerCamera::VoyagerCamera (Cube &cube) : FramingCamera(cube) {
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+
+    naif->CheckErrors();
 
     // Set the pixel pitch
-    SetPixelPitch();
-    SetFocalLength();
+    SetPixelPitch(naif);
+    SetFocalLength(naif);
     // Find out what camera is being used, and set the focal length, altinstcode,
     // and camera
     Pvl &lab = *cube.label();
@@ -135,7 +137,7 @@ namespace Isis {
     new CameraDetectorMap(this);
 
     // Setup focal plane map, and detector origin
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
     focalMap->SetDetectorOrigin(500.0, 500.0);
 
     // Master reseau location file
@@ -170,10 +172,10 @@ namespace Isis {
 
     // add half the exposure duration to the start time to get the center if the image
     iTime centerTime = shuttertimes.first.Et() + exposureDuration / 2.0;
-    setTime(centerTime);
+    setTime(centerTime, naif);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   

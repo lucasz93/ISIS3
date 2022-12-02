@@ -23,6 +23,7 @@ enum GetLatLon { Adjusted, Apriori };
 
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
   ControlNet cnet(ui.GetFileName("CNET"));
 
   // Get input DEM cube and get ground map for it
@@ -88,7 +89,8 @@ void IsisMain() {
       bool success = surfacePt.Valid();
 
       if (success) {
-        success = ugm->SetUniversalGround(surfacePt.GetLatitude().degrees(),
+        success = ugm->SetUniversalGround(naif,
+                                          surfacePt.GetLatitude().degrees(),
                                           surfacePt.GetLongitude().degrees());
       }
 
@@ -114,7 +116,7 @@ void IsisMain() {
       // otherwise, we will replace the computed radius value to the output control net
       else {
         numSuccesses++;
-        surfacePt.ResetLocalRadius(Distance(radius, Distance::Meters));
+        surfacePt.ResetLocalRadius(naif, Distance(radius, Distance::Meters));
         if (newRadiiSource == Adjusted) {
           cp->SetAdjustedSurfacePoint(surfacePt);
         }

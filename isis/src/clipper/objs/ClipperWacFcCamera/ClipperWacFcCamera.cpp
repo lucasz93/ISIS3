@@ -29,7 +29,7 @@
 #include "CameraSkyMap.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 
@@ -45,20 +45,22 @@ namespace Isis {
    * @internal
    */
   ClipperWacFcCamera::ClipperWacFcCamera(Cube &cube) : FramingCamera(cube) {
+    auto naif = NaifContext::acquire();
+    
     m_spacecraftNameLong = "Europa Clipper";
     m_spacecraftNameShort = "Clipper";
 
     m_instrumentNameLong  = "Europa Imaging System Framing Wide Angle Camera";
     m_instrumentNameShort = "EIS-FWAC";
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
-    SetFocalLength(); 
-    SetPixelPitch();
+    SetFocalLength(naif); 
+    SetPixelPitch(naif);
 
     // Set up detector map, focal plane map, and distortion map
     new CameraDetectorMap(this);
-    new CameraFocalPlaneMap(this, naifIkCode());
+    new CameraFocalPlaneMap(naif, this, naifIkCode());
     new CameraDistortionMap(this);
     
     // Setup the ground and sky map
@@ -73,11 +75,11 @@ namespace Isis {
     // double exposureDuration = (double)inst["ExposureDuration"] / 1000.0;
     // pair<iTime, iTime> startStop = ShutterOpenCloseTimes(et, exposureDuration);
 
-     setTime(etStart.Et()); // Set the time explicitly for now to prevent segfault
+     setTime(etStart.Et(), naif); // Set the time explicitly for now to prevent segfault
 
     // Internalize all the NAIF SPICE information into memory.
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   /**

@@ -28,7 +28,7 @@
 #include "CameraSkyMap.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "NirsDetectorMap.h"
 
 using namespace std;
@@ -42,18 +42,20 @@ namespace Isis {
    * @internal
    */
   HayabusaNirsCamera::HayabusaNirsCamera(Cube &cube) : FramingCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "Near InfraRed Spectrometer";
     m_instrumentNameShort = "NIRS";
     m_spacecraftNameLong = "Hayabusa";
     m_spacecraftNameShort = "Hayabusa";
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     Pvl &lab = *cube.label();
 
     // Get focal length and pixel pitch from IAK
-    SetFocalLength();
+    SetFocalLength(naif);
     SetFocalLength(FocalLength() * 1000.0);  // Convert from meters to mm
-    SetPixelPitch();
+    SetPixelPitch(naif);
 
     // Get the start time in et
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -61,19 +63,19 @@ namespace Isis {
     // get the start and stop times
     QString startTime = inst["SpacecraftClockStartCount"];
     QString stopTime = inst["SpacecraftClockStopCount"];
-    iTime etStart = getClockTime(startTime);
-    iTime etStop = getClockTime(stopTime);
+    iTime etStart = getClockTime(naif, startTime);
+    iTime etStop = getClockTime(naif, stopTime);
 
     double exposureDuration = etStop - etStart;
     iTime centerTime  = etStart + (exposureDuration / 2.0);
 
     // Setup focal plane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
     
     // lines and samples added to the pvl in the order you
     // call getDouble()
-    double bLines = Spice::getDouble("INS" + toString(naifIkCode()) + "_BORESIGHT_LINE");
-    double bSamples = Spice::getDouble("INS" + toString(naifIkCode()) + "_BORESIGHT_SAMPLE");
+    double bLines = Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_BORESIGHT_LINE");
+    double bSamples = Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_BORESIGHT_SAMPLE");
 
     focalMap->SetDetectorOrigin(bSamples, bLines);
 
@@ -89,9 +91,9 @@ namespace Isis {
     new CameraGroundMap(this);
     new CameraSkyMap(this);
 
-    setTime(centerTime);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(centerTime, naif);
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
 

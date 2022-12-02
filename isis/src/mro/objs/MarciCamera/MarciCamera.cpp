@@ -28,7 +28,7 @@
 #include "CameraSkyMap.h"
 #include "IException.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "PushFrameCameraDetectorMap.h"
 #include "PushFrameCameraGroundMap.h"
 
@@ -51,7 +51,8 @@ namespace Isis {
     m_spacecraftNameLong = "Mars Reconnaissance Orbiter";
     m_spacecraftNameShort = "MRO";
 
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+    naif->CheckErrors();
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
     // make sure it is a marci image
@@ -61,10 +62,10 @@ namespace Isis {
     }
 
     // Set up the camera characteristics
-    SetFocalLength();
+    SetFocalLength(naif);
 
     QString pixelPitchKey = "INS" + toString(naifIkCode()) + "_PIXEL_SIZE";
-    SetPixelPitch(getDouble(pixelPitchKey));
+    SetPixelPitch(getDouble(naif, pixelPitchKey));
 
     // Get necessary variables
     p_exposureDur = inst["ExposureDuration"];
@@ -74,7 +75,7 @@ namespace Isis {
     // Get the start and end time
     double et;
     QString stime = inst["SpacecraftClockCount"];
-    et = getClockTime(stime).Et();
+    et = getClockTime(naif, stime).Et();
     p_etStart = et - ((p_exposureDur / 1000.0) / 2.0);
     p_nframelets = (int) (ParentLines() / sumMode);
 
@@ -137,7 +138,7 @@ namespace Isis {
     dmap->SetFrameletOrderReversed(flippedFramelets, numFramelets);
 
     // Setup focal plane map
-    new CameraFocalPlaneMap(this, -74400);
+    new CameraFocalPlaneMap(naif, this, -74400);
 
     if ((int) naifIkCode() == -74410) {
       // The line detector origin is in the middle of the orange framelet
@@ -152,14 +153,14 @@ namespace Isis {
     }
 
     // Setup distortion map
-    new MarciDistortionMap(this, naifIkCode());
+    new MarciDistortionMap(naif, this, naifIkCode());
 
     // Setup the ground and sky map
     bool evenFramelets = (inst["Framelets"][0] == "Even");
     new PushFrameCameraGroundMap(this, evenFramelets);
     new CameraSkyMap(this);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
 
     if(sumMode == 1) {
       SetGeometricTilingHint(16, 4);
@@ -188,8 +189,9 @@ namespace Isis {
    *
    * @param vband The band number to set
    */
-  void MarciCamera::SetBand(const int vband) {
-    Camera::SetBand(vband);
+  void MarciCamera::SetBand(const int vband, NaifContextPtr naif) {
+
+    Camera::SetBand(vband, naif);
 
     PushFrameCameraDetectorMap *dmap = (PushFrameCameraDetectorMap *)DetectorMap();
     dmap->SetBandFirstDetectorLine(p_detectorStartLines[vband-1]);

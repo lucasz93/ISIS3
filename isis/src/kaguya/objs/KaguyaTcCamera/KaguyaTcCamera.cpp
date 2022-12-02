@@ -29,7 +29,7 @@
 #include "IException.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -42,22 +42,24 @@ namespace Isis {
    *   @history 2018-10-02 Adam Goins & Jeannie Backer - Original Version
    */
   KaguyaTcCamera::KaguyaTcCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong  = "Terrain Camera";
     m_instrumentNameShort = "TC";
     m_spacecraftNameLong  = "Kaguya";
     m_spacecraftNameShort = "Kaguya";
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Get the camera characteristics
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     // Get the start time in et
     Pvl &lab = *cube.label();
     PvlGroup inst = lab.findGroup("Instrument", Pvl::Traverse);
 
     QString clockCount = inst["SpacecraftClockStartCount"];
-    double time = getClockTime(clockCount, -1, true).Et();
+    double time = getClockTime(naif, clockCount, -1, true).Et();
 
     // Setup detector map
     double lineRate = (double) inst["LineSamplingInterval"] / 1000.0;
@@ -81,29 +83,29 @@ namespace Isis {
 
     detectorMap->SetStartingDetectorSample(startingDetectorSample);
     
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     // This sets the origin of the detector (not image samp,line). It is zero bassed.
     // The detector offsets are 0,0 because the borsight is in the center of the array
     // The origin of the detector does not depend on swath mode. 
     QString key;
     key = "INS" + toString(naifIkCode()) + "_BORESIGHT_SAMPLE";
-    double sampleBoreSight = getDouble(key);
+    double sampleBoreSight = getDouble(naif, key);
 
     key = "INS" + toString(naifIkCode()) + "_BORESIGHT_LINE";
-    double lineBoreSight = getDouble(key);
+    double lineBoreSight = getDouble(naif, key);
     focalMap->SetDetectorOrigin(sampleBoreSight, lineBoreSight); 
 
     // Setup distortion map
-    new KaguyaTcCameraDistortionMap(this, naifIkCode());
+    new KaguyaTcCameraDistortionMap(naif, this, naifIkCode());
 
     // Setup the ground and sky map
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    setTime(time);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(time, naif);
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   //! Destroys the KaguyaTcCamera object.

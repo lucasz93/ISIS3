@@ -28,9 +28,7 @@
 
 #include <QVector>
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Pvl.h"
 #include "SurfacePoint.h"
@@ -71,21 +69,22 @@ namespace Isis {
       using Isis::ShapeModel::intersectSurface; 
       
       // Intersect the shape model
-      bool intersectSurface(std::vector<double> observerPos,
-                            std::vector<double> lookDirection);
+      bool intersectSurface(NaifContextPtr naif,
+                            std::vector<double> observerPos,
+                            std::vector<double> lookDirection) override;
 
-      bool isDEM() const;
+      bool isDEM() const override;
 
       // Calculate the surface normal of the current intersection point
-      void calculateSurfaceNormal();
-      void calculateDefaultNormal();
-      void calculateLocalNormal(QVector<double *> cornerNeighborPoints);
+      void calculateSurfaceNormal(NaifContextPtr naif) override;
+      void calculateDefaultNormal(NaifContextPtr naif) override;
+      void calculateLocalNormal(NaifContextPtr naif, QVector<double *> cornerNeighborPoints) override;
 
-      double emissionAngle(const std::vector<double> & sB);
-      double incidenceAngle(const std::vector<double> &uB);
+      double emissionAngle(NaifContextPtr naif, const std::vector<double> & sB) override;
+      double incidenceAngle(NaifContextPtr naif, const std::vector<double> &uB) override;
 
       // Get the local radius for a point on the surface
-      Distance localRadius(const Latitude &lat, const Longitude &lon);
+      Distance localRadius(NaifContextPtr naif, const Latitude &lat, const Longitude &lon) override;
   };
 };
 

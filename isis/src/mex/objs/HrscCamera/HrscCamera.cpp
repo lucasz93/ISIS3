@@ -31,7 +31,7 @@
 #include "iTime.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Statistics.h"
 #include "VariableLineScanCameraDetectorMap.h"
 
@@ -45,14 +45,16 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   HrscCamera::HrscCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "High Resolution Stereo Camera";
     m_instrumentNameShort = "HRSC";
     m_spacecraftNameLong = "Mars Express";
     m_spacecraftNameShort = "MEX";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Setup camera characteristics from instrument and frame kernel
-    SetFocalLength();
+    SetFocalLength(naif);
     SetPixelPitch(0.007);
     instrumentRotation()->SetFrame(-41210);
 
@@ -70,13 +72,13 @@ namespace Isis {
     // focal plane x/y.  This will read the appropriate CCD
     // transformation coefficients from the instrument kernel
 
-    new CameraFocalPlaneMap(this, naifIkCode());
+    new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     QString ikernKey = "INS" + toString(naifIkCode())  + "_BORESIGHT_SAMPLE";
-    double sampleBoresight = getDouble(ikernKey);
+    double sampleBoresight = getDouble(naif, ikernKey);
 
     ikernKey = "INS" + toString(naifIkCode())  + "_BORESIGHT_LINE";
-    double lineBoresight = getDouble(ikernKey);
+    double lineBoresight = getDouble(naif, ikernKey);
 
     FocalPlaneMap()->SetDetectorOrigin(sampleBoresight, lineBoresight);
 
@@ -89,8 +91,8 @@ namespace Isis {
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
 

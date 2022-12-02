@@ -1,12 +1,12 @@
 #include "Isis.h"
 
-#include <SpiceUsr.h>
+#include "NaifContext.h"
 
 #include "Application.h"
 #include "Distance.h"
 #include "iTime.h"
 #include "KernelDb.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "ProcessByBrick.h"
 #include "ShadowFunctor.h"
 #include "SpicePosition.h"
@@ -19,12 +19,13 @@ QStringList kernels(QString kernelType, Kernel (KernelDb::*kernelDbAccessor)(Pvl
 
 void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
 
   ProcessByBrick p;
   Cube *demCube = p.SetInputCube("FROM");
   p.SetBrickSize(demCube->sampleCount(), 128, 1);
 
-  ShadowFunctor functor(demCube);
+  ShadowFunctor functor(naif, demCube);
 
   PvlKeyword kernelsUsed("Kernels");
   kernelsUsed.addCommentWrapped("These NAIF kernels were furnished in order to compute the "
@@ -42,11 +43,11 @@ void IsisMain() {
     allKernelFiles.append(kernels("PCK", &KernelDb::targetAttitudeShape, *demCube->label()));
     allKernelFiles.append(kernels("SPK", &KernelDb::targetPosition, *demCube->label()));
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     foreach (QString kernelFile, allKernelFiles) {
       kernelsUsed += kernelFile;
-      furnsh_c(FileName(kernelFile).expanded().toLatin1().data());
+      naif->furnsh_c(FileName(kernelFile).expanded().toLatin1().data());
     }
 
     // Find the NAIF target code for the DEM's target
@@ -54,21 +55,21 @@ void IsisMain() {
     SpiceDouble sunPosition[3];
     SpiceDouble lightTime;
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     iTime time(ui.GetString("TIME"));
 
     // Get actual sun position, relative to target
     QString bodyFixedFrame = QString("IAU_%1").arg(name.toUpper());
-    spkpos_c("SUN", time.Et(), bodyFixedFrame.toLatin1().data(), "NONE",
-             name.toUpper().toLatin1().data(), sunPosition, &lightTime);
+    naif->spkpos_c("SUN", time.Et(), bodyFixedFrame.toLatin1().data(), "NONE",
+                   name.toUpper().toLatin1().data(), sunPosition, &lightTime);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Adjusted for light time
-    spkpos_c("SUN", time.Et() - lightTime, bodyFixedFrame.toLatin1().data(), "NONE",
-             name.toUpper().toLatin1().data(), sunPosition, &lightTime);
+    naif->spkpos_c("SUN", time.Et() - lightTime, bodyFixedFrame.toLatin1().data(), "NONE",
+                   name.toUpper().toLatin1().data(), sunPosition, &lightTime);
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // Convert sun position units: KM -> M
     sunPosition[0] *= 1000;
@@ -76,10 +77,10 @@ void IsisMain() {
     sunPosition[2] *= 1000;
 
     foreach (QString kernelFile, allKernelFiles) {
-      unload_c(FileName(kernelFile).expanded().toLatin1().data());
+      naif->unload_c(FileName(kernelFile).expanded().toLatin1().data());
     }
 
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     functor.setSunPosition(sunPosition);
   }
 

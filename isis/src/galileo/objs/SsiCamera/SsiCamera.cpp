@@ -30,7 +30,7 @@
 #include "CameraSkyMap.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Pvl.h"
 #include "PvlObject.h"
 #include "RadialDistortionMap.h"
@@ -49,12 +49,14 @@ namespace Isis {
    *                          to ShutterOpenCloseTimes() method.
    */
   SsiCamera::SsiCamera(Cube &cube) : FramingCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "Solid State Imaging System";
     m_instrumentNameShort = "SSI";
     m_spacecraftNameLong = "Galileo Orbiter";
     m_spacecraftNameShort = "Galileo";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Get the camera characteristics
     double k1;
 
@@ -68,15 +70,15 @@ namespace Isis {
     if(imageDate < removeCoverDate) {
       int code = naifIkCode();
       QString key = "INS" + toString(code) + "_FOCAL_LENGTH_COVER";
-      SetFocalLength(Spice::getDouble(key));
-      k1 = Spice::getDouble("INS" + toString(naifIkCode()) + "_K1_COVER");
+      SetFocalLength(Spice::getDouble(naif, key));
+      k1 = Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_K1_COVER");
     }
     else {
-      SetFocalLength();
-      k1 = Spice::getDouble("INS" + toString(naifIkCode()) + "_K1");
+      SetFocalLength(naif);
+      k1 = Spice::getDouble(naif, "INS" + toString(naifIkCode()) + "_K1");
     }
 
-    SetPixelPitch();
+    SetPixelPitch(naif);
 
     // Get the start time in et
     PvlGroup inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -97,12 +99,12 @@ namespace Isis {
     detectorMap->SetDetectorLineSumming(sumMode);
 
     // Setup focal plane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     focalMap->SetDetectorOrigin(
-      Spice::getDouble("INS" + toString(naifIkCode()) + 
+      Spice::getDouble(naif, "INS" + toString(naifIkCode()) + 
                        "_BORESIGHT_SAMPLE"),
-      Spice::getDouble("INS" + toString(naifIkCode()) + 
+      Spice::getDouble(naif, "INS" + toString(naifIkCode()) + 
                        "_BORESIGHT_LINE"));
 
     // Setup distortion map
@@ -112,9 +114,9 @@ namespace Isis {
     new CameraGroundMap(this);
     new CameraSkyMap(this);
 
-    setTime(et);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(et, naif);
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   /**

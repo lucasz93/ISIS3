@@ -28,6 +28,7 @@ void IsisMain() {
 
 //  Input parameters
   UserInterface &ui = Application::GetUserInterface();
+  auto naif = NaifContext::acquire();
   QString sourceFile = ui.GetAsString("FROM");    //  Save off source filename
   FileName from(sourceFile);
 
@@ -57,7 +58,7 @@ void IsisMain() {
       Cube cube;
       cube.open(temp.expanded(), "rw");
       Pvl *label = cube.label();
-      MdisGeometry::validateTarget(*label, true);
+      MdisGeometry::validateTarget(naif, *label, true);
       cube.close();
 
       //  Run spiceinit on it
@@ -83,8 +84,8 @@ void IsisMain() {
     MdisEdrKeys edrkeys(edrlab);
 
 //  Compute the Geometry
-    MdisGeometry geom(from.expanded());
-    Pvl geomkeys = geom.getGeometry(sourceFile);
+    MdisGeometry geom(naif, from.expanded());
+    Pvl geomkeys = geom.getGeometry(naif, sourceFile);
     edrkeys.updateKeys(geomkeys);
 
     PvlGroup mdiskeys("MdisPdsKeys");

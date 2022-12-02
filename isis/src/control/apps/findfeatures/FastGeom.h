@@ -69,9 +69,9 @@ class ImageTransform;
 class FastGeom {
   public:
     typedef GenericTransform::RectArea   RectArea;
-    FastGeom();
-    FastGeom(const PvlFlatMap &parameters);
-    FastGeom(const int maxpts, const double tolerance, const bool crop = false,
+    FastGeom(NaifContextPtr naif);
+    FastGeom(NaifContextPtr naif, const PvlFlatMap &parameters);
+    FastGeom(NaifContextPtr naif, const int maxpts, const double tolerance, const bool crop = false,
              const bool preserve = false, const double &maxarea = 3.0);
     virtual ~FastGeom();
 
@@ -85,6 +85,8 @@ class FastGeom {
                                  or "map" */
     double     m_maxarea;    //!< Maximum scale change to use "map" option
     PvlFlatMap m_parameters; //!< Parameters of transform
+
+    NaifContextPtr m_naif;
 
     void validate( const QString &geomtype ) const;
 };

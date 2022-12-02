@@ -3,16 +3,14 @@
 #include <QVector>
 
 
-#include <SpiceUsr.h>
-#include <SpiceZfc.h>
-#include <SpiceZmc.h>
+#include "NaifContext.h"
 
 #include "Distance.h"
 #include "IException.h"
 #include "IString.h"
 #include "Latitude.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "ShapeModel.h"
 #include "SurfacePoint.h"
 
@@ -43,28 +41,29 @@ namespace Isis {
   /** Find the intersection point
    *
    */
-  bool EllipsoidShape::intersectSurface (std::vector<double> observerPos,
+  bool EllipsoidShape::intersectSurface (NaifContextPtr naif,
+                                         std::vector<double> observerPos,
                                          std::vector<double> lookDirection) {
 
-    return (intersectEllipsoid(observerPos, lookDirection));
+    return (intersectEllipsoid(naif, observerPos, lookDirection));
   }
 
 
   /** Calculate default normal
    *
    */
-  void EllipsoidShape::calculateDefaultNormal()  {
+  void EllipsoidShape::calculateDefaultNormal(NaifContextPtr naif)  {
     QVector <double *> points;
-    calculateLocalNormal(points);
+    calculateLocalNormal(naif, points);
   }
 
 
   /** Calculate surface normal
    *
    */
-  void EllipsoidShape::calculateSurfaceNormal()  {
+  void EllipsoidShape::calculateSurfaceNormal(NaifContextPtr naif)  {
     QVector <double *> points;
-    calculateLocalNormal(points);
+    calculateLocalNormal(naif, points);
   }
 
 
@@ -99,7 +98,8 @@ namespace Isis {
    *
    * @param cornerNeighborPoints
    */
-  void EllipsoidShape::calculateLocalNormal(QVector<double *> cornerNeighborPoints)  {
+  void EllipsoidShape::calculateLocalNormal(NaifContextPtr naif,
+                                            QVector<double *> cornerNeighborPoints)  {
 
     if (!surfaceIntersection()->Valid() || !hasIntersection()) {
      IString msg = "A valid intersection must be defined before computing the surface normal";
@@ -119,9 +119,9 @@ namespace Isis {
     double c = radii[2].kilometers();
 
     vector<double> normal(3,0.);
-    NaifStatus::CheckErrors();
-    surfnm_c(a, b, c, pB, (SpiceDouble *) &normal[0]);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
+    naif->surfnm_c(a, b, c, pB, (SpiceDouble *) &normal[0]);
+    naif->CheckErrors();
 
     setNormal(normal);
     setHasNormal(true);
@@ -135,7 +135,7 @@ namespace Isis {
    *         surface at the given lat/lon location.
    *
    */
-  Distance EllipsoidShape::localRadius(const Latitude &lat, const Longitude &lon) {
+  Distance EllipsoidShape::localRadius(NaifContextPtr naif, const Latitude &lat, const Longitude &lon) {
 
     std::vector<Distance> radii = targetRadii();
 

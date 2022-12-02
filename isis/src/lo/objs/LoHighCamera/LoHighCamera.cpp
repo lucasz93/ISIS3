@@ -34,7 +34,7 @@
 #include "IException.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -50,7 +50,9 @@ namespace Isis {
    *
    */
   LoHighCamera::LoHighCamera(Cube &cube) : FramingCamera(cube) {
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+
+    naif->CheckErrors();
     
     m_instrumentNameLong = "High Resolution Camera";
     m_instrumentNameShort = "High";
@@ -87,26 +89,26 @@ namespace Isis {
     instrumentPosition()->SetAberrationCorrection("NONE");
 
     // Get the camera characteristics
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     // Get the start time in et
     double time = iTime((QString)inst["StartTime"]).Et();
 
     // Setup focal plane map
-    LoCameraFiducialMap fid(inst, naifIkCode());
+    LoCameraFiducialMap fid(naif, inst, naifIkCode());
 
     // Setup detector map
     new CameraDetectorMap(this);
 
     // Setup focalplane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
     // Try (0.,0.)
     focalMap->SetDetectorOrigin(0.0, 0.0);
 
     // Setup distortion map
     LoHighDistortionMap *distortionMap = new LoHighDistortionMap(this);
-    distortionMap->SetDistortion(naifIkCode());
+    distortionMap->SetDistortion(naif, naifIkCode());
     // Setup the ground and sky map
     new CameraGroundMap(this);
     new CameraSkyMap(this);
@@ -126,9 +128,9 @@ namespace Isis {
       throw IException(IException::User, msg, _FILEINFO_);
     }
 
-    setTime(time);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(time, naif);
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
   

@@ -20,7 +20,9 @@ using namespace std;
 using namespace Isis;
 
 int main() {
-  Isis::Preference::Preferences(true);
+  Preference::Preferences(true);
+  NaifContextReference naif_reference;
+  auto naif = NaifContext::acquire();
 
   try {
     cout << "Unit test for PolygonTools" << endl << endl;
@@ -114,23 +116,23 @@ int main() {
 
     // Create coordinate sequence for the first of two polygons
     geos::geom::CoordinateSequence *llpts = new geos::geom::CoordinateArraySequence();
-    ugm.SetImage(1.0, 1.0);
+    ugm.SetImage(1.0, 1.0, naif);
     llpts->add(geos::geom::Coordinate(
           qRound(ugm.UniversalLongitude()),
           qRound(ugm.UniversalLatitude())));
-    ugm.SetImage(1204.0, 1.0);
+    ugm.SetImage(1204.0, 1.0, naif);
     llpts->add(geos::geom::Coordinate(
           qRound(ugm.UniversalLongitude()),
           qRound(ugm.UniversalLatitude())));
-    ugm.SetImage(1204.0, 1056.0);
+    ugm.SetImage(1204.0, 1056.0, naif);
     llpts->add(geos::geom::Coordinate(
           qRound(ugm.UniversalLongitude()),
           qRound(ugm.UniversalLatitude())));
-    ugm.SetImage(1.0, 1056.0);
+    ugm.SetImage(1.0, 1056.0, naif);
     llpts->add(geos::geom::Coordinate(
           qRound(ugm.UniversalLongitude()),
           qRound(ugm.UniversalLatitude())));
-    ugm.SetImage(1.0, 1.0);
+    ugm.SetImage(1.0, 1.0, naif);
     llpts->add(geos::geom::Coordinate(
           qRound(ugm.UniversalLongitude()),
           qRound(ugm.UniversalLatitude())));
@@ -143,7 +145,7 @@ int main() {
 
     geos::geom::MultiPolygon *llmPolygon = Isis::globalFactory->createMultiPolygon(llpolys);
 
-    geos::geom::MultiPolygon *slmPolygon = PolygonTools::LatLonToSampleLine(*llmPolygon, &ugm);
+    geos::geom::MultiPolygon *slmPolygon = PolygonTools::LatLonToSampleLine(naif, *llmPolygon, &ugm);
     cout << "Coordinates of Sample/Line polygon:" <<
         PolygonTools::ReducePrecision(slmPolygon, 2)->toString() << endl;
 
@@ -164,7 +166,7 @@ int main() {
 
     geos::geom::MultiPolygon *llmPolygon2 = Isis::globalFactory->createMultiPolygon(llpolys2);
 
-    geos::geom::MultiPolygon *slmPolygon2 = PolygonTools::LatLonToSampleLine(*llmPolygon2, &ugm);
+    geos::geom::MultiPolygon *slmPolygon2 = PolygonTools::LatLonToSampleLine(naif, *llmPolygon2, &ugm);
     cout << "Coordinates of Sample/Line polygon:" <<
         PolygonTools::ReducePrecision(slmPolygon2, 2)->toString() << endl;
 

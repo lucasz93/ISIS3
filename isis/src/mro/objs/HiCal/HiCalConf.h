@@ -32,6 +32,7 @@
 #include "Pvl.h"
 #include "DbAccess.h"
 #include "IException.h"
+#include "NaifContext.h"
 
 namespace Isis {
 
@@ -126,7 +127,7 @@ namespace Isis {
       int getMatrixBand() const;
       int getMatrixBand(const DbProfile &p) const;
 
-      double sunDistanceAU();
+      double sunDistanceAU(NaifContextPtr naif);
 
       DbProfile getMatrixProfile(const QString &profile = "") const;
       ValueList getList(const DbProfile &profile, const QString &key) const;
@@ -134,7 +135,6 @@ namespace Isis {
                           const DbProfile &matconf) const;
 
     private:
-      static bool  _naifLoaded;  //!< Ensures one instance of NAIF kernels
       QString  _profName;    //!< Specified name of profile
       Pvl          _label;       //!< Hold label for future references
 
@@ -143,7 +143,7 @@ namespace Isis {
 
       void init();
       void init(Pvl &label);
-      void loadNaifTiming();
+      void loadNaifTiming(NaifContextPtr naif);
       DbProfile getLabelProfile(const DbProfile &profile) const;
       int getChannelIndex(const int &ccd, const int &channel) const;
       DbProfile makeParameters(Pvl &label) const;

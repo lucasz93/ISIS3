@@ -84,20 +84,20 @@ namespace Isis {
       MdisGeometry() : _label(), _orglabel(), _nSubframes(0), _camera(0),
         _digitsPrecision(_defaultDigits),
         _NullDefault("\"N/A\""), _doUpdate(true), _spice() { }
-      MdisGeometry(const QString &filename);
-      MdisGeometry(Cube &cube);
+      MdisGeometry(NaifContextPtr naif, const QString &filename);
+      MdisGeometry(NaifContextPtr naif, Cube &cube);
       virtual ~MdisGeometry() {
         delete _camera;
       }
 
-      void setCube(const QString &filename);
-      static bool validateTarget(Pvl &label, bool makeValid = true);
+      void setCube(NaifContextPtr naif, const QString &filename);
+      static bool validateTarget(NaifContextPtr naif, Pvl &label, bool makeValid = true);
       virtual void refCenterCoord(double &sample, double &line) const;
       virtual void refUpperLeftCoord(double &sample, double &line) const;
       virtual void refUpperRightCoord(double &sample, double &line) const;
       virtual void refLowerLeftCoord(double &sample, double &line) const;
       virtual void refLowerRightCoord(double &sample, double &line) const;
-      Pvl getGeometry(const QString &filename);
+      Pvl getGeometry(NaifContextPtr naif, const QString &filename);
 
 
       /**
@@ -170,17 +170,17 @@ namespace Isis {
       bool          _doUpdate;         //!< Action when vlue is uncomputable
       SpiceManager _spice;             //!< SPICE kernel manager
 
-      void init(Cube &cube);
+      void init(NaifContextPtr naif, Cube &cube);
 
-      void GeometryKeys(Pvl &geom);
-      void TargetKeys(Pvl &geom);
-      void SubframeTargetKeys(Pvl &geom);
+      void GeometryKeys(NaifContextPtr naif, Pvl &geom);
+      void TargetKeys(NaifContextPtr naif, Pvl &geom);
+      void SubframeTargetKeys(NaifContextPtr naif, Pvl &geom);
       bool getSubframeCoordinates(int frameno, double &sample, double &line,
                                   double &width, double &height);
-      void SpacecraftKeys(Pvl &geom);
-      void ViewingAndLightingKeys(Pvl &geom);
+      void SpacecraftKeys(NaifContextPtr naif, Pvl &geom);
+      void ViewingAndLightingKeys(NaifContextPtr naif, Pvl &geom);
       bool SmearComponents(double &smear_magnitude, double &smear_azimuth);
-      std::vector<double> ScVelocityVector();
+      std::vector<double> ScVelocityVector(NaifContextPtr naif);
 
       PvlKeyword format(const QString &name, const double &value,
                         const QString &unit = "") const;

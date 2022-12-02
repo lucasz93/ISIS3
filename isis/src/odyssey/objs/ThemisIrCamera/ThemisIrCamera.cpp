@@ -29,7 +29,7 @@
 #include "LineScanCameraDetectorMap.h"
 #include "LineScanCameraGroundMap.h"
 #include "LineScanCameraSkyMap.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 
 using namespace std;
 namespace Isis {
@@ -42,12 +42,14 @@ namespace Isis {
    *   @history 2011-05-03 Jeannie Walldren - Added NAIF error check.
    */
   ThemisIrCamera::ThemisIrCamera(Cube &cube) : LineScanCamera(cube) {
+    auto naif = NaifContext::acquire();
+
     m_instrumentNameLong = "Thermal Emission Imaging System Infrared";
     m_instrumentNameShort = "Themis-IR";
     m_spacecraftNameLong = "Mars Odyssey";
     m_spacecraftNameShort = "Odyssey";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     // Set the detector size
     SetPixelPitch(0.05);
     SetFocalLength(203.9213);
@@ -58,7 +60,7 @@ namespace Isis {
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
     QString stime = inst["SpacecraftClockCount"];
-    p_etStart = getClockTime(stime).Et();
+    p_etStart = getClockTime(naif, stime).Et();
 
     double offset = inst["SpacecraftClockOffset"];
     p_etStart += offset;
@@ -98,7 +100,7 @@ namespace Isis {
     // The focal plane map tells us how to go from detector position
     // to focal plane x/y (distorted).  That is, (sample,time) to (x,y).
     // This is band dependent so it will change in SetBand
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     // The boresight sample in the K-T model was 164.25.  In Duxbury's it is
     // 160.5 or half the detector width.  The detector offset varies by band
@@ -115,8 +117,8 @@ namespace Isis {
     new LineScanCameraGroundMap(this);
     new LineScanCameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
 
@@ -128,7 +130,7 @@ namespace Isis {
    *
    * @author 2009-02-26 Jeff Anderson
    */
-  void ThemisIrCamera::SetBand(const int vband) {
+  void ThemisIrCamera::SetBand(const int vband, NaifContextPtr naif) {
     // Lookup the original band from the band bin group.  Unless there is
     // a reference band which means the data has all been aligned in the
     // band dimension

@@ -39,7 +39,7 @@
 #include "IException.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "SpecialPixel.h"
 
 using namespace std;
@@ -68,7 +68,9 @@ namespace Isis {
     m_spacecraftNameLong = "Cassini Huygens";
     m_spacecraftNameShort = "Cassini";
 
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+
+    naif->CheckErrors();
 
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -129,7 +131,7 @@ namespace Isis {
     QString intTime = stime.split(".").first();
     stime = stime.split(".").last();
 
-    double etStart = getClockTime(intTime).Et();
+    double etStart = getClockTime(naif, intTime).Et();
 
     //  Add 2 seconds to either side of time range because the time are for IR
     // channel, the VIS may actually start integrating before NATIVE_START_TIME.
@@ -141,7 +143,7 @@ namespace Isis {
     intTime = etime.split(".").first();
     etime = etime.split(".").last();
 
-    double etStop = getClockTime(intTime).Et();
+    double etStop = getClockTime(naif, intTime).Et();
 
     //  Add 2 seconds to either side of time range because the time are for IR
     // channel, the VIS may actually start integrating before NATIVE_START_TIME.
@@ -152,7 +154,7 @@ namespace Isis {
     new CameraDetectorMap(this);
 
     // Setup focal plane map
-    new CameraFocalPlaneMap(this, naifIkCode());
+    new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     // Setup distortion map
     new CameraDistortionMap(this);
@@ -161,15 +163,15 @@ namespace Isis {
     new VimsGroundMap(this, lab);
     new VimsSkyMap(this, lab);
 
-    ((VimsGroundMap *)GroundMap())->Init(lab);
-    ((VimsSkyMap *)SkyMap())->Init(lab);
+    ((VimsGroundMap *)GroundMap())->Init(naif, lab);
+    ((VimsSkyMap *)SkyMap())->Init(naif, lab);
 
-    LoadCache();
+    LoadCache(naif);
 
     IgnoreProjection(true);
-    SetImage(1, 1);
+    SetImage(1, 1, naif);
     IgnoreProjection(false);
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
     return;
   }
 

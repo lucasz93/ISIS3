@@ -64,37 +64,39 @@ namespace Isis {
       void   setTolerance(const double &tolerance);
 
       // Intersect the shape model
-      bool intersectSurface(std::vector<double> observerPos,
-                            std::vector<double> lookDirection);
+      bool intersectSurface(NaifContextPtr naif,
+                            std::vector<double> observerPos,
+                            std::vector<double> lookDirection) override;
       virtual bool intersectSurface(const Latitude &lat, const Longitude &lon,
                                     const std::vector<double> &observerPos,
                                     const bool &checkOcclusion = true);
       virtual bool intersectSurface(const SurfacePoint &surfpt, 
                                     const std::vector<double> &observerPos,
-                                    const bool &checkOcclusion = true);
+                                    const bool &checkOcclusion = true) override;
 
       virtual void setSurfacePoint(const SurfacePoint &surfacePoint);
       virtual void clearSurfacePoint();
 
       // Calculate the default normal of the current intersection point
-      void calculateDefaultNormal();
+      void calculateDefaultNormal(NaifContextPtr naif) override;
 
-      bool isDEM() const;
+      bool isDEM() const override;
 
       // Calculate the surface normal of the current intersection point
       void setLocalNormalFromIntercept();
-      void calculateLocalNormal(QVector<double *> cornerNeighborPoints);
-      void calculateSurfaceNormal();
+      void calculateLocalNormal(NaifContextPtr naif, QVector<double *> cornerNeighborPoints) override;
+      void calculateSurfaceNormal(NaifContextPtr naif) override;
 
-      Distance localRadius(const Latitude &lat, const Longitude &lon);
+      Distance localRadius(NaifContextPtr naif, const Latitude &lat, const Longitude &lon) override;
 
-      QVector<double> ellipsoidNormal();
+      QVector<double> ellipsoidNormal(NaifContextPtr naif);
 
       const BulletWorldManager &model() const;
 
 
       // Determine if the internal intercept is occluded from the observer/lookdir
-      virtual bool isVisibleFrom(const std::vector<double> observerPos,
+      virtual bool isVisibleFrom(NaifContextPtr naif,
+                                 const std::vector<double> observerPos,
                                  const std::vector<double> lookDirection);
 
     private:

@@ -27,7 +27,7 @@
 #include "CameraFocalPlaneMap.h"
 #include "CameraSkyMap.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "PushFrameCameraDetectorMap.h"
 #include "PushFrameCameraGroundMap.h"
 #include "ThemisVisDistortionMap.h"
@@ -53,7 +53,8 @@ namespace Isis {
     m_spacecraftNameLong = "Mars Odyssey";
     m_spacecraftNameShort = "Odyssey";
     
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
+    naif->CheckErrors();
     // Set up the camera characteristics
     // LoadFrameMounting("M01_SPACECRAFT","M01_THEMIS_VIS");
     // Changed Focal Length from 203.9 (millimeters????) to 202.059, per request from
@@ -79,7 +80,7 @@ namespace Isis {
     // Get the start and end time
     double et;
     QString stime = inst["SpacecraftClockCount"];
-    et = getClockTime(stime).Et();
+    et = getClockTime(naif, stime).Et();
 
     double offset = inst["SpacecraftClockOffset"];
     p_etStart = et + offset - ((p_exposureDur / 1000.0) / 2.0);
@@ -108,7 +109,7 @@ namespace Isis {
     // We do not want to set the exposure duration in the detector map, let it default to 0.0...
 
     // Setup focal plane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, naifIkCode());
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, naifIkCode());
     focalMap->SetDetectorOrigin(512.5, 512.5);
 
     // Setup distortion map
@@ -119,8 +120,8 @@ namespace Isis {
     new PushFrameCameraGroundMap(this, evenFramelets);
     new CameraSkyMap(this);
 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    LoadCache(naif);
+    naif->CheckErrors();
   }
   
 
@@ -134,12 +135,12 @@ namespace Isis {
    *
    * @param vband The band number to set
    */
-  void ThemisVisCamera::SetBand(const int vband) {
-    Camera::SetBand(vband);
+  void ThemisVisCamera::SetBand(const int vband, NaifContextPtr naif) {
+    Camera::SetBand(vband, naif);
 
     // Set the et
     double et = p_etStart + BandEphemerisTimeOffset(vband);
-    setTime(et);
+    setTime(et, naif);
     PushFrameCameraDetectorMap *dmap = (PushFrameCameraDetectorMap *)this->DetectorMap();
     dmap->SetStartTime(et);
   }

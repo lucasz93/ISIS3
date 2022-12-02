@@ -37,7 +37,7 @@
 #include "iTime.h"
 #include "Latitude.h"
 #include "Longitude.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Projection.h"
 #include "ShapeModel.h"
 #include "SpecialPixel.h"
@@ -109,8 +109,8 @@ namespace Isis {
    *
    * @param time Ephemeris time.
    */
-  void Sensor::setTime(const iTime &time) {
-    Spice::setTime(time);
+  void Sensor::setTime(const iTime &time, NaifContextPtr naif) {
+    Spice::setTime(time, naif);
     target()->shape()->clearSurfacePoint();
   }
 
@@ -153,7 +153,7 @@ namespace Isis {
    *                           Vesta DEM on the limb.
    *
    */
-  bool Sensor::SetLookDirection(const double v[3]) {
+  bool Sensor::SetLookDirection(const double v[3], NaifContextPtr naif) {
     //std::cout << "Sensor::SetLookDirection()\n";
     // The look vector must be in the camera coordinate system
 
@@ -164,8 +164,8 @@ namespace Isis {
     vector<double> lookC(v, v + 3);
 
     // Convert it to body-fixed
-    const vector<double> &lookJ = instrumentRotation()->J2000Vector(lookC);
-    const vector<double> &lookB = bodyRotation()->ReferenceVector(lookJ);
+    const vector<double> &lookJ = instrumentRotation()->J2000Vector(lookC, naif);
+    const vector<double> &lookB = bodyRotation()->ReferenceVector(lookJ, naif);
 
     // This memcpy does:
     // m_lookB[0] = lookB[0];
@@ -182,11 +182,11 @@ namespace Isis {
 
     // See if it intersects the planet
     const vector<double> &sB = bodyRotation()->ReferenceVector(
-        instrumentPosition()->Coordinate());
+        instrumentPosition()->Coordinate(), naif);
 
     // double tolerance = resolution() / 100.0; return
     // target()->shape()->intersectSurface(sB, lookB, tolerance);
-    return target()->shape()->intersectSurface(sB, lookB);
+    return target()->shape()->intersectSurface(naif, sB, lookB);
   }
 
 
@@ -297,8 +297,8 @@ namespace Isis {
    * @return @b Distance The distance from the center of the planet to this
    *          lat,lon in meters.
    */
-  Distance Sensor::LocalRadius(Latitude lat, Longitude lon) {
-    return target()->shape()->localRadius(lat, lon);
+  Distance Sensor::LocalRadius(NaifContextPtr naif, Latitude lat, Longitude lon) {
+    return target()->shape()->localRadius(naif, lat, lon);
   }
 
 
@@ -313,8 +313,9 @@ namespace Isis {
     * @return @b Distance The distance from the center of the planet to this
     *          lat,lon in meters.
     */
-  Distance Sensor::LocalRadius(double lat, double lon) {
-    return target()->shape()->localRadius(Latitude(lat, Angle::Degrees),
+  Distance Sensor::LocalRadius(NaifContextPtr naif, double lat, double lon) {
+    return target()->shape()->localRadius(naif,
+                                          Latitude(lat, Angle::Degrees),
                                           Longitude(lon, Angle::Degrees));
   }
 
@@ -324,10 +325,10 @@ namespace Isis {
    *
    * @return @b double Phase angle, in degrees.
    */
-  double Sensor::PhaseAngle() const {
+  double Sensor::PhaseAngle(NaifContextPtr naif) const {
     std::vector<double> sunB(m_uB, m_uB+3);
-    return target()->shape()->phaseAngle(
-                               bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate()), sunB);
+    return target()->shape()->phaseAngle(naif,
+                               bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif), sunB);
   }
 
 
@@ -336,9 +337,9 @@ namespace Isis {
    *
    * @return @b double Emission angle, in degrees.
    */
-  double Sensor::EmissionAngle() const {
-    return target()->shape()->emissionAngle(
-        bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate()));
+  double Sensor::EmissionAngle(NaifContextPtr naif) const {
+    return target()->shape()->emissionAngle(naif,
+        bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif));
   }
 
 
@@ -347,9 +348,9 @@ namespace Isis {
    *
    * @return @b double Incidence angle, in degrees.
    */
-  double Sensor::IncidenceAngle() const {
+  double Sensor::IncidenceAngle(NaifContextPtr naif) const {
     std::vector<double> sunB(m_uB, m_uB+3);
-    return target()->shape()->incidenceAngle(sunB);
+    return target()->shape()->incidenceAngle(naif, sunB);
   }
 
 
@@ -371,7 +372,8 @@ namespace Isis {
    * @internal
    *   @history 2017-03-23 Kris Becker - Added support for occlusion tests
    */
-  bool Sensor::SetUniversalGround(const double latitude,
+  bool Sensor::SetUniversalGround(NaifContextPtr naif,
+                                  const double latitude,
                                   const double longitude,
                                   bool backCheck) {
 
@@ -387,11 +389,11 @@ namespace Isis {
     Latitude lat(latitude, Angle::Degrees);
     Longitude lon(longitude, Angle::Degrees);
     // Local radius is deferred to (possible derived) shape model method
-    shape->intersectSurface(lat, lon,
-                            bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate()),
+    shape->intersectSurface(naif, lat, lon,
+                            bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif),
                             backCheck);
 
-    return SetGroundLocal(backCheck);
+    return SetGroundLocal(backCheck, naif);
   }
 
   /**
@@ -413,7 +415,8 @@ namespace Isis {
    * @internal
    *   @history 2017-03-23 Kris Becker - Added support for occlusion test
    */
-  bool Sensor::SetUniversalGround(const double latitude,
+  bool Sensor::SetUniversalGround(NaifContextPtr naif,
+                                  const double latitude,
                                   const double longitude,
                                   const double radius,
                                   bool backCheck) {
@@ -430,11 +433,11 @@ namespace Isis {
     Longitude lon(longitude, Angle::Degrees);
     Distance rad(radius, Distance::Meters);
 
-    shape->intersectSurface(SurfacePoint(lat, lon, rad), 
-                            bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate()),
+    shape->intersectSurface(SurfacePoint(naif, lat, lon, rad), 
+                            bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif),
                             backCheck);
 
-    return SetGroundLocal(backCheck);
+    return SetGroundLocal(backCheck, naif);
   }
 
 
@@ -455,7 +458,7 @@ namespace Isis {
    *   @history 2017-03-23 Kris Becker - Added support for occlusion test
    * 
    */
-  bool Sensor::SetGround(const SurfacePoint &surfacePt, bool backCheck) {
+  bool Sensor::SetGround(NaifContextPtr naif, const SurfacePoint &surfacePt, bool backCheck) {
     //std::cout << "Sensor::SetGround()\n";
     ShapeModel *shape = target()->shape();
     shape->clearSurfacePoint();
@@ -466,10 +469,10 @@ namespace Isis {
     }
 
     shape->intersectSurface(surfacePt, 
-                            bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate()),
+                            bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif),
                             backCheck);
 
-    return SetGroundLocal(backCheck);
+    return SetGroundLocal(backCheck, naif);
   }
 
 
@@ -487,7 +490,7 @@ namespace Isis {
   * @internal
   *   @history 2017-03-23 Kris Becker - Added formal occlusion callback
   */
-  bool Sensor::SetGroundLocal(bool backCheck) {
+  bool Sensor::SetGroundLocal(bool backCheck, NaifContextPtr naif) {
     ShapeModel *shape = target()->shape();
     // With the 3 spherical value compute the x/y/z coordinate
     //latrec_c(m_radius, (m_longitude * PI / 180.0), (m_latitude * PI / 180.0), m_pB);
@@ -502,7 +505,7 @@ namespace Isis {
     // This is static purely for performance reasons. A significant speedup
     // is achieved here.
     const vector<double> &sB =
-        bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate());
+        bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif);
 
     m_lookB[0] = shape->surfaceIntersection()->GetX().kilometers() - sB[0];
     m_lookB[1] = shape->surfaceIntersection()->GetY().kilometers() - sB[1];
@@ -516,7 +519,7 @@ namespace Isis {
       // Assume the intersection point is good in order to get the emission angle
       // shape->setHasIntersection(true);  //KJB there should be a formal intersection in ShapeModel
       std::vector<double> lookdir = lookDirectionBodyFixed();
-      if ( !shape->isVisibleFrom(sB, lookdir) ) {
+      if ( !shape->isVisibleFrom(naif, sB, lookdir) ) {
         shape->clearSurfacePoint();
         shape->setHasIntersection(false);
         return false;
@@ -535,8 +538,8 @@ namespace Isis {
    *
    * @param v[] The look vector.
    */
-  void Sensor::LookDirection(double v[3]) const {
-    vector<double> lookC = instrumentRotation()->ReferenceVector(lookDirectionJ2000());
+  void Sensor::LookDirection(double v[3], NaifContextPtr naif) const {
+    vector<double> lookC = instrumentRotation()->ReferenceVector(lookDirectionJ2000(naif), naif);
     v[0] = lookC[0];
     v[1] = lookC[1];
     v[2] = lookC[2]; 
@@ -561,8 +564,8 @@ namespace Isis {
    *
    * @return @b vector<double> Look direction in J2000 cooridinate system.
    */
-  vector<double> Sensor::lookDirectionJ2000() const {
-    vector<double> lookJ = bodyRotation()->J2000Vector(lookDirectionBodyFixed());
+  vector<double> Sensor::lookDirectionJ2000(NaifContextPtr naif) const {
+    vector<double> lookJ = bodyRotation()->J2000Vector(lookDirectionBodyFixed(), naif);
     return lookJ;
   }
 
@@ -573,8 +576,8 @@ namespace Isis {
    *
    * @return @b double The angle of right ascension, in degrees.
    */
-  double Sensor::RightAscension() {
-    if (m_newLookB) computeRaDec();
+  double Sensor::RightAscension(NaifContextPtr naif) {
+    if (m_newLookB) computeRaDec(naif);
     return m_ra;
   }
 
@@ -584,8 +587,8 @@ namespace Isis {
    *
    * @return @b double Declination angle, in degrees.
    */
-  double Sensor::Declination() {
-    if (m_newLookB) computeRaDec();
+  double Sensor::Declination(NaifContextPtr naif) {
+    if (m_newLookB) computeRaDec(naif);
     return m_dec;
   }
 
@@ -593,16 +596,16 @@ namespace Isis {
   /**
    * Protected method which computes the ra/dec of the current look direction.
    */
-  void Sensor::computeRaDec() {
+  void Sensor::computeRaDec(NaifContextPtr naif) {
     m_newLookB = false;
     vector<double> lookB(3);
     lookB[0] = m_lookB[0];
     lookB[1] = m_lookB[1];
     lookB[2] = m_lookB[2];
-    vector<double> lookJ = bodyRotation()->J2000Vector(lookB);
+    vector<double> lookJ = bodyRotation()->J2000Vector(lookB, naif);
 
     SpiceDouble range;
-    recrad_c((SpiceDouble *)&lookJ[0], &range, &m_ra, &m_dec);
+    naif->recrad_c((SpiceDouble *)&lookJ[0], &range, &m_ra, &m_dec);
     m_ra *= 180.0 / PI;
     m_dec *= 180.0 / PI;
   }
@@ -616,12 +619,12 @@ namespace Isis {
    *
    * @return @b bool True if successful.
    */
-  bool Sensor::SetRightAscensionDeclination(const double ra, const double dec) {
+  bool Sensor::SetRightAscensionDeclination(const double ra, const double dec, NaifContextPtr naif) {
     vector<double> lookJ(3);
-    radrec_c(1.0, ra * PI / 180.0, dec * PI / 180.0, (SpiceDouble *)&lookJ[0]);
+    naif->radrec_c(1.0, ra * PI / 180.0, dec * PI / 180.0, (SpiceDouble *)&lookJ[0]);
 
-    vector<double> lookC = instrumentRotation()->ReferenceVector(lookJ);
-    return SetLookDirection((double *)&lookC[0]);
+    vector<double> lookC = instrumentRotation()->ReferenceVector(lookJ, naif);
+    return SetLookDirection((double *)&lookC[0], naif);
   }
 
 
@@ -645,11 +648,11 @@ namespace Isis {
    *
    * @return @b double Slant distance.
    */
-  double Sensor::SlantDistance() const {
+  double Sensor::SlantDistance(NaifContextPtr naif) const {
     SpiceDouble psB[3], upsB[3];
     SpiceDouble dist;
 
-    std::vector<double> sB = bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate());
+    std::vector<double> sB = bodyRotation()->ReferenceVector(instrumentPosition()->Coordinate(), naif);
 
     SpiceDouble pB[3];
     ShapeModel *shape = target()->shape();
@@ -657,8 +660,8 @@ namespace Isis {
     pB[1] = shape->surfaceIntersection()->GetY().kilometers();
     pB[2] = shape->surfaceIntersection()->GetZ().kilometers();
 
-    vsub_c(pB, (SpiceDouble *) &sB[0], psB);
-    unorm_c(psB, upsB, &dist);
+    naif->vsub_c(pB, (SpiceDouble *) &sB[0], psB);
+    naif->unorm_c(psB, upsB, &dist);
     return dist;
   }
 
@@ -668,9 +671,9 @@ namespace Isis {
    *
    * @return @b double Local solar time, in hours.
    */
-  double Sensor::LocalSolarTime() {
+  double Sensor::LocalSolarTime(NaifContextPtr naif) {
     double slat, slon;
-    subSolarPoint(slat, slon);
+    subSolarPoint(slat, slon, naif);
 
     double lst = UniversalLongitude() - slon + 180.0;
     lst = lst / 15.0;  // 15 degress per hour
@@ -709,23 +712,23 @@ namespace Isis {
    *
    * @return @b double Spacecraft altitude.
    */
-  double Sensor::SpacecraftAltitude() {
+  double Sensor::SpacecraftAltitude(NaifContextPtr naif) {
     // Get the spacecraft coord
     double spB[3];
-    Spice::instrumentPosition(spB);
+    Spice::instrumentPosition(spB, naif);
 
     // Get subspacecraft point
     double lat, lon;
-    subSpacecraftPoint(lat, lon);
+    subSpacecraftPoint(lat, lon, naif);
     double rlat = lat * PI / 180.0;
     double rlon = lon * PI / 180.0;
 
     // Compute radius
-    Distance rad = LocalRadius(lat, lon);
+    Distance rad = LocalRadius(naif, lat, lon);
 
     // Now with the 3 spherical value compute the x/y/z coordinate
     double ssB[3];
-    latrec_c(rad.kilometers(), rlon, rlat, ssB);
+    naif->latrec_c(rad.kilometers(), rlon, rlat, ssB);
 
     // Calc the change
     double xChange = spB[0] - ssB[0];

@@ -33,6 +33,7 @@
 #include "Pvl.h"
 #include "SessionLog.h"
 #include "UserInterface.h"
+#include "NaifContext.h"
 
 #ifdef Q_OS_LINUX
 #include <X11/Xlib.h>

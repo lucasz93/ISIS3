@@ -60,7 +60,8 @@ class LineOffsetFunctor :
   public std::unary_function<double, double > {
   public:
 
-    LineOffsetFunctor(Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+    LineOffsetFunctor(NaifContextPtr naif, Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+      m_naif = naif;
       m_camera = camera;
       m_surfacePoint = surPt;
     }
@@ -93,17 +94,17 @@ class LineOffsetFunctor :
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
      
-      m_camera->Sensor::setTime(et);
+      m_camera->Sensor::setTime(et, m_naif);
  
       // Set ground
-      if (!m_camera->Sensor::SetGround(m_surfacePoint, false)) {
+      if (!m_camera->Sensor::SetGround(m_naif, m_surfacePoint, false)) {
         IString msg = "Sensor::SetGround failed for surface point in LineScanCameraGroundMap.cpp"
                       " LineOffsetFunctor";
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
    
       // Calculate the undistorted focal plane coordinates
-      m_camera->Sensor::LookDirection(lookC);
+      m_camera->Sensor::LookDirection(lookC, m_naif);
       ux = m_camera->FocalLength() * lookC[0] / lookC[2];
       uy = m_camera->FocalLength() * lookC[1] / lookC[2];
 
@@ -153,6 +154,7 @@ class LineOffsetFunctor :
   private:
     SurfacePoint m_surfacePoint;
     Camera* m_camera;
+    NaifContextPtr m_naif;
 };
 
 
@@ -165,7 +167,8 @@ class SensorSurfacePointDistanceFunctor :
   public std::unary_function<double, double > {
 
   public:
-    SensorSurfacePointDistanceFunctor(Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+    SensorSurfacePointDistanceFunctor(NaifContextPtr naif, Isis::Camera *camera, const Isis::SurfacePoint &surPt) {
+      m_naif = naif;
       m_camera = camera;
       surfacePoint = surPt;
     }
@@ -186,12 +189,12 @@ class SensorSurfacePointDistanceFunctor :
                       "cache bounds";
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
-      m_camera->Sensor::setTime(et);
-      if (!m_camera->Sensor::SetGround(surfacePoint, false)) {
+      m_camera->Sensor::setTime(et, m_naif);
+      if (!m_camera->Sensor::SetGround(m_naif, surfacePoint, false)) {
          IString msg = "Sensor::SetGround failed for surface point in LineScanCameraGroundMap.cpp"
                        "SensorSurfacePointDistanceFunctor";
       }
-      m_camera->instrumentPosition(s);
+      m_camera->instrumentPosition(s, m_naif);
       m_camera->Coordinate(p);
       return sqrt((s[0] - p[0]) * (s[0] - p[0]) +
                   (s[1] - p[1]) * (s[1] - p[1]) +
@@ -201,6 +204,7 @@ class SensorSurfacePointDistanceFunctor :
   private:
     SurfacePoint surfacePoint;
     Camera* m_camera;
+    NaifContextPtr m_naif;
 };
 
 
@@ -225,12 +229,12 @@ namespace Isis {
    *
    * @return conversion was successful
    */
-  bool LineScanCameraGroundMap::SetGround(const Latitude &lat,
+  bool LineScanCameraGroundMap::SetGround(NaifContextPtr naif, const Latitude &lat,
       const Longitude &lon) {
-    Distance radius(p_camera->LocalRadius(lat, lon));
+    Distance radius(p_camera->LocalRadius(naif, lat, lon));
 
     if (radius.isValid()) {
-      return SetGround(SurfacePoint(lat, lon, radius));
+      return SetGround(naif, SurfacePoint(naif, lat, lon, radius));
     }
     else {
       return false;
@@ -246,8 +250,8 @@ namespace Isis {
    *
    * @return conversion was successful
    */
-  bool LineScanCameraGroundMap::SetGround(const SurfacePoint &surfacePoint, const int &approxLine) {
-    FindFocalPlaneStatus status = FindFocalPlane(approxLine, surfacePoint);
+  bool LineScanCameraGroundMap::SetGround(NaifContextPtr naif, const SurfacePoint &surfacePoint, const int &approxLine) {
+    FindFocalPlaneStatus status = FindFocalPlane(naif, approxLine, surfacePoint);
     if (status == Success) return true;
     //if(status == Failure) return false;
     return false;
@@ -260,8 +264,8 @@ namespace Isis {
    *
    * @return conversion was successful
    */
-  bool LineScanCameraGroundMap::SetGround(const SurfacePoint &surfacePoint) {
-    FindFocalPlaneStatus status = FindFocalPlane(-1, surfacePoint);
+  bool LineScanCameraGroundMap::SetGround(NaifContextPtr naif, const SurfacePoint &surfacePoint) {
+    FindFocalPlaneStatus status = FindFocalPlane(naif, -1, surfacePoint);
 
     if (status == Success) return true;
 
@@ -269,21 +273,22 @@ namespace Isis {
   }
 
 
-  double LineScanCameraGroundMap::FindSpacecraftDistance(int line,
+  double LineScanCameraGroundMap::FindSpacecraftDistance(NaifContextPtr naif, int line,
       const SurfacePoint &surfacePoint) {
 
     CameraDetectorMap *detectorMap = p_camera->DetectorMap();
-    detectorMap->SetParent(p_camera->ParentSamples() / 2, line);
-    if (!p_camera->Sensor::SetGround(surfacePoint, false)) {
+    detectorMap->SetParent(naif, p_camera->ParentSamples() / 2, line);
+    if (!p_camera->Sensor::SetGround(naif, surfacePoint, false)) {
       return DBL_MAX;
     }
 
-    return p_camera->SlantDistance();
+    return p_camera->SlantDistance(naif);
   }
 
 
   LineScanCameraGroundMap::FindFocalPlaneStatus
-      LineScanCameraGroundMap::FindFocalPlane(const int &approxLine,
+      LineScanCameraGroundMap::FindFocalPlane(NaifContextPtr naif, 
+                                              const int &approxLine,
                                               const SurfacePoint &surfacePoint) {
 
     //CameraDistortionMap *distortionMap = p_camera->DistortionMap();
@@ -303,27 +308,27 @@ namespace Isis {
 
     if (lineRate == 0.0) return Failure;
 
-    LineOffsetFunctor offsetFunc(p_camera,surfacePoint);
-    SensorSurfacePointDistanceFunctor distanceFunc(p_camera,surfacePoint);
+    LineOffsetFunctor offsetFunc(naif,p_camera,surfacePoint);
+    SensorSurfacePointDistanceFunctor distanceFunc(naif,p_camera,surfacePoint);
 
     // METHOD #1
     // Use the line given as a start point for the secant method root search. 
     if (approxLine >= 0.5) {
 
       // convert the approxLine to an approximate time and offset
-      p_camera->DetectorMap()->SetParent(p_camera->ParentSamples() / 2.0, approxLine);
+      p_camera->DetectorMap()->SetParent(naif, p_camera->ParentSamples() / 2.0, approxLine);
       approxTime = p_camera->time().Et();
   
       approxOffset = offsetFunc(approxTime);
 
       // Check to see if there is no need to improve this root, it's good enough
       if (fabs(approxOffset) < 1e-2) { 
-        p_camera->Sensor::setTime(approxTime);
+        p_camera->Sensor::setTime(approxTime, naif);
         // check to make sure the point isn't behind the planet
-        if (!p_camera->Sensor::SetGround(surfacePoint, true)) {
+        if (!p_camera->Sensor::SetGround(naif, surfacePoint, true)) {
           return Failure;
         } 
-        p_camera->Sensor::LookDirection(lookC);
+        p_camera->Sensor::LookDirection(lookC, naif);
         ux = p_camera->FocalLength() * lookC[0] / lookC[2];
         uy = p_camera->FocalLength() * lookC[1] / lookC[2];
      
@@ -373,12 +378,12 @@ namespace Isis {
 
         // See if we converged on the point so set up the undistorted focal plane values and return
         if (fabs(f) < 1e-2) {
-          p_camera->Sensor::setTime(approxTime);
+          p_camera->Sensor::setTime(approxTime, naif);
           // check to make sure the point isn't behind the planet
-          if (!p_camera->Sensor::SetGround(surfacePoint, true)) {
+          if (!p_camera->Sensor::SetGround(naif, surfacePoint, true)) {
             return Failure;
           } 
-          p_camera->Sensor::LookDirection(lookC);
+          p_camera->Sensor::LookDirection(lookC, naif);
           ux = p_camera->FocalLength() * lookC[0] / lookC[2];
           uy = p_camera->FocalLength() * lookC[1] / lookC[2];
       
@@ -520,14 +525,14 @@ namespace Isis {
     }
 
     if (fabs(approxOffset) < 1.0e-2) { // No need to iteratively improve this root, it's good enough
-      p_camera->Sensor::setTime(approxTime);
+      p_camera->Sensor::setTime(approxTime, naif);
 
       // Check to make sure the point isn't behind the planet
-      if (!p_camera->Sensor::SetGround(surfacePoint, true)) {
+      if (!p_camera->Sensor::SetGround(naif, surfacePoint, true)) {
         return Failure;
       }
        
-      p_camera->Sensor::LookDirection(lookC);
+      p_camera->Sensor::LookDirection(lookC, naif);
       ux = p_camera->FocalLength() * lookC[0] / lookC[2];
       uy = p_camera->FocalLength() * lookC[1] / lookC[2];
      
@@ -586,9 +591,9 @@ namespace Isis {
 
     // Discard any roots that are looking through the planet
     for (int i = root.size()-1; i>=0; i--) {
-      p_camera->Sensor::setTime(root[i]);
+      p_camera->Sensor::setTime(root[i], naif);
       //check to make sure the point isn't behind the planet
-      if (!p_camera->Sensor::SetGround(surfacePoint, true)) {
+      if (!p_camera->Sensor::SetGround(naif, surfacePoint, true)) {
         root.removeAt(i);
       }
     }
@@ -613,11 +618,11 @@ namespace Isis {
         if (dist[i] < dist[j]) j=i;
       }
 
-      p_camera->Sensor::setTime(root[j]);
+      p_camera->Sensor::setTime(root[j], naif);
     }
 
     // No need to make sure the point isn't behind the planet, it was done above
-    p_camera->Sensor::LookDirection(lookC);
+    p_camera->Sensor::LookDirection(lookC, naif);
     ux = p_camera->FocalLength() * lookC[0] / lookC[2];
     uy = p_camera->FocalLength() * lookC[1] / lookC[2];
      

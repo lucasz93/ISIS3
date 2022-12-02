@@ -10,7 +10,8 @@
 #include "IException.h"
 #include "FileName.h"
 #include "LineManager.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
+#include "NaifContext.h"
 #include "IString.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
@@ -43,9 +44,8 @@ namespace Isis {
  */
 /* Helper function for sunDistanceAu, don't need this until we have radiance calibration
    parameters for Hayabusa2 ONC-T filters to calculate radiance and I/F
-static void loadNaifTiming() {
-  static bool naifLoaded = false;
-  if (!naifLoaded) {
+static void loadNaifTiming(NaifContextPtr naif) {
+  if (!naif->hayabusaTimingLoaded()) {
 
 //  Load the NAIF kernels to determine timing data
     Isis::FileName leapseconds("$base/kernels/lsk/naif????.tls");
@@ -69,19 +69,19 @@ static void loadNaifTiming() {
     QString pckName5(pck5.expanded());
     QString pckName6(pck6.expanded());
 
-    furnsh_c(leapsecondsName.toLatin1().data());
-    furnsh_c(sclkName.toLatin1().data());
+    naif->furnsh_c(leapsecondsName.toLatin1().data());
+    naif->furnsh_c(sclkName.toLatin1().data());
 
-    furnsh_c(pckName1.toLatin1().data());
-    furnsh_c(pckName2.toLatin1().data());
-    furnsh_c(pckName3.toLatin1().data());
-    furnsh_c(pckName4.toLatin1().data());
-    furnsh_c(pckName5.toLatin1().data());
-    furnsh_c(pckName6.toLatin1().data());
+    naif->furnsh_c(pckName1.toLatin1().data());
+    naif->furnsh_c(pckName2.toLatin1().data());
+    naif->furnsh_c(pckName3.toLatin1().data());
+    naif->furnsh_c(pckName4.toLatin1().data());
+    naif->furnsh_c(pckName5.toLatin1().data());
+    naif->furnsh_c(pckName6.toLatin1().data());
 
 
 //  Ensure it is loaded only once
-    naifLoaded = true;
+    naif->set_hayabusaTimingLoaded(true);
   }
   return;
 }
@@ -99,31 +99,32 @@ static void loadNaifTiming() {
 /* commented out until we have radiance values (RAD/IOF group in calibration trn) for Hayabusa2.
  static bool sunDistanceAU(const QString &scStartTime,
                           const QString &target,
+                          NaifContextPtr naif,
                           double &sunDist) {
 
   //  Ensure NAIF kernels are loaded
-  loadNaifTiming();
+  loadNaifTiming(naif);
   sunDist = 1.0;
 
   //  Determine if the target is a valid NAIF target
   SpiceInt tcode;
   SpiceBoolean found;
-  bodn2c_c(target.toLatin1().data(), &tcode, &found);
+  naif->bodn2c_c(target.toLatin1().data(), &tcode, &found);
 
   if (!found) return (false);
 
   //  Convert starttime to et
   double obsStartTime;
-  scs2e_c(-37, scStartTime.toLatin1().data(), &obsStartTime);
+  naif->scs2e_c(-37, scStartTime.toLatin1().data(), &obsStartTime);
 
   //  Get the vector from target to sun and determine its length
   double sunv[3];
   double lt;
-  spkpos_c(target.toLatin1().data(), obsStartTime, "J2000", "LT+S", "sun",
+  naif->spkpos_c(target.toLatin1().data(), obsStartTime, "J2000", "LT+S", "sun",
                   sunv, &lt);
-  NaifStatus::CheckErrors();
+  naif->CheckErrors();
 
-  double sunkm = vnorm_c(sunv);
+  double sunkm = naif->vnorm_c(sunv);
 
 
   //  Return in AU units

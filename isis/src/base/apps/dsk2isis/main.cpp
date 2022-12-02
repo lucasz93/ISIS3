@@ -11,7 +11,7 @@
 #include "Longitude.h"
 #include "NaifDskApi.h"
 #include "NaifDskPlateModel.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "PixelType.h"
 #include "ProcessByLine.h"
 #include "Progress.h"
@@ -32,7 +32,8 @@ void initialize(Buffer &out) {
 }
 
 void IsisMain() {
- 
+  auto naif = NaifContext::acquire();
+  
   // We will be processing by line
   ProcessByLine p;
   UserInterface &ui = Application::GetUserInterface();
@@ -92,14 +93,15 @@ void IsisMain() {
         double lon = tproj->UniversalLongitude();
         double radius = tproj->LocalRadius(lat);
   
-        point.SetSphericalCoordinates(Latitude(lat, Angle::Degrees), 
+        point.SetSphericalCoordinates(naif,
+                                      Latitude(lat, Angle::Degrees), 
                                       Longitude(lon, Angle::Degrees),
                                       Distance(radius, Distance::Meters));
 
         // Calculate the grid point intersection of the DEM
         if ( useGridMethod ) {  // ( "grid" == method )
           // Get the grid point (lat, lon) from the DEM
-          QScopedPointer<SurfacePoint> dempt(dsk.point(point.GetLatitude(), 
+          QScopedPointer<SurfacePoint> dempt(dsk.point(naif, point.GetLatitude(), 
                                                        point.GetLongitude()));
 
           pixels[i] = dempt->GetLocalRadius().meters();
@@ -114,18 +116,18 @@ void IsisMain() {
           NaifVertex observer(3);
           point.ToNaifArray(&observer[0]);
 
-          NaifStatus::CheckErrors();
-          vscl_c(1.5, &observer[0], &observer[0]);
-          NaifStatus::CheckErrors();
+          naif->CheckErrors();
+          naif->vscl_c(1.5, &observer[0], &observer[0]);
+          naif->CheckErrors();
 
           // Get look vector
           NaifVector raydir(3);
-          vminus_c(&observer[0], &raydir[0]);
-          NaifStatus::CheckErrors();
+          naif->vminus_c(&observer[0], &raydir[0]);
+          naif->CheckErrors();
   
           // Check for valid intercept
           NaifVertex xpt;
-          if ( dsk.isPlateIdValid(dsk.plateIdOfIntercept(observer, raydir, xpt)) ) { 
+          if ( dsk.isPlateIdValid(dsk.plateIdOfIntercept(naif, observer, raydir, xpt)) ) { 
             point.FromNaifArray(&xpt[0]);
             pixels[i] = point.GetLocalRadius().meters();
           }

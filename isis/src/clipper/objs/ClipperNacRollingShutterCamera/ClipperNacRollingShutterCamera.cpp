@@ -29,7 +29,7 @@
 #include "CameraSkyMap.h"
 #include "Cube.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "Pvl.h"
 #include "PvlGroup.h"
 #include "RollingShutterCamera.h"
@@ -52,10 +52,12 @@ namespace Isis {
     m_instrumentNameLong  = "Europa Imaging System Rolling Shutter Narrow Angle Camera";
     m_instrumentNameShort = "EIS-RSNAC";
 
-    NaifStatus::CheckErrors();
+    auto naif = NaifContext::acquire();
 
-    SetFocalLength();
-    SetPixelPitch();
+    naif->CheckErrors();
+
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     Pvl &lab = *cube.label();
     PvlGroup &inst = lab.findGroup("Instrument", Pvl::Traverse);
@@ -100,7 +102,7 @@ namespace Isis {
     new RollingShutterCameraDetectorMap(this, readoutTimes, sampleCoeffs, lineCoeffs);
 
     // Set up focal plane map
-    new CameraFocalPlaneMap(this, naifIkCode());
+    new CameraFocalPlaneMap(naif, this, naifIkCode());
 
     // Set up distortion map (use default for now)
     new CameraDistortionMap(this);
@@ -109,9 +111,9 @@ namespace Isis {
     new CameraGroundMap(this);
     new CameraSkyMap(this);
 
-    setTime(etStart.Et()); // Consider changing to center in future. 
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(etStart, naif); // Consider changing to center in future. 
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
 

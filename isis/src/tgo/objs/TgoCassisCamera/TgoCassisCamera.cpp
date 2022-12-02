@@ -35,7 +35,7 @@
 #include "IException.h"
 #include "IString.h"
 #include "iTime.h"
-#include "NaifStatus.h"
+#include "NaifContext.h"
 #include "TgoCassisDistortionMap.h"
 
 using namespace std;
@@ -48,6 +48,7 @@ namespace Isis {
    * @param cube The image cube.
    */
   TgoCassisCamera::TgoCassisCamera(Cube &cube) : FramingCamera(cube) {
+    auto naif = NaifContext::acquire();
 
     m_instrumentNameLong = "Colour and Stereo Surface Imaging System";
     m_instrumentNameShort = "CaSSIS";
@@ -55,7 +56,7 @@ namespace Isis {
     m_spacecraftNameLong = "Trace Gas Orbiter";
     m_spacecraftNameShort = "TGO";
     
-    NaifStatus::CheckErrors();
+    naif->CheckErrors();
 
     // CaSSIS codes
     int cassisCode = naifIkCode();
@@ -67,8 +68,8 @@ namespace Isis {
 
     // Set up the camera characteristics
     instrumentRotation()->SetFrame(-143420);
-    SetFocalLength();
-    SetPixelPitch();
+    SetFocalLength(naif);
+    SetPixelPitch(naif);
 
     // Get the Start time from the labels
     // TODO: This is currently using UTC time. Once the timestamp is figured out,
@@ -93,16 +94,16 @@ namespace Isis {
     }
     
     // Setup focal plane map
-    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(this, cassisCode);
+    CameraFocalPlaneMap *focalMap = new CameraFocalPlaneMap(naif, this, cassisCode);
 
     // Get CASSIS detector boresight
-    double bsSample = getDouble("INS" + cassis + "_BORESIGHT_SAMPLE");
-    double bsLine = getDouble("INS" + cassis + "_BORESIGHT_LINE");
+    double bsSample = getDouble(naif, "INS" + cassis + "_BORESIGHT_SAMPLE");
+    double bsLine = getDouble(naif, "INS" + cassis + "_BORESIGHT_LINE");
     focalMap->SetDetectorOrigin(bsSample, bsLine);
 
     // Setup distortion map
     try {
-      new TgoCassisDistortionMap(this, naifIkCode());
+      new TgoCassisDistortionMap(naif, this, naifIkCode());
     }
     catch (IException &e) {
       // Set NULL so that cameras destructor wont seg fault trying to delete
@@ -119,9 +120,9 @@ namespace Isis {
     double p_exposureDur = toDouble(inst["ExposureDuration"]);
     iTime p_etStart = et + ( p_exposureDur / 2.0);
 
-    setTime(p_etStart);
-    LoadCache();
-    NaifStatus::CheckErrors();
+    setTime(p_etStart, naif);
+    LoadCache(naif);
+    naif->CheckErrors();
   }
 
 
