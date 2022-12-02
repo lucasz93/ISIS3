@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9radiom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Linearize Mariner 9 images
+  </brief>
+
+  <description>
+    <p>
+      M9RADIOM corrects Mariner 9 images for solar distance, exposure time, and
+      shading.  SPICELAB must be run first to provide SEDR data in the header
+      of the input image.  The input image should be in raw distorted space.
+      Both input and output images are 16-bit data files.  It is assumed that
+      the input file has been linearized (see LINEARIZE).  The filter number 
+      in the formatted labels is used to find the correct shading file, and the
+      exposure time from the labels is used to find the actual preflight
+      exposure time.  The solar vector in the labels is used to calculate the
+      distance to the sun (R) in astronomical units.  Each data value in the 
+      image is then corrected as follows:
+         OUTPUT = INPUT * FF * R*R * SHADING / EXPOSURE
+      where FF is a multiplicative factor that depends upon the filter used and
+      scales the output to units of I/F * 10000.  I/F is the ratio of the 
+      observed intensity to the solar flux, and is related to albedo through
+      the photometric function.  For more details, see Herkenhoff et al., 1988
+      in Icarus (in press).
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner 9</missionItem>
+  </category>
+
+  <history>
+    <change name="Ken Herkenhoff" date="1986-06-26">
+      Original version
+    </change>
+    <change name="Tracie Stoewe" date="1987-11-16">
+      Add NIMS documentation
+    </change>
+    <change name="Added NIMS documentation" date="2000-01-16">
+      Port to Unix
+    </change>
+    <change name="Lucas Zadrozny" date="2022-08-18">
+      Port to ISIS3
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input image file name
+        </brief>
+        <description>
+          The input Mariner 9 image file must be linearized (16-bit),
+          and not geometrically transformed. If the file extension
+          is omitted, then ".cub" will be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output image file name
+        </brief>
+        <description>
+          The 16-bit output file is radiometrically corrected, with
+          each pixel value equal to I/F * 10000. If the file extension
+          is omitted, then ".cub" will be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="FALLBACK">
+        <type>boolean</type>
+        <default><item>false</item></default>
+        <brief>Fallback to a different filter calibration file if necessary.</brief>
+        <description>
+            Use the closest matching filter calibration file if one doesn't exist.
+            For example: use the polaroid calibration file on the yellow filter. Center wavelength difference is 0.005 nm.
+        </description>
+      </parameter>
+    </group>
+  </groups>
+
+</application>
+

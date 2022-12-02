@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9cal" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Clean-up application for Mariner9 images 
+  </brief>
+
+  <description>
+    <p>
+      mar9cal performs the clean up of Mariner9 images. This includes salt 
+      and pepper noise, removing reseaus, and trimming edges of invalid data. 
+      The program runs mar9nonoise to clean up noise followed by findrx and 
+      remrx. Several lowpass filters fill in the null areas left by the noise 
+      removal. Finally a trim is also completed which nulls the top 5 rows of 
+      pixels, left 11 columns pixels, and the bottom 8 rows of pixels.
+    </p>
+    <p>
+      This program only allows itself to be run once on an image. It is 
+      intended for non-compressed images only and will not run on compressed 
+      images. Compressed images, technically previously compressed, are 
+      distinctive because they are mostly null data with good data in a 
+      checkerboard patter, see mar9restore for more info. mar9cal should be 
+      run immediately after importing and before calibration.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner</missionItem>
+  </category>
+
+  <seeAlso>
+    <applications>
+      <item>findrx</item>
+      <item>remrx</item>
+      <item>trim</item>
+      <item>lowpass</item>
+      <item>marnonoise</item>
+    </applications> 
+  </seeAlso>
+
+  <history>
+    <change name="Lucas Zadrozny" date="2022-08-17">
+      Original version.
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input file to be cleaned
+        </brief>
+        <description>
+          The cube to be cleaned.  The cube will be run through a series of 
+          filters to remove salt and pepper noise and reseaus.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          The resultant cube containing the clean data.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+
+    <group name="Options">
+      <parameter name="REMOVE">
+        <type>boolean</type>
+          <brief>
+            Remove intermediate files
+          </brief>
+        <description>
+          Option to remove or leave intermediate cube files made by the 
+          application.
+        </description>
+        <default><item>TRUE</item></default>
+      </parameter>
+
+      <parameter name="FALLBACK">
+        <type>boolean</type>
+        <default><item>false</item></default>
+        <brief>Fallback to a different filter calibration file if necessary.</brief>
+        <description>
+            Use the closest matching filter calibration file if one doesn't exist.
+            For example: use the polaroid calibration file on the yellow filter. Center wavelength difference is 0.005 nm.
+        </description>
+      </parameter>
+
+    </group>
+  </groups>
+
+</application>
+

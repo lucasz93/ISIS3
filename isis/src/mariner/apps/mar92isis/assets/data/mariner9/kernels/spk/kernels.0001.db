@@ -1,0 +1,30 @@
+# The times in this file come from the listing in mariner9.0001.tsc.
+
+Object = SpacecraftPosition
+  RunTime = 2010-03-03T16:26:09
+
+  Group = Dependencies
+    SpacecraftClockKernel = $mariner9/kernels/sclk/mariner9.0001.tsc
+    LeapsecondKernel      = $base/kernels/lsk/naif0008.tls
+  End_Group
+  
+  Group = Selection
+    Time = ("1971 NOV 11 08:33:19.750 TDB", "1971 NOV 13 17:06:42.726 TDB")
+    File = $mariner9/kernels/spk/approach.bsp
+    Type = Reconstructed
+  End_Group
+
+  Group = Selection
+    Time = ("1971 NOV 14 01:29:18.817 TDB", "1972 APR 14 06:29:17.814 TDB")
+    File = $mariner9/kernels/spk/m9.bsp
+    Type = Reconstructed
+  End_Group
+
+  Group = Selection
+    Time = ("1972 JUN 08 21:10:06.000 TDB", "1972 OCT 16 23:39:02.000 TDB")
+    File = $mariner9/kernels/spk/extended.bsp
+    Type = Reconstructed
+  End_Group
+
+End_Object
+End

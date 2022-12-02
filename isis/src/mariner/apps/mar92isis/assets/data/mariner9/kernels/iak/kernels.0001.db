@@ -1,0 +1,13 @@
+Object = InstrumentAddendum
+  Group = Selection
+    Match = ("Instrument","InstrumentId","M9_VIDICON_A")
+    File  = ("mariner9", "kernels/iak/mariner9Addendum???.ti")
+  EndGroup
+
+  Group = Selection
+    Match = ("Instrument","InstrumentId","M9_VIDICON_B")
+    File  = ("mariner9", "kernels/iak/mariner9Addendum???.ti")
+  EndGroup
+
+EndObject
+

@@ -1,0 +1,29 @@
+# The times in this file come from the naif toolkit application "spacit", with
+#  a 1 minute padding on the start and end times.
+
+Object = SpacecraftPointing
+  RunTime = 2022-08-12T03:08:11
+
+  Group = Dependencies
+    SpacecraftClockKernel = $mariner9/kernels/sclk/mariner9.0001.tsc
+    LeapsecondKernel      = $base/kernels/lsk/naif0008.tls
+  End_Group
+
+  # M9_VIDICON_A and M9_VIDICON_B match because I merged them into the same kernel.
+  # That might not be 100% correct, but I figure the instruments point down the same axis so it doesn't matter in practice.
+  Group = Selection
+    Time = ("1971 NOV 11 08:32:19.750 TDB", "1972 OCT 17 00:54:14.207 TDB")
+    Match = ("Instrument","InstrumentId","M9_VIDICON_A")
+    File = $mariner9/kernels/ck/m9.bc
+    Type = Reconstructed
+  End_Group
+  
+  Group = Selection
+    Time = ("1971 NOV 11 08:32:19.750 TDB", "1972 OCT 17 00:54:14.207 TDB")
+    Match = ("Instrument","InstrumentId","M9_VIDICON_B")
+    File = $mariner9/kernels/ck/m9.bc
+    Type = Reconstructed
+  End_Group
+
+End_Object
+End

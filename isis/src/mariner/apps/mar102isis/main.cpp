@@ -263,6 +263,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   PvlKeyword valid("Valid");
   PvlKeyword templ("Template");
   PvlKeyword status("Status");
+  PvlKeyword master("Master");
 
   // All cubes will stay this way until indexOfrx is run on them
   status = "Nominal";
@@ -277,11 +278,13 @@ void UpdateLabels(Cube *cube, const QString &labels) {
     templ = "$mariner10/reseaus/mar10a.template.cub";
     naif += "-76110";
     camera = "M10_VIDICON_A_RESEAUS";
+    master = "$mariner10/reseaus/mar10aMasterReseaus.pvl";
   }
   else {
     templ = "$mariner10/reseaus/mar10b.template.cub";
     naif += "-76120";
     camera = "M10_VIDICON_B_RESEAUS";
+    master = "$mariner10/reseaus/mar10aMasterReseaus.pvl";
   }
 
   // Add naif frame code
@@ -312,7 +315,8 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   rx += valid;
   rx += templ;
   rx += status;
-
+  rx += master;
+  
   // Get the labels and add the updated labels to them
   Pvl *cubeLabels = cube->label();
   cubeLabels->findObject("IsisCube").addGroup(inst);

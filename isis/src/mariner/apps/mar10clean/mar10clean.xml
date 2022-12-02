@@ -9,7 +9,7 @@
     <p>
       Mar10clean performs the clean up of Mariner10 images. This includes salt 
       and pepper noise, removing reseaus, and trimming edges of invalid data. 
-      The program runs mar10nonoise to clean up noise followed by findrx and 
+      The program runs marnonoise to clean up noise followed by findrx and 
       remrx. Several lowpass filters fill in the null areas left by the noise 
       removal. Finally a trim is also completed which nulls the top 5 rows of 
       pixels, left 11 columns pixels, and the bottom 8 rows of pixels.
@@ -34,7 +34,7 @@
       <item>remrx</item>
       <item>trim</item>
       <item>lowpass</item>
-      <item>mar10nonoise</item> 
+      <item>marnonoise</item> 
       <item>mar10restore</item> </applications> 
   </seeAlso>
 

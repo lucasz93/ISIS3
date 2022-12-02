@@ -115,6 +115,9 @@ End
        to Pixel/Detector/Line/Sample resolutions, as well as providing the ability for developers
        to order the fields in CSV/Pvl output.  References #476"
     </change>
+    <change name="Lucas Zadrozny" date="2022-08-21">
+       Added PIXRES option.
+    </change>
 </history>
 
   <groups>
@@ -364,6 +367,19 @@ End
                        <TD>0.0 (Bad!)</TD>
                     </TR>
                 </TABLE>
+        </description>
+      </parameter>
+
+      <parameter name="PIXRES">
+        <type>string</type>
+        <default><item>Average</item></default>
+        <internalDefault>None</internalDefault>
+        <brief>
+           Pixel resolution calculation.
+        </brief>
+        <description>
+          Sets the computation used to determine the pixel resolution, based off the input cubes.
+          Can be AVERAGE, MIN, MAX.
         </description>
       </parameter>
     </group>

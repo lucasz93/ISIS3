@@ -59,10 +59,10 @@ void IsisMain() {
   p.SetOutputFile("TO");
   p.KeepTemporaryFiles(!ui.GetBoolean("REMOVE"));
 
-  // Run mar10nonoise to remove noise
-  p.AddToPipeline("mar10nonoise");
-  p.Application("mar10nonoise").SetInputParameter("FROM", true);
-  p.Application("mar10nonoise").SetOutputParameter("TO", "mar10nonoise");
+  // Run mar9nonoise to remove noise
+  p.AddToPipeline("marnonoise");
+  p.Application("marnonoise").SetInputParameter("FROM", true);
+  p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
 
   // Run findrx on the cube to find the actual position of the reseaus
   p.AddToPipeline("findrx");
