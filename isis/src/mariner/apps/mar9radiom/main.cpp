@@ -68,13 +68,13 @@ void IsisMain() {
     : BEXPT.at(EXPT_INDEX);
 
   Camera * cam = cube.camera();
-  bool camSuccess = cam->SetImage(cube.sampleCount()/2,cube.lineCount()/2);
-  if (!camSuccess) {
-    throw IException(IException::Unknown,
-        "Unable to calculate the Solar Distance on [" +
-        cube.fileName() + "]", _FILEINFO_);
-  }
-  const double SUND = cam->SolarDistance();
+
+  // Try to get the distance to a point in the image.
+  const double SUND = cam->SetImage(cube.sampleCount()/2,cube.lineCount()/2)
+    // Success! This is more accurate than the original m9radiom from ISIS 2.
+    ? cam->SolarDistance()
+    // This is the way ISIS 2 did it. Fall back if necessary.
+    : cam->sunToBodyDist();
   const double SUNDS = SUND * SUND;
   std::cout << " SUN DISTANCE IS: " << std::setw(6) << std::setprecision(7) << SUND << " AU." << std::endl;
 

@@ -1,0 +1,17 @@
+\begindata
+INPUT_DATA_TYPE   = 'STATES'
+OUTPUT_SPK_TYPE   = 9
+OBJECT_ID         = -9
+CENTER_NAME       = 'MARS BARYCENTER'
+REF_FRAME_NAME    = 'B1950'
+PRODUCER_ID       = 'Lucas Zadrozny'
+DATA_ORDER        = 'EPOCH X Y Z VX VY VZ'
+INPUT_DATA_UNITS  = ('ANGLES=DEGREES' 'DISTANCES=km')
+DATA_DELIMITER    = ' '
+LINES_PER_RECORD  = 1
+LEAPSECONDS_FILE  = '../../../base/kernels/lsk/naif0012.tls'
+POLYNOM_DEGREE    = 9
+SEGMENT_ID        = 'APPROACH'
+INPUT_DATA_FILE   = 'approach.txt'
+OUTPUT_SPK_FILE   = 'approach.bsp'
+\begintext
