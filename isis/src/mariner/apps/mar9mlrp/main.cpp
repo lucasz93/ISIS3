@@ -23,7 +23,7 @@ void IsisMain() {
 
   UserInterface &ui = Application::GetUserInterface();
 
-  const FileName from(ui.GetFileName("FROM"));
+  const FileName from(ui.GetCubeName("FROM"));
   const FileName tempFile(from.path() + "/" + from.baseName() + ".mar9mlrp." + from.extension());
 
   //
@@ -31,19 +31,19 @@ void IsisMain() {
   //
   {    
     Cube cube;
-    cube.open(ui.GetFileName("FROM"));
+    cube.open(ui.GetCubeName("FROM"));
     
     // Check that it is a Mariner10 cube.
     Pvl * labels = cube.label();
     if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
-      QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
+      QString msg = "The cube [" + ui.GetCubeName("FROM") + "] does not appear" +
         " to be a Mariner9 cube";
       throw IException(IException::User, msg, _FILEINFO_);
     }
 
     ProcessByLine p;
 
-    CubeAttributeOutput tempAtt(ui.GetFileName("FROM"));
+    CubeAttributeOutput tempAtt(ui.GetCubeName("FROM"));
 
     p.SetInputCube("FROM");
     p.SetOutputCube(tempFile.expanded(), tempAtt, cube.sampleCount(), cube.lineCount(), cube.bandCount());

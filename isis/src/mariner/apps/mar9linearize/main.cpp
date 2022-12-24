@@ -29,12 +29,12 @@ void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
 
   Cube cube;
-  cube.open(ui.GetFileName("FROM"));
+  cube.open(ui.GetCubeName("FROM"));
 
   // Check that it is a Mariner9 cube.
   Pvl * labels = cube.label();
   if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
-    QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
+    QString msg = "The cube [" + ui.GetCubeName("FROM") + "] does not appear" +
       " to be a Mariner9 cube";
     throw IException(IException::User, msg, _FILEINFO_);
   }
@@ -98,7 +98,7 @@ void IsisMain() {
 
   CubeAttributeOutput outputProperties;
   outputProperties.setPixelType(Real);
-  p.SetOutputCube(ui.GetFileName("TO"), outputProperties);
+  p.SetOutputCube(ui.GetCubeName("TO"), outputProperties);
 
   p.ProcessCubes(linearize, false);
 }

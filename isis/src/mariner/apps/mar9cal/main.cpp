@@ -21,11 +21,11 @@ void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
 
   Cube fromCube;
-  fromCube.open(ui.GetFileName("FROM"));
+  fromCube.open(ui.GetCubeName("FROM"));
 
   // Check that it is a Mariner9 cube.
   if ("Mariner_9" != (QString)fromCube.label()->findKeyword("SpacecraftName", Pvl::Traverse)) {
-    QString msg = "The cube [" + ui.GetFileName("FROM") + "] does not appear" +
+    QString msg = "The cube [" + ui.GetCubeName("FROM") + "] does not appear" +
         " to be a Mariner9 cube";
     throw IException(IException::User, msg, _FILEINFO_);
   }
