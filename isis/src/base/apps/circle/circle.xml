@@ -79,6 +79,17 @@
       </parameter>
     </group>
 
+    <group name="Masking: ">
+      <parameter name="TRIM">
+        <type>string</type>
+        <default>OUTSIDE</default>
+        <brief>Area to clear</brief>
+        <description>
+          Set to OUTSIDE or INSIDE to define whether data outside, or inside the defined circle is cleared.
+        </description>
+      </parameter>
+    </group>
+
     <group name="Define Circle By: ">
       <parameter name="DEFINITION">
         <type>string</type>

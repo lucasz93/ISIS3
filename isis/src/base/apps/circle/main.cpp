@@ -8,6 +8,7 @@ using namespace Isis;
 
 void circle(Buffer &in, Buffer &out);
 double cline, csamp, radius; // Global variables
+bool trimOutside = true;
 
 void IsisMain() {
   // We will be processing by line
@@ -24,6 +25,8 @@ void IsisMain() {
 
   // Override the defaults if the user entered a value
   UserInterface &ui = Application::GetUserInterface();
+
+  trimOutside = ui.GetString("TRIM") == "OUTSIDE";
 
   bool defByRadius = (ui.GetString("DEFINITION") == "CENTERRAD");
   bool defByEdge = !defByRadius;
@@ -86,12 +89,23 @@ void circle(Buffer &in, Buffer &out) {
     if(dist < 0.0) dist = 0.0;  // Shouldn't happen
     dist = sqrt(dist);
 
-    // Mask everything outside the radius and keep what is inside
-    if(dist <= radius) {
-      out[i] = in[i];
+    if (trimOutside) {
+      // Mask everything outside the radius and keep what is inside
+      if(dist <= radius) {
+        out[i] = in[i];
+      }
+      else {
+        out[i] = NULL8;
+      }
     }
     else {
-      out[i] = NULL8;
+      // Mask everything inside the radius and keep what is output
+      if(dist >= radius) {
+        out[i] = in[i];
+      }
+      else {
+        out[i] = NULL8;
+      }
     }
   }
 }
