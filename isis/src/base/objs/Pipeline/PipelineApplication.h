@@ -115,6 +115,7 @@ namespace Isis {
       }
 
       void SetInputParameter(const QString &inputParamName, bool supportsVirtualBands);
+      void SetInputParameter(const QString &inputParamName, const QString &value, bool supportsVirtualBands);
       void SetInputParameter(const QString &inputParamName, CustomParameterValue value, bool supportsVirtualBands);
 
       void SetOutputParameter(const QString &outputParamName, const QString &outNameModifier, const QString &outFileExtension = "cub");

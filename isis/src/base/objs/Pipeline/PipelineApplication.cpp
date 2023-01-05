@@ -82,6 +82,20 @@ namespace Isis {
     p_supportsVirtualBands = supportsVirtualBands;
   }
 
+  /**
+   * Set the input parameter for this application and whether or not this
+   * application supports the virtual bands functionality. It supports the virtual
+   * bands functionality if the input is an Isis cube.
+   *
+   * @param inputParamName Name of the input parameter, typically "FROM"
+   * @param supportsVirtualBands True if this application supports virtual bands
+   */
+  void PipelineApplication::SetInputParameter(const QString &inputParamName, const QString &value, bool supportsVirtualBands) {
+    p_input.clear();
+    p_input.push_back(PipelineParameter(inputParamName, value));
+    p_supportsVirtualBands = supportsVirtualBands;
+  }
+
 
   /**
    * Set the input parameter for this application and whether or not this
