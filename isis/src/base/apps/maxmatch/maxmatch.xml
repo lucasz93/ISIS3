@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="histmatch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Match modes of 2 cubes
+  </brief>
+
+  <description>
+    This program takes in two input images, FROM and MATCH, and transforms the mode of FROM to equal the MATCH cube.
+  </description>
+
+  <category>
+    <categoryItem>Math and Statistics</categoryItem>
+  </category>
+
+  <seeAlso>
+    <applications>
+      <item>equalizer</item>
+    </applications>
+  </seeAlso>
+
+  <history>
+    <change name="Lucas Zadrozny" date="2023-01-05">
+     Original version 
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input file to be altered 
+        </brief>
+        <description>
+          This file will have its mode scaled to resemble MATCH's histogram
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="MATCH">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input file to be matched
+        </brief>
+        <description>
+          This file's mode will be matched by FROM
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          The resultant cube containing the altered input file
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+</application>

@@ -17,7 +17,9 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
-void NullMissingLines(Buffer &in, Buffer &out);
+void NullStripes(Buffer &in, Buffer &out);
+int row = 0;
+bool isVidiconA = false;
 
 void IsisMain() {
 
@@ -45,10 +47,13 @@ void IsisMain() {
 
     CubeAttributeOutput tempAtt(ui.GetCubeName("FROM"));
 
+    const QString instrumentId = cube.label()->findKeyword("InstrumentId", Pvl::Traverse);
+    isVidiconA = instrumentId == "M9_VIDICON_A";
+
     p.SetInputCube("FROM");
     p.SetOutputCube(tempFile.expanded(), tempAtt, cube.sampleCount(), cube.lineCount(), cube.bandCount());
 
-    p.ProcessCube(NullMissingLines);
+    p.ProcessCube(NullStripes, false);
   }
 
   //
@@ -56,7 +61,7 @@ void IsisMain() {
   //
   {
     // Open the input cube
-    Pipeline p("mar9mlrp");
+    Pipeline p("mar9dstripe");
     p.SetInputFile(tempFile);
     p.SetOutputFile("TO");
     p.KeepTemporaryFiles(false);
@@ -74,21 +79,48 @@ void IsisMain() {
   QFile::remove(tempFile.expanded());
 }
 
-void NullMissingLines(Buffer &in, Buffer &out)
+void NullRange(Buffer& b, int begin, int end)
 {
-  const bool lineIsValid = !IsHighPixel(in[0]) || !IsHighPixel(in[1]) || !IsNullPixel(in[2]) || !IsNullPixel(in[3]);
-  if (lineIsValid)
+  for (int i = begin; i < end; ++i)
   {
-    for (int i = 0; i < in.size(); ++i)
-    {
-      out[i] = in[i];
-    }
+    b[i] = NULL8;
   }
-  else
+}
+
+void NullStripes(Buffer &in, Buffer &out)
+{
+  for (int i = 0; i < in.size(); ++i)
   {
-    for (int i = 0; i < in.size(); ++i)
-    {
-      out[i] = NULL8;
-    }
+    out[i] = in[i];
   }
+
+  // Only the A camera seems to have these stripe problems. So weird.
+  if (!isVidiconA)
+  {
+    return;
+  }
+
+  switch (row)
+  {
+    case 236: NullRange(out, 305, 818); break;
+    case 237: NullRange(out, 295, 818); break;
+    case 238: NullRange(out, 290, 818); break;
+    case 239: NullRange(out, 350, 818); break;
+
+    case 277: NullRange(out, 295, 800); break;
+    case 278: NullRange(out, 200, 800); break;
+    case 279: NullRange(out, 240, 800); break;
+  
+    case 576: NullRange(out, 300, 800); break;
+    case 577: NullRange(out, 295, 800); break;
+    case 578: NullRange(out, 295, 800); break;
+    case 579: NullRange(out, 295, 800); break;
+    
+    case 617: NullRange(out, 300, 815); break;
+    case 618: NullRange(out, 250, 815); break;
+    case 619: NullRange(out, 295, 800); break;
+    case 620: NullRange(out, 255, 800); break;
+  }
+
+  ++row;
 }

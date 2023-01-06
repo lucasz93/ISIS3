@@ -57,10 +57,10 @@ void IsisMain() {
 
   int das = fromLabels->findKeyword("ImageNumber", Pvl::Traverse);
   int prevDas = previousLabels->findKeyword("ImageNumber", Pvl::Traverse);
-  if (!ui.WasEntered("FORCE") && (das - prevDas <= 0 || das - prevDas > 70))
+  if (!ui.WasEntered("FORCE") && das - prevDas != 70)
   {
-    QString msg = "PREVIOUS DAS must be 70 DAS counts less than FROM";
-    throw IException(IException::User, msg, _FILEINFO_);
+    std::string msg = "PREVIOUS DAS (" + std::to_string(prevDas) + ") must be 70 DAS counts less than FROM DAS " + std::to_string(das);
+    throw IException(IException::User, QString(msg.c_str()), _FILEINFO_);
   }
   
   const auto fil = GetCalibrationFilePrefix(*fromLabels, *previousLabels);
@@ -115,7 +115,7 @@ static QString GetCalibrationFilePrefix(Pvl& fromLabels, Pvl& previousLabels)
 
   if (fil != "b" && fil != "2" && fil != "4")
   {
-    throw IException(IException::User, "Calibration file does not exist for this filter combination", _FILEINFO_);
+    throw IException(IException::User, "Calibration file does not exist for this filter combination (FROM = " + filter1 + ", PREVIOUS = " + filter2 + ")", _FILEINFO_);
   }
 
   return fil;
