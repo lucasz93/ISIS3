@@ -90,6 +90,12 @@ namespace Isis{
         p.SetExportType(ProcessExportPds::Fixed);
       }
 
+      if (!ui.GetBoolean("ATTACHED")) {
+        FileName outLabel(ui.GetFileName("TO", "lbl"));
+        QString outLabelName(outLabel.expanded());
+        p.SetDetached(outLabelName);
+      }
+
       if (ui.GetBoolean("CHECKSUM")) {
         p.setCanGenerateChecksum(true);
       }
@@ -102,7 +108,12 @@ namespace Isis{
       FileName outFile(ui.GetFileName("TO", "img"));
       QString outFileName(outFile.expanded());
       ofstream oCube(outFileName.toLatin1().data());
-      p.OutputLabel(oCube);
+      if (ui.GetBoolean("ATTACHED")) {
+        p.OutputLabel(oCube);
+      }
+      else {
+        p.OutputDetachedLabel();
+      }
       p.StartProcess(oCube);
       if (ui.GetBoolean("CHECKSUM")) {
         p.updateChecksumInLabel(oCube);

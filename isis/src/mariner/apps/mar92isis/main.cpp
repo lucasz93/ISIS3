@@ -40,12 +40,20 @@ void IsisMain() {
   // Determine whether input is a raw Mariner 10 image or an Isis 2 cube
   bool isRaw = false;
   FileName inputFile = ui.GetFileName("FROM");
-  Pvl label(inputFile.expanded());
 
-  // If the PVL created from the input labels is empty, then input is raw
-  if(label.groups() + label.objects() + label.keywords() == 0) {
+  try
+  {
+    // Raw VICAR labels have numeric extensions, indicating the file number on the source tape.
+    // mme_001.001, mme_034.117, etc.
+    std::stoi(inputFile.extension().toStdString());
     isRaw = true;
   }
+  catch(const std::exception& e)
+  {
+    // Guess we have a different extension. Assume it's a PDS label.
+    isRaw = false;
+  }
+  
 
   if (isRaw) {  
     ProcessImport p;
@@ -79,6 +87,7 @@ void IsisMain() {
     p.SetByteOrder(Lsb);
     p.SetDataSuffixBytes(136);
 
+    Pvl label(inputFile.expanded());
     p.SetPdsFile(inputFile.expanded(), "", label);
     Cube *oCube = p.SetOutputCube("TO");
 

@@ -203,6 +203,16 @@ better information.
           </option>
         </list>
       </parameter>
+
+      <parameter name="ATTACHED">
+        <type>boolean</type>
+        <default>true</default>
+        <brief>Output as attached or detached label</brief>
+        <description>
+          Output as attached or detached label.
+        </description>
+      </parameter>
+
       <parameter name="NULL">
         <type>boolean</type>
         <default><item>true</item></default>
