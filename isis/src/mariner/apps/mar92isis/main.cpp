@@ -64,7 +64,7 @@ void IsisMain() {
     p.StartProcess();
     unsigned char *header = (unsigned char *) p.FileHeader();
     QString labels = EbcdicToAscii(header);
-    if (ui.GetBoolean("PIXELSONLY"))
+    if (!ui.GetBoolean("PIXELSONLY"))
     {
       UpdateLabels(oCube, labels);
     }
