@@ -1,0 +1,208 @@
+Group = SpacecraftName
+  Auto
+  InputKey       = INSTRUMENT_HOST_NAME
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = SpacecraftName
+  OutputPosition = (Object, IsisCube, Group, Instrument)
+  Translation    = (Mariner_9, *)
+End_Group
+
+Group = InstrumentId
+  Auto
+  InputKey       = FILTER_NUMBER
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = InstrumentId
+  OutputPosition = (Object, IsisCube, Group, Instrument)
+  Translation    = (M9_VIDICON_B, 0)
+  Translation    = (M9_VIDICON_A, 1)
+  Translation    = (M9_VIDICON_A, 2)
+  Translation    = (M9_VIDICON_A, 3)
+  Translation    = (M9_VIDICON_A, 4)
+  Translation    = (M9_VIDICON_B, 5)
+  Translation    = (M9_VIDICON_A, 6)
+  Translation    = (M9_VIDICON_A, 7)
+  Translation    = (M9_VIDICON_A, 8)
+  Translation    = (*, 9)
+  Translation    = (M9_VIDICON_A, 10)
+  Translation    = (M9_VIDICON_A, 11)
+  Translation    = (M9_VIDICON_A, 12)
+  Translation    = (M9_VIDICON_A, 13)
+  Translation    = (M9_VIDICON_A, 14)
+  Translation    = (M9_VIDICON_A, 15)
+End_Group
+
+Group = TargetName
+  Auto
+  InputKey       = TARGET_NAME
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = TargetName
+  OutputPosition = (Object, IsisCube, Group, Instrument)
+  Translation    = (*, *)
+End_Group
+
+Group = StartTime
+  Auto
+  InputKey       = START_TIME
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = StartTime
+  OutputPosition = (Object, IsisCube, Group, Instrument)
+  Translation    = (*, *)
+End_Group
+
+Group = ExposureDuration
+  Auto
+  InputKey       = EXPOSURE_DURATION
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = ExposureDuration
+  OutputPosition = (Object, IsisCube, Group, Instrument)
+  Translation    = (*, *)
+End_Group
+
+Group = FilterName
+  Auto
+  InputKey       = FILTER_NUMBER
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = FilterName
+  OutputPosition = (Object, IsisCube, Group, BandBin)
+  Translation    = (*, 0)
+  Translation    = (Yellow, 1)
+  Translation    = (Orange, 2)
+  Translation    = (Orange, 3)
+  Translation    = (Green, 4)
+  Translation    = (*, 5)
+  Translation    = (Orange, 6)
+  Translation    = (Polaroid_120, 7)
+  Translation    = (Violet, 8)
+  Translation    = (*, 9)
+  Translation    = (Violet, 10)
+  Translation    = (Polaroid_0, 11)
+  Translation    = (Polaroid_60, 12)
+  Translation    = (Polaroid_60, 13)
+  Translation    = (Blue, 14)
+  Translation    = (Polaroid_60, 15)
+End_Group
+
+Group = FilterNumber
+  Auto
+  InputKey       = FILTER_NUMBER
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = FilterNumber
+  OutputPosition = (Object, IsisCube, Group, BandBin)
+  Translation    = (*, 0)
+  Translation    = (1, 1)
+  Translation    = (2, 2)
+  Translation    = (2, 3)
+  Translation    = (4, 4)
+  Translation    = (0, 5)
+  Translation    = (2, 6)
+  Translation    = (7, 7)
+  Translation    = (8, 8)
+  Translation    = (*, 9)
+  Translation    = (8, 10)
+  Translation    = (3, 11)
+  Translation    = (5, 12)
+  Translation    = (5, 13)
+  Translation    = (6, 14)
+  Translation    = (5, 15)
+End_Group
+
+Group = OriginalBand
+  Auto
+  InputKey       = BAND_BIN_ORIGINAL_BAND
+  InputGroup     = "QUBE,BAND_BIN"
+  InputPosition  = (QUBE, BAND_BIN)
+  InputDefault   = 1
+  OutputName     = OriginalBand
+  OutputPosition = (Object, IsisCube, Group, BandBin)
+  Translation    = (*, *)
+End_Group
+
+Group = Center
+  Auto
+  InputKey       = FILTER_NUMBER
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = Center
+  OutputPosition = (Object, IsisCube, Group, BandBin)
+  Translation    = (*, 0)
+  Translation    = (0.560, 1)
+  Translation    = (0.61, 2)
+  Translation    = (0.61, 3)
+  Translation    = (0.545, 4)
+  Translation    = (*, 5)
+  Translation    = (0.61, 6)
+  Translation    = (0.565, 7)
+  Translation    = (0.414, 8)
+  Translation    = (*, 9)
+  Translation    = (0.414, 10)
+  Translation    = (0.565, 11)
+  Translation    = (0.565, 12)
+  Translation    = (0.565, 13)
+  Translation    = (0.477, 14)
+  Translation    = (0.565, 15)
+End_Group
+
+Group = NaifFrameCode
+  Auto
+  InputKey       = FILTER_NUMBER
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  InputDefault   = Null
+  InputDefault   = 1
+  OutputName     = NaifFrameCode
+  OutputPosition = (Object, IsisCube, Group, Kernels)
+  Translation    = (-9120, 0)
+  Translation    = (-9110, 1)
+  Translation    = (-9110, 2)
+  Translation    = (-9110, 3)
+  Translation    = (-9110, 4)
+  Translation    = (-9120, 5)
+  Translation    = (-9110, 6)
+  Translation    = (-9110, 7)
+  Translation    = (-9110, 8)
+  Translation    = (*, 9)
+  Translation    = (-9110, 10)
+  Translation    = (-9110, 11)
+  Translation    = (-9110, 12)
+  Translation    = (-9110, 13)
+  Translation    = (-9110, 14)
+  Translation    = (-9110, 15)
+End_Group
+
+Group = GMT
+  Auto
+  InputKey       = IMAGE_TIME
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = GMT
+  OutputPosition = (Object, IsisCube, Group, Archive)
+  Translation    = (*, *)
+End_Group
+
+Group = Encounter
+  Auto
+  InputKey       = TARGET_NAME
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = Encounter
+  OutputPosition = (Object, IsisCube, Group, Archive)
+  Translation    = (*, *)
+End_Group
+
+Group = ImageNumber
+  Auto
+  InputKey       = PRODUCT_ID
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = ImageNumber
+  OutputPosition = (Object, IsisCube, Group, Archive)
+  Translation    = (*, *)
+End_Group
+End

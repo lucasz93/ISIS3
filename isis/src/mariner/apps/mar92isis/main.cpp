@@ -30,7 +30,7 @@ using namespace std;
 using namespace Isis;
 
 void UpdateLabels(Cube *cube, const QString &labels);
-void TranslateIsis2Labels(FileName &labelFile, Cube *oCube);
+void TranslatePdsLabels(FileName &labelFile, Cube *oCube);
 QString EbcdicToAscii(unsigned char *header);
 QString DaysToDate(int currentYear, int days);
 
@@ -47,30 +47,45 @@ void IsisMain() {
     isRaw = true;
   }
 
-  // Only support the original Mariner 9 images.
-  // I saw some weird size differences between some images which offsets the reseaus positions.
-  if(!isRaw) {
-    throw IException(IException::User, "Only raw Mariner 9 images are supported", _FILEINFO_);
+  if (isRaw) {  
+    ProcessImport p;
+
+    // All mariner images from both cameras share this size
+    p.SetDimensions(832, 700, 1);
+    p.SetFileHeaderBytes(968);
+    p.SaveFileHeader();
+    p.SetPixelType(UnsignedByte);
+    p.SetByteOrder(Lsb);
+    p.SetDataSuffixBytes(136);
+
+    p.SetInputFile(ui.GetFileName("FROM"));
+    Cube *oCube = p.SetOutputCube("TO");
+
+    p.StartProcess();
+    unsigned char *header = (unsigned char *) p.FileHeader();
+    QString labels = EbcdicToAscii(header);
+    if (ui.GetBoolean("PIXELSONLY"))
+    {
+      UpdateLabels(oCube, labels);
+    }
+    p.EndProcess();
   }
-  
-  ProcessImport p;
+  else {
+    ProcessImportPds p;
 
-  // All mariner images from both cameras share this size
-  p.SetDimensions(832, 700, 1);
-  p.SetFileHeaderBytes(968);
-  p.SaveFileHeader();
-  p.SetPixelType(UnsignedByte);
-  p.SetByteOrder(Lsb);
-  p.SetDataSuffixBytes(136);
+    // All mariner images from both cameras share this size
+    p.SetDimensions(832, 700, 1);
+    p.SetPixelType(UnsignedByte);
+    p.SetByteOrder(Lsb);
+    p.SetDataSuffixBytes(136);
 
-  p.SetInputFile(ui.GetFileName("FROM"));
-  Cube *oCube = p.SetOutputCube("TO");
+    p.SetPdsFile(inputFile.expanded(), "", label);
+    Cube *oCube = p.SetOutputCube("TO");
 
-  p.StartProcess();
-  unsigned char *header = (unsigned char *) p.FileHeader();
-  QString labels = EbcdicToAscii(header);
-  UpdateLabels(oCube, labels);
-  p.EndProcess();
+    TranslatePdsLabels(inputFile, oCube);
+    p.StartProcess();
+    p.EndProcess();
+  }
 }
 
 // Converts labels into standard pvl format and adds necessary
@@ -161,7 +176,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
 
       case 11:  // 19 total images.
         filterCenter = .565;
-        filterName = "Polaroid 0";
+        filterName = "Polaroid_0";
         filterPos = "3";
         break;
 
@@ -169,7 +184,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
       case 13:  // 1730 total images.
       case 15:  // 1 image. Taken between POL 60 images.
         filterCenter = .565;
-        filterName = "Polaroid 60";
+        filterName = "Polaroid_60";
         filterPos = "5";
         break;
 
@@ -233,7 +248,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   bandBin.findKeyword("Center").setUnits("micrometers");
 
   inst += PvlKeyword("TargetName", "Mars");
-    archive += PvlKeyword("Encounter", "Mars");
+  archive += PvlKeyword("Encounter", "Mars");
 
   // Place start time and exposure duration in intrument group
   inst += PvlKeyword("StartTime", fullTime);
@@ -323,6 +338,128 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   olabel.addObject(original);
   OriginalLabel ol(olabel);
   cube->write(ol);
+}
+
+// Translate PDS labels into Isis labels.
+void TranslatePdsLabels(FileName &labelFile, Cube *oCube) {
+  // Transfer the instrument group to the output cube
+  QString transDir = "$ISISROOT/appdata/translations/";
+  Pvl inputLabel(labelFile.expanded());
+  FileName transFile;
+
+  transFile = transDir + "Mariner9isis2.trn";
+
+  // Get the translation manager ready
+  PvlToPvlTranslationManager translation(inputLabel, transFile.expanded());
+  Pvl *outputLabel = oCube->label();
+  translation.Auto(*(outputLabel));
+  
+  //Instrument group
+  PvlGroup &inst = outputLabel->findGroup("Instrument", Pvl::Traverse);
+#if 0
+
+  PvlKeyword &instrumentId = inst.findKeyword("InstrumentId");
+  instrumentId.setValue("M10_VIDICON_" + instrumentId[0]);
+
+  PvlKeyword &targetName = inst.findKeyword("TargetName");
+  QString targetTail(targetName[0].mid(1));
+  targetTail = targetTail.toLower();
+  targetName.setValue(targetName[0].at(0) + targetTail);
+
+  PvlKeyword &startTime = inst.findKeyword("StartTime");
+  startTime.setValue(startTime[0].mid(0, startTime[0].size() - 1));
+
+  PvlGroup &archive = outputLabel->findGroup("Archive", Pvl::Traverse);
+  PvlKeyword &imgNo = archive.findKeyword("ImageNumber");
+  QString ino = imgNo[0];
+  ino = ino.trimmed();
+  imgNo.setValue(ino);
+
+  iTime time(startTime[0]);
+  if(time < iTime("1974-2-3T12:00:00")) {
+    archive += PvlKeyword("Encounter", "Moon");
+  }
+  else if(time < iTime("1974-3-22T12:00:00")) {
+    archive += PvlKeyword("Encounter", "Venus");
+  }
+  else if(time < iTime("1974-9-19T12:00:00")) {
+    archive += PvlKeyword("Encounter", "Mercury_1");
+  }
+  else if(time < iTime("1975-3-14T12:00:00")) {
+    archive += PvlKeyword("Encounter", "Mercury_2");
+  }
+  else {
+    archive += PvlKeyword("Encounter", "Mercury_3");
+  }
+
+  inst.findKeyword("ExposureDuration").setUnits("milliseconds");
+
+  PvlGroup &bBin = outputLabel->findGroup("BandBin", Pvl::Traverse);
+  QString filter = inputLabel.findObject("QUBE")["FILTER_NAME"];
+  if(filter != "F") {
+    //Band Bin group
+    bBin.findKeyword("Center").setUnits("micrometers");
+  }
+#endif
+  // Open nominal positions pvl named by QString encounter
+  Pvl nomRx("$mariner9/reseaus/mar9Nominal.pvl");
+
+  // Allocate all keywords within reseaus groups well as the group its self
+  PvlGroup rx("Reseaus");
+  PvlKeyword line("Line");
+  PvlKeyword sample("Sample");
+  PvlKeyword type("Type");
+  PvlKeyword valid("Valid");
+  PvlKeyword templ("Template");
+  PvlKeyword status("Status");
+  PvlKeyword master("Master");
+
+  // All cubes will stay this way until indexOfrx is run on them
+  status = "Nominal";
+
+  // Camera dependent information
+  QString camera = "";
+  QString camera_number_reseaus = "";
+  if(QString("M9_VIDICON_A") == inst["InstrumentId"][0]) {
+    templ = "$mariner9/reseaus/mar9a.template.cub";
+//    kernels.findKeyword("NaifFrameCode").setValue("-76110");
+    camera = "M9_VIDICON_A_RESEAUS";
+    camera_number_reseaus = "M9_VIDICON_A_NUMBER_RESEAUS";
+  }
+  else {
+    templ = "$mariner9/reseaus/mar9b.template.cub";
+//    kernels.findKeyword("NaifFrameCode").setValue("-76120");
+    camera = "M9_VIDICON_B_RESEAUS";
+    camera_number_reseaus = "M9_VIDICON_B_NUMBER_RESEAUS";
+  }
+
+  // Find the correct PvlKeyword corresponding to the camera for nominal positions
+  PvlKeyword resnom = nomRx[camera];
+  int rescount = nomRx[camera_number_reseaus];
+
+  // This loop goes through the PvlKeyword resnom which contains data
+  // in the format: line, sample, type, on each line. There are 111 reseaus for
+  // both cameras. To put data away correctly, it must go through a total 333 items,
+  // all in one PvlKeyword.
+  int i = 0;
+  while(i < rescount * 3) {
+    line += resnom[i];
+    i++;
+    sample += resnom[i];
+    i++;
+    type += resnom[i];
+    i++;
+    valid += "0";
+  }
+
+  // Add all the PvlKeywords to the PvlGroup Reseaus
+  rx += line;
+  rx += sample;
+  rx += type;
+  rx += valid;
+  rx += templ;
+  rx += status;
+  rx += master;
 }
 
 // FYI, mariner10 original labels are stored in ebcdic, a competitor with ascii,
