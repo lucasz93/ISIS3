@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9combine" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Combines the VICAR and PDS labels to increase signal to noise
+  </brief>
+
+  <description>
+    <p>
+      The Mariner 9 VICAR and PDS labels sometimes have different noise profiles.
+      Comparing the images lets us find and remove some of the noise.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner</missionItem>
+  </category>
+
+  <history>
+    <change name="Lucas Zadrozny" date="2023-01-10">
+      Original version
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input cube to be cleaned
+        </brief>
+        <description>
+          The VICAR or PDS cube (imported with mar92isis).
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="FROM2">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input cube to be cleaned
+        </brief>
+        <description>
+          The PDS or VICAR cube (imported with mar92isis).
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          The resultant cube containing the clean data.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+
+  </groups>
+
+</application>
+

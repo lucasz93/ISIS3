@@ -262,7 +262,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   // Place start time and exposure duration in intrument group
   inst += PvlKeyword("StartTime", fullTime);
   inst += PvlKeyword("ExposureDuration", exposure, "milliseconds");
-  inst += PvlKeyword("ImageNumber", das);
+  inst += PvlKeyword("ImageNumber", dasErt);
 
   // Open nominal positions pvl named by QString encounter
   Pvl nomRx("$mariner9/reseaus/mar9Nominal.pvl");
@@ -365,51 +365,8 @@ void TranslatePdsLabels(FileName &labelFile, Cube *oCube) {
   
   //Instrument group
   PvlGroup &inst = outputLabel->findGroup("Instrument", Pvl::Traverse);
-#if 0
-
-  PvlKeyword &instrumentId = inst.findKeyword("InstrumentId");
-  instrumentId.setValue("M10_VIDICON_" + instrumentId[0]);
-
-  PvlKeyword &targetName = inst.findKeyword("TargetName");
-  QString targetTail(targetName[0].mid(1));
-  targetTail = targetTail.toLower();
-  targetName.setValue(targetName[0].at(0) + targetTail);
-
-  PvlKeyword &startTime = inst.findKeyword("StartTime");
-  startTime.setValue(startTime[0].mid(0, startTime[0].size() - 1));
-
-  PvlGroup &archive = outputLabel->findGroup("Archive", Pvl::Traverse);
-  PvlKeyword &imgNo = archive.findKeyword("ImageNumber");
-  QString ino = imgNo[0];
-  ino = ino.trimmed();
-  imgNo.setValue(ino);
-
-  iTime time(startTime[0]);
-  if(time < iTime("1974-2-3T12:00:00")) {
-    archive += PvlKeyword("Encounter", "Moon");
-  }
-  else if(time < iTime("1974-3-22T12:00:00")) {
-    archive += PvlKeyword("Encounter", "Venus");
-  }
-  else if(time < iTime("1974-9-19T12:00:00")) {
-    archive += PvlKeyword("Encounter", "Mercury_1");
-  }
-  else if(time < iTime("1975-3-14T12:00:00")) {
-    archive += PvlKeyword("Encounter", "Mercury_2");
-  }
-  else {
-    archive += PvlKeyword("Encounter", "Mercury_3");
-  }
-
   inst.findKeyword("ExposureDuration").setUnits("milliseconds");
 
-  PvlGroup &bBin = outputLabel->findGroup("BandBin", Pvl::Traverse);
-  QString filter = inputLabel.findObject("QUBE")["FILTER_NAME"];
-  if(filter != "F") {
-    //Band Bin group
-    bBin.findKeyword("Center").setUnits("micrometers");
-  }
-#endif
   // Open nominal positions pvl named by QString encounter
   Pvl nomRx("$mariner9/reseaus/mar9Nominal.pvl");
 
@@ -469,6 +426,10 @@ void TranslatePdsLabels(FileName &labelFile, Cube *oCube) {
   rx += templ;
   rx += status;
   rx += master;
+
+  // Get the labels and add the updated labels to them
+  Pvl *cubeLabels = oCube->label();
+  cubeLabels->findObject("IsisCube").addGroup(rx);
 }
 
 // FYI, mariner10 original labels are stored in ebcdic, a competitor with ascii,
