@@ -29,6 +29,8 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
+int MeasureRawLabelLength(const QString& labelPath);
+
 void UpdateLabels(Cube *cube, const QString &labels);
 void TranslatePdsLabels(FileName &labelFile, Cube *oCube);
 QString EbcdicToAscii(unsigned char *header);
@@ -53,20 +55,21 @@ void IsisMain() {
     // Guess we have a different extension. Assume it's a PDS label.
     isRaw = false;
   }
-  
+
+  const auto from = ui.GetFileName("FROM");
 
   if (isRaw) {  
     ProcessImport p;
 
     // All mariner images from both cameras share this size
     p.SetDimensions(832, 700, 1);
-    p.SetFileHeaderBytes(968);
+    p.SetFileHeaderBytes(MeasureRawLabelLength(from));
     p.SaveFileHeader();
     p.SetPixelType(UnsignedByte);
     p.SetByteOrder(Lsb);
     p.SetDataSuffixBytes(136);
 
-    p.SetInputFile(ui.GetFileName("FROM"));
+    p.SetInputFile(from);
     Cube *oCube = p.SetOutputCube("TO");
 
     p.StartProcess();
@@ -95,6 +98,37 @@ void IsisMain() {
     p.StartProcess();
     p.EndProcess();
   }
+}
+
+int MeasureRawLabelLength(const QString& labelPath) {
+  std::ifstream fin(labelPath.toStdString());
+  if (!fin.good()) {
+    throw IException(IException::User, "Couldnt open FROM", _FILEINFO_);
+  }
+
+  unsigned char buffer[968];
+  
+  while (fin.good()) {
+    // Read the current record.
+    // Only the first 360 bytes are related to the label.
+    fin.read((char*)buffer, 968);
+
+    const auto ascii = EbcdicToAscii(buffer);
+
+    // Maximum of 5 labels can be stored in 360 bytes.
+    // Each label is 72 characters. A 'C' in the last character of each label indicates there is another character.
+    // After 5 labels have been read, we need to move to the next record to read another batch of 5.
+    // An 'L' in the last character indicates this is the last label.
+    for (int i = 0; i < 5; ++i)
+    {
+      if (ascii[i * 72 + 71] == 'L')
+      {
+        return fin.tellg();
+      }
+    }
+  }
+
+  throw IException(IException::User, "Failed to parse FROM. Last label not found.", _FILEINFO_);
 }
 
 // Converts labels into standard pvl format and adds necessary
@@ -460,10 +494,14 @@ QString EbcdicToAscii(unsigned char *header) {
   // Mariner 10 has 360 bytes of header information
   for(int i = 0; i < 360; i++) {
     header[i] = xlate[header[i]];
+    if (header[i] == 0)
+    {
+      header[i] = ' ';
+    }
   }
 
   // Put in a end of QString mark and return
-  header[215] = 0;
+  header[360] = 0;
   return QString((const char *)header);
 }
 
