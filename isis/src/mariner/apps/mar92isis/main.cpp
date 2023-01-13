@@ -108,11 +108,18 @@ int MeasureRawLabelLength(const QString& labelPath) {
 
   unsigned char buffer[968];
   
-  while (fin.good()) {
-    // Read the current record.
-    // Only the first 360 bytes are related to the label.
-    fin.read((char*)buffer, 968);
+  // Read the current record.
+  // Only the first 360 bytes are related to the label.
+  fin.read((char*)buffer, 968);
 
+  // mme_019.003 has a 4 byte prefix which throws everything out of whack. Skip it, and refresh the header.
+  if (buffer[0] == 0xFC && buffer[1] == 0x07 && buffer[2] == 0x01 && buffer[3] == 0x00 && buffer[4] == 0xF7 && buffer[5] == 0xF7)
+  {
+    fin.seekg(4);
+    fin.read((char*)buffer, 968);
+  }
+
+  while (!fin.eof()) {
     const auto ascii = EbcdicToAscii(buffer);
 
     // Maximum of 5 labels can be stored in 360 bytes.
@@ -126,6 +133,8 @@ int MeasureRawLabelLength(const QString& labelPath) {
         return fin.tellg();
       }
     }
+
+    fin.read((char*)buffer, 968);
   }
 
   throw IException(IException::User, "Failed to parse FROM. Last label not found.", _FILEINFO_);
