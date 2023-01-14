@@ -57,15 +57,19 @@ static void combine(vector<Buffer *> &in, vector<Buffer *> &out)
 
   double last = 0;
 
+  bool lineIsNull = true;
+
   for (int i = 0; i < from.SampleDimension(); ++i)
   {
+    lineIsNull = lineIsNull && from[i] == Null && from2[i] == Null;
+
     // Fill in NULL pixels from the other source.
-    if (from[i] == NULL8)
+    if (from[i] == Null)
     {
       last = to[i] = from2[i];
       continue;
     }
-    if (from2[i] == NULL8)
+    if (from2[i] == Null)
     {
       last = to[i] = from[i];
       continue;
@@ -88,5 +92,13 @@ static void combine(vector<Buffer *> &in, vector<Buffer *> &out)
     }
 
     last = to[i];
+  }
+
+  if (lineIsNull)
+  {
+    to[0] = to[1] = Hrs;
+    to[2] = to[3] = Null;
+    to[4] = to[5] = Hrs;
+    to[6] = to[7] = Null;
   }
 }

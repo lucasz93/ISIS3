@@ -75,10 +75,7 @@ void IsisMain() {
     p.StartProcess();
     unsigned char *header = (unsigned char *) p.FileHeader();
     QString labels = EbcdicToAscii(header);
-    if (!ui.GetBoolean("PIXELSONLY"))
-    {
-      UpdateLabels(oCube, labels);
-    }
+    UpdateLabels(oCube, labels);
     p.EndProcess();
   }
   else {
@@ -163,6 +160,18 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   consumeChars = labels.indexOf("CPICTURE") - keyPosition - key.length();
   QString dasErt(labels.mid(keyPosition + key.length(), consumeChars));
   dasErt = dasErt.trimmed();
+
+  if (!sedr.hasGroup(dasErt) && Application::GetUserInterface().GetBoolean("PIXELSONLY"))
+  {
+    // Create the instrument group
+    PvlGroup inst("Instrument");
+    inst += PvlKeyword("SpacecraftName", "Mariner_9");
+    inst += PvlKeyword("ImageNumber", dasErt);
+
+    Pvl *cubeLabels = cube->label();
+    cubeLabels->findObject("IsisCube").addGroup(inst);
+    return;
+  }
 
   const auto& metadata = sedr.findGroup(dasErt);
   QString das = metadata.findKeyword("DAS");
