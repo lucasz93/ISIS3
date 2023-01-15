@@ -29,7 +29,9 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
-int MeasureRawLabelLength(const QString& labelPath);
+int MeasureVicarLabelLength(const QString& labelPath, int recordLength);
+
+void Decode7Track(const FileName& from, const FileName& to);
 
 void UpdateLabels(Cube *cube, const QString &labels);
 void TranslatePdsLabels(FileName &labelFile, Cube *oCube);
@@ -40,30 +42,16 @@ void IsisMain() {
   UserInterface &ui = Application::GetUserInterface();
 
   // Determine whether input is a raw Mariner 10 image or an Isis 2 cube
-  bool isRaw = false;
   FileName inputFile = ui.GetFileName("FROM");
-
-  try
-  {
-    // Raw VICAR labels have numeric extensions, indicating the file number on the source tape.
-    // mme_001.001, mme_034.117, etc.
-    std::stoi(inputFile.extension().toStdString());
-    isRaw = true;
-  }
-  catch(const std::exception& e)
-  {
-    // Guess we have a different extension. Assume it's a PDS label.
-    isRaw = false;
-  }
-
   const auto from = ui.GetFileName("FROM");
+  const auto baseName = inputFile.baseName();
 
-  if (isRaw) {  
+  if (baseName.startsWith("mme_")) {  
     ProcessImport p;
 
     // All mariner images from both cameras share this size
     p.SetDimensions(832, 700, 1);
-    p.SetFileHeaderBytes(MeasureRawLabelLength(from));
+    p.SetFileHeaderBytes(MeasureVicarLabelLength(from, 968));
     p.SaveFileHeader();
     p.SetPixelType(UnsignedByte);
     p.SetByteOrder(Lsb);
@@ -77,6 +65,27 @@ void IsisMain() {
     QString labels = EbcdicToAscii(header);
     UpdateLabels(oCube, labels);
     p.EndProcess();
+  }
+  else if (baseName.startsWith("tvr_")) {
+    const auto decoded7TrackPath = FileName::createTempFile(inputFile.path() + "/" + baseName + "-decoded.cub");
+    Decode7Track(inputFile, decoded7TrackPath);
+
+    ProcessImport p;
+
+    // All mariner images from both cameras share this size
+    p.SetDimensions(950, 800, 1);
+    p.SetFileHeaderBytes(MeasureVicarLabelLength(decoded7TrackPath.expanded(), 1900));
+    p.SaveFileHeader();
+    p.SetPixelType(UnsignedWord);
+    p.SetByteOrder(Lsb);
+
+    p.SetInputFile(decoded7TrackPath.expanded());
+    Cube *oCube = p.SetOutputCube("TO");
+
+    p.StartProcess();
+    p.EndProcess();
+
+    QFile::remove(decoded7TrackPath.expanded());
   }
   else {
     ProcessImportPds p;
@@ -97,27 +106,20 @@ void IsisMain() {
   }
 }
 
-int MeasureRawLabelLength(const QString& labelPath) {
-  std::ifstream fin(labelPath.toStdString());
+int MeasureVicarLabelLength(const QString& labelPath, int recordLength) {
+  std::ifstream fin(labelPath.toStdString(), std::ios::binary);
   if (!fin.good()) {
     throw IException(IException::User, "Couldnt open FROM", _FILEINFO_);
   }
 
-  unsigned char buffer[968];
+  std::vector<unsigned char> buffer(recordLength);
   
   // Read the current record.
   // Only the first 360 bytes are related to the label.
-  fin.read((char*)buffer, 968);
-
-  // mme_019.003 has a 4 byte prefix which throws everything out of whack. Skip it, and refresh the header.
-  if (buffer[0] == 0xFC && buffer[1] == 0x07 && buffer[2] == 0x01 && buffer[3] == 0x00 && buffer[4] == 0xF7 && buffer[5] == 0xF7)
-  {
-    fin.seekg(4);
-    fin.read((char*)buffer, 968);
-  }
+  fin.read((char*)buffer.data(), recordLength);
 
   while (!fin.eof()) {
-    const auto ascii = EbcdicToAscii(buffer);
+    const auto ascii = EbcdicToAscii(buffer.data());
 
     // Maximum of 5 labels can be stored in 360 bytes.
     // Each label is 72 characters. A 'C' in the last character of each label indicates there is another character.
@@ -131,10 +133,32 @@ int MeasureRawLabelLength(const QString& labelPath) {
       }
     }
 
-    fin.read((char*)buffer, 968);
+    fin.read((char*)buffer.data(), recordLength);
   }
 
   throw IException(IException::User, "Failed to parse FROM. Last label not found.", _FILEINFO_);
+}
+
+void Decode7Track(const FileName& from, const FileName& to)
+{
+  std::ifstream fin (from.expanded().toStdString(), std::ios::binary);
+  std::ofstream fout(to.expanded().toStdString(), std::ios::binary);
+
+  unsigned char src[4];
+
+  fin.seekg(2);
+  fin.read((char*)src, 4);
+  while (!fin.eof())
+  {
+    unsigned char dst[3];
+
+    dst[0] = ( 4 *  src[0])       + (src[1] / 16);
+    dst[1] = (16 * (src[1] % 16)) + (src[2] / 4);
+    dst[2] = (64 * (src[2] % 4))  +  src[3];
+
+    fout.write((const char*)dst, 3);
+    fin.read((char*)src, 4);
+  }
 }
 
 // Converts labels into standard pvl format and adds necessary
