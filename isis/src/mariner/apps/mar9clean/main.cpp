@@ -13,6 +13,7 @@ find files of those names at the top level of this repository. **/
 #include "IException.h"
 #include "Pipeline.h"
 #include "Statistics.h"
+#include "History.h"
 
 using namespace std;
 using namespace Isis;
@@ -30,23 +31,11 @@ void IsisMain() {
     throw IException(IException::User, msg, _FILEINFO_);
   }
 
-  // Check that the cube actually needs cleaning. This verifies that it
-  // wasn't a "compressed" cube and that it hasn't been cleaned.
-  Chip cp(5, 5);
-  cp.TackCube(2.5, 2.5);
-  cp.Load(fromCube);
-  Statistics *stats = NULL;
-  stats = cp.Statistics();
-  cout << "Valid pixels: "<< stats->ValidPixels() << endl;
-  const bool alreadyCleaned = stats->ValidPixels() == 0;
-  if (alreadyCleaned && !ui.GetBoolean("REPEAT")) {
+  // Check that the cube actually needs cleaning.
+  if (fromCube.readHistory().ReturnHist().hasObject("remrx")) {
     QString msg = "The cube [" + ui.GetCubeName("FROM") + "]" +
       " appears to have already been cleaned";
     throw IException(IException::User, msg, _FILEINFO_);
-  }
-  if (stats != NULL) {
-    delete stats;
-    stats = NULL;
   }
 
   // Open the input cube
@@ -55,24 +44,21 @@ void IsisMain() {
   p.SetOutputFile("TO");
   p.KeepTemporaryFiles(!ui.GetBoolean("REMOVE"));
 
-  if (!alreadyCleaned)
-  {
-    // Run marnonoise to remove noise
-    p.AddToPipeline("marnonoise");
-    p.Application("marnonoise").SetInputParameter("FROM", true);
-    p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
+  // Run marnonoise to remove noise
+  p.AddToPipeline("marnonoise");
+  p.Application("marnonoise").SetInputParameter("FROM", true);
+  p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
 
-    // Run findrx on the cube to find the actual position of the reseaus
-    p.AddToPipeline("findrx");
-    p.Application("findrx").SetInputParameter("FROM", false);
+  // Run findrx on the cube to find the actual position of the reseaus
+  p.AddToPipeline("findrx");
+  p.Application("findrx").SetInputParameter("FROM", false);
 
-    // Run remrx on the cube to remove the reseaus
-    p.AddToPipeline("remrx");
-    p.Application("remrx").SetInputParameter("FROM", true);
-    p.Application("remrx").SetOutputParameter("TO", "remrx");
-    p.Application("remrx").AddParameter("SDIM", "SDIM");
-    p.Application("remrx").AddParameter("LDIM", "LDIM");
-  }
+  // Run remrx on the cube to remove the reseaus
+  p.AddToPipeline("remrx");
+  p.Application("remrx").SetInputParameter("FROM", true);
+  p.Application("remrx").SetOutputParameter("TO", "remrx");
+  p.Application("remrx").AddParameter("SDIM", "SDIM");
+  p.Application("remrx").AddParameter("LDIM", "LDIM");
 
   // Run a low pass filter on the null data in the cube
   p.AddToPipeline("lowpass", "pass1");
@@ -100,12 +86,9 @@ void IsisMain() {
   p.Application("trim").AddConstParameter("LEFT", "11");
   p.Application("trim").AddConstParameter("RIGHT", "8");
 
-  if (!alreadyCleaned)
-  {
-    p.AddToPipeline("mar9mlrp");
-    p.Application("mar9mlrp").SetInputParameter("FROM", true);
-    p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
-  }
+  p.AddToPipeline("mar9mlrp");
+  p.Application("mar9mlrp").SetInputParameter("FROM", true);
+  p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
 
   cout << p;
   p.Run();

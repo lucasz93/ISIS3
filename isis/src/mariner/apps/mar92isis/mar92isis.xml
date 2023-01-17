@@ -56,19 +56,6 @@
       </parameter>
     </group>
 
-    <group name="Options">
-      <parameter name="PIXELSONLY">
-        <type>boolean</type>
-          <brief>
-            Don't sample the SEDR
-          </brief>
-        <description>
-          Some labels don't have an entry in the SEDR. Normally this would prevent the output from being generated.
-          Use this setting if you still want to see the pretty picture.
-        </description>
-        <default><item>FALSE</item></default>
-      </parameter>
-    </group>
   </groups>
 
   <examples>

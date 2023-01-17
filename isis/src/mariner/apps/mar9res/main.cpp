@@ -16,6 +16,8 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
+static double prevScale = 1.0;
+
 static QString GetCalibrationFilePrefix(Pvl& fromLabels, Pvl& previousLabels);
 static void resred(vector<Buffer *> &in, vector<Buffer *> &out);
 
@@ -72,6 +74,8 @@ void IsisMain() {
   {
     throw IException(IException::Io, "Couldn't find calibration file!", _FILEINFO_);
   }
+
+  prevScale = (double)fromLabels->findKeyword("ExposureDuration", Pvl::Traverse) / (double)previousLabels->findKeyword("ExposureDuration", Pvl::Traverse);
 
   // Setup guard values?
   for (int I = 0; I < 166; ++I)
@@ -183,10 +187,12 @@ static void resred(vector<Buffer *> &in, vector<Buffer *> &out)
     static short IRES1, IRES3, IRES4;
     static double T, U, RES;
 
+    const auto PREIS = PRE[IS] * prevScale;
+
     for (int I = 0; I < 5; ++I)
     {
       if (CUR[IS] > N2[I][ISD]) IDX2 = I + 1;
-      if (PRE[IS] > N1[I][ISD]) IDX1 = I + 1;
+      if (PREIS   > N1[I][ISD]) IDX1 = I + 1;
     }
 
     if (IDX1 > 4)
@@ -292,7 +298,7 @@ static void resred(vector<Buffer *> &in, vector<Buffer *> &out)
       }
     }
     
-    T = double(PRE[IS] - IN1) / double(N1[IDX1][ISD] - IN1);
+    T = double(PREIS   - IN1) / double(N1[IDX1][ISD] - IN1);
     U = double(CUR[IS] - IN2) / double(N2[IDX2][ISD] - IN2);
     RES = (1.-T)*(1.-U)*double(IRES4) + T*(1.-U)*double(IRES3) + T*U*double(IRES[IDX2][IDX1][ISD]) + (1.-T)*U*double(IRES1);
     OUT[IS] = CUR[IS] - std::round(RES/16.);

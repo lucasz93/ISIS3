@@ -185,27 +185,61 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   QString dasErt(labels.mid(keyPosition + key.length(), consumeChars));
   dasErt = dasErt.trimmed();
 
-  if (!sedr.hasGroup(dasErt) && Application::GetUserInterface().GetBoolean("PIXELSONLY"))
+  QString gmt, ccamera, filterId, description, fullTime;
+  if (sedr.hasGroup(dasErt))
   {
-    // Create the instrument group
-    PvlGroup inst("Instrument");
-    inst += PvlKeyword("SpacecraftName", "Mariner_9");
-    inst += PvlKeyword("ImageNumber", dasErt);
+    // SEDR is more reliable. Sometimes things are wrong in the label.
+    const auto& metadata = sedr.findGroup(dasErt);
+    gmt = (QString)metadata.findKeyword("MeasurementTime");
+    ccamera = ((QString)metadata.findKeyword("Instrument")).mid(3, 1); // "TV*A" -> "A".
+    filterId = (QString)metadata.findKeyword("FilterID");
+    description = (QString)metadata.findKeyword("Description");
 
-    Pvl *cubeLabels = cube->label();
-    cubeLabels->findObject("IsisCube").addGroup(inst);
-    return;
+    {
+      std::istringstream igmt(gmt.toStdString());
+      std::string year, day, time;
+      std::getline(igmt, year, ':');
+      std::getline(igmt, day, ':');
+      std::getline(igmt, time);
+
+      int years = toInt(QString(year.c_str()));
+      int days = toInt(QString(day.c_str()));
+      QString date = DaysToDate(years, days);
+
+      // Construct the Start Time in yyyy-mm-ddThh:mm:ss format
+      fullTime = date + "T" + QString(time.c_str());
+      iTime startTime(fullTime);
+    }
   }
+  else
+  {
+    // Fallback to the label, if necessary.
+    // Better to have a picture with inaccurate data, instead of no picture.
+    key = "YR ";
+    keyPosition = labels.indexOf(key);
+    consumeChars = labels.indexOf("DAS TIME") - keyPosition - key.length();
 
-  const auto& metadata = sedr.findGroup(dasErt);
-  QString das = metadata.findKeyword("DAS");
-  QString gmt = metadata.findKeyword("MeasurementTime");
-  QString ccamera = metadata.findKeyword("Instrument");
-  QString filterId = metadata.findKeyword("FilterID");
-  QString mdr = metadata.findKeyword("MDR");
-  QString description = metadata.findKeyword("Description");
+    std::string pad, time;
+    int years, days;
+    std::istringstream iss(QString(labels.mid(keyPosition + key.length(), consumeChars)).toStdString());
+    iss >> years >> pad >> days >> pad >> time;
 
-  ccamera = ccamera.mid(3, 1);
+    std::string formattedTime = time.substr(0, 2) + ":" + time.substr(2, 2) + ":" + time.substr(4, 2);
+   
+    std::ostringstream ogmt;
+    ogmt << 1900 + years << ":" << days << ":" << formattedTime;
+    gmt = ogmt.str().c_str();
+
+    fullTime = DaysToDate(1900 + years, days) + QString("T") + formattedTime.c_str();
+
+    ccamera = labels.contains("***A******") ? "A" : "B";
+
+    key = "FILTER POS ";
+    keyPosition = labels.indexOf(key);
+    consumeChars = labels.indexOf("CALT") - keyPosition - key.length();
+    filterId = QString(labels.mid(keyPosition + key.length(), consumeChars));
+    filterId = filterId.trimmed();
+  }
 
   // This table was constructed using the SEDR and paper "Verification of Performance of the Mariner 9 Television Cameras".
   double filterCenter = 0.;
@@ -214,7 +248,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
     // I've only even seen these asterix appear on the B camera.
     // Sanity check here.
     if (filterId == "*")
-      throw IException(IException::Programmer, "Camera A, DAS TIME [" + das + "] has an unknown filter", _FILEINFO_);
+      throw IException(IException::Programmer, "Camera A, DAS TIME [" + dasErt + "] has an unknown filter", _FILEINFO_);
 
     int fnum = toInt(filterId);
     switch(fnum) {
@@ -299,28 +333,9 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   inst += PvlKeyword("SpacecraftName", "Mariner_9");
   inst += PvlKeyword("InstrumentId", "M9_VIDICON_" + ccamera);
 
-  // Get the date
-  QString fullTime;
-  {
-    std::istringstream igmt(gmt.toStdString());
-    std::string year, day, time;
-    std::getline(igmt, year, ':');
-    std::getline(igmt, day, ':');
-    std::getline(igmt, time);
-
-    int years = toInt(QString(year.c_str()));
-    int days = toInt(QString(day.c_str()));
-    QString date = DaysToDate(years, days);
-
-    // Construct the Start Time in yyyy-mm-ddThh:mm:ss format
-    fullTime = date + "T" + QString(time.c_str());
-    iTime startTime(fullTime);
-  }
-
   // Create the archive group
   PvlGroup archive("Archive");
   archive += PvlKeyword("GMT", gmt);
-  archive += PvlKeyword("MDR", mdr);
   archive += PvlKeyword("Description", description);
 
   // Create the band bin group
@@ -467,12 +482,14 @@ void TranslatePdsLabels(FileName &labelFile, Cube *oCube) {
 //    kernels.findKeyword("NaifFrameCode").setValue("-76110");
     camera = "M9_VIDICON_A_RESEAUS";
     camera_number_reseaus = "M9_VIDICON_A_NUMBER_RESEAUS";
+    master = "$mariner9/reseaus/mar9aMasterReseaus.pvl";
   }
   else {
     templ = "$mariner9/reseaus/mar9b.template.cub";
 //    kernels.findKeyword("NaifFrameCode").setValue("-76120");
     camera = "M9_VIDICON_B_RESEAUS";
     camera_number_reseaus = "M9_VIDICON_B_NUMBER_RESEAUS";
+    master = "$mariner9/reseaus/mar9bMasterReseaus.pvl";
   }
 
   // Find the correct PvlKeyword corresponding to the camera for nominal positions

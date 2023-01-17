@@ -116,15 +116,6 @@
         <default><item>9</item></default>
       </parameter> 
 
-      <parameter name="REPEAT">
-        <type>boolean</type>
-        <default><item>false</item></default>
-        <brief>Clean the input cube again</brief>
-        <description>
-            Force noise removal to happen again, even if the input cube has been previously cleaned
-        </description>
-      </parameter>
-
     </group>
   </groups>
 

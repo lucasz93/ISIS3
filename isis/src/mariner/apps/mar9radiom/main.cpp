@@ -47,6 +47,7 @@ void IsisMain() {
   const double EXPTL = (double)labels->findKeyword("ExposureDuration", Pvl::Traverse) / 1000.0;
 
   const QString FILTER = labels->findKeyword("FilterName", Pvl::Traverse);
+  std::cout << "Camera: " << CAMERA.toStdString() << std::endl;
   const int IF = CAMERA == "M9_VIDICON_A"
     ? (int)labels->findKeyword("FilterNumber", Pvl::Traverse)
     : 9;
@@ -60,12 +61,12 @@ void IsisMain() {
 
   std::cout << " EXPOSURE TIME: " << std::setw(5) << std::setprecision(3) << EXPTL << " SEC." << std::endl;
   
-  const std::array<double, 12> AEXPT{ 3.93, 6.75, 12.66, 24.51, 48.26, 95.67, 190.42, 379.98, 759., 1517.2, 3033.57, 6066.3 };
-  const std::array<double, 12> BEXPT{ 3.98, 6.95, 12.86, 24.62, 48.42, 95.80, 186.50, 380.10, 759., 1517.0, 3033.17, 6065.5 };
-  const int EXPT_INDEX = std::round(std::log(EXPTL/.003)/0.6931471806);
+  const std::array<double, 14> AEXPT{ 1.0, 2.511, 3.93, 6.75, 12.66, 24.51, 48.26, 95.67, 190.42, 379.98, 759., 1517.2, 3033.57, 6066.3 };
+  const std::array<double, 14> BEXPT{ 1.0, 2.54,  3.98, 6.95, 12.86, 24.62, 48.42, 95.80, 186.50, 380.10, 759., 1517.0, 3033.17, 6065.5 };
+  const int EXPT_INDEX = std::round(std::log(EXPTL/.001)/0.6931471806);
   if (EXPT_INDEX > AEXPT.size())
   {
-    std::string err = "Larger than expected ExposureDuration [" + std::to_string(EXPTL) + "]";
+    std::string err = "Larger than expected ExposureDuration [" + std::to_string(EXPTL) + "]. Produces EXPT index of [" + std::to_string(EXPT_INDEX) + "]";
     throw IException(IException::User, QString(err.c_str()), _FILEINFO_);
   }
   const double EXPT = CAMERA == "M9_VIDICON_A"

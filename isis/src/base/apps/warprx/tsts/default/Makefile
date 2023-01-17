@@ -1,4 +1,4 @@
-APPNAME = apollowarp
+APPNAME = warprx
 
 include $(ISISROOT)/make/isismake.tsts
 
