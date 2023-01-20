@@ -299,6 +299,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
         filterPos = "3";
         break;
 
+      case  9:  // 1 image. Taken between POL 60 images.
       case 12:  // 1 image. Taken between POL 60 images.
       case 13:  // 1730 total images.
       case 15:  // 1 image. Taken between POL 60 images.
