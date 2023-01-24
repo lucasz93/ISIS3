@@ -97,6 +97,27 @@
             <default><item>false</item></default>
         </parameter>
     </group>
+
+    <group name="Other Options">
+        <parameter name ="FORCEREFINE">
+            <type>boolean</type>
+            <brief>
+                Flag a failed match as Valid.
+            </brief>
+            <description>
+                findrx will use a search chip to refine a reseau position, given the initial position.
+                When the search chip fails, the position is marked as invalid.
+
+                However there are times where it's desirable to just keep the initial position and flag
+                it as valid rather than outright rejecting it.
+
+                For example: marnonoise will sometimes NULL the reseau pixels. We know the initial position
+                is already a reasonable guess, and invalid reseaus will prevent the camera distortion
+                map from accurate dewarping. So using the initial position is the Lesser Evil.
+            </description>
+            <default><item>false</item></default>
+        </parameter>
+    </group>
   </groups>
 
 </application>

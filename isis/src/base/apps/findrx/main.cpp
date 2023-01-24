@@ -104,6 +104,9 @@ void IsisMain() {
       reseaus["Line"][res] = toString(ar->CubeLine());
       reseaus["Valid"][res] = "1";
     }
+    else if (ui.GetBoolean("FORCEREFINE")) {
+      reseaus["Valid"][res] = "1";
+    }
     else {
       reseaus["Valid"][res] = "0";
     }

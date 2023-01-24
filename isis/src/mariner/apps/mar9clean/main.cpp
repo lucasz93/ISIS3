@@ -50,8 +50,13 @@ void IsisMain() {
   p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
 
   // Run findrx on the cube to find the actual position of the reseaus
-  p.AddToPipeline("findrx");
-  p.Application("findrx").SetInputParameter("FROM", false);
+  auto &reseaus = fromCube.label()->findGroup("Reseaus", Pvl::Traverse);
+  if ((QString)reseaus["Status"] != "Refined")
+  {
+    p.AddToPipeline("findrx");
+    p.Application("findrx").SetInputParameter("FROM", false);
+    p.Application("findrx").AddConstParameter("FORCEREFINE", "true");
+  }
 
   // Run remrx on the cube to remove the reseaus
   p.AddToPipeline("remrx");
