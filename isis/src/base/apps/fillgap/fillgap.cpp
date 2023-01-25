@@ -17,6 +17,7 @@ namespace Isis {
 
   //Global variables
   int numSpecPixKept;
+  bool onlyFillNulls = false;
 
   void fillgap(UserInterface &ui, Pvl *log) {
 
@@ -33,6 +34,7 @@ namespace Isis {
   void fillgap(Cube *inCube, UserInterface &ui, Pvl *log) {
     // initialize global variables
     numSpecPixKept = 0;
+    onlyFillNulls = ui.GetBoolean("ONLYFILLNULLS");
     CubeAttributeOutput &att = ui.GetOutputAttribute("TO");
 
 
@@ -108,7 +110,7 @@ namespace Isis {
     // Fill the data set with valid pixel values
     NumericalApproximation spline(iType);
     for(int i = 0; i < in.size(); i++) {
-      if(!IsSpecial(in[i])) {
+      if(onlyFillNulls ? !IsNullPixel(in[i]) : !IsSpecial(in[i])) {
         spline.AddData((double)(i + 1), in[i]);
       }
     }
@@ -116,7 +118,7 @@ namespace Isis {
     // loop through output buffer
     for(int j = 0 ; j < out.size() ; j++) {
       // if the input pixel is valid, copy it
-      if(!IsSpecial(in[j])) {
+      if(onlyFillNulls ? !IsNullPixel(in[j]) : !IsSpecial(in[j])) {
         out[j] = in[j];
       }
       // otherwise, try to interpolate from the valid values

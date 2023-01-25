@@ -17,78 +17,58 @@ find files of those names at the top level of this repository. **/
 using namespace std;
 using namespace Isis;
 
-void NullMissingLines(Buffer &in, Buffer &out);
+void FillMissingLines(Buffer &in, Buffer &out);
+
+static std::array<double, 832> lastValidLine{ 0 };
 
 void IsisMain() {
 
   UserInterface &ui = Application::GetUserInterface();
 
   const FileName from(ui.GetCubeName("FROM"));
-  const FileName tempFile(from.path() + "/" + from.baseName() + ".mar9mlrp." + from.extension());
 
-  //
-  // NULL the bad lines.
-  //
-  {    
-    Cube cube;
-    cube.open(ui.GetCubeName("FROM"));
-    
-    // Check that it is a Mariner10 cube.
-    Pvl * labels = cube.label();
-    if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
-      QString msg = "The cube [" + ui.GetCubeName("FROM") + "] does not appear" +
-        " to be a Mariner9 cube";
-      throw IException(IException::User, msg, _FILEINFO_);
-    }
-
-    ProcessByLine p;
-
-    CubeAttributeOutput tempAtt(ui.GetCubeName("FROM"));
-
-    p.SetInputCube("FROM");
-    p.SetOutputCube(tempFile.expanded(), tempAtt, cube.sampleCount(), cube.lineCount(), cube.bandCount());
-
-    p.ProcessCube(NullMissingLines);
+  Cube cube;
+  cube.open(ui.GetCubeName("FROM"));
+  
+  // Check that it is a Mariner10 cube.
+  Pvl * labels = cube.label();
+  if ("Mariner_9" != (QString)labels->findKeyword("SpacecraftName", Pvl::Traverse)) {
+    QString msg = "The cube [" + ui.GetCubeName("FROM") + "] does not appear" +
+      " to be a Mariner9 cube";
+    throw IException(IException::User, msg, _FILEINFO_);
   }
 
-  //
-  // Fill the gaps.
-  //
-  {
-    // Open the input cube
-    Pipeline p("mar9mlrp");
-    p.SetInputFile(tempFile);
-    p.SetOutputFile("TO");
-    p.KeepTemporaryFiles(false);
+  ProcessByLine p;
 
-    // Run marnonoise to remove noise
-    p.AddToPipeline("fillgap");
-    p.Application("fillgap").SetInputParameter("FROM", true);
-    p.Application("fillgap").SetOutputParameter("TO", "fillgap");
-    p.Application("fillgap").AddConstParameter("DIRECTION", "SAMPLE");
-    p.Application("fillgap").AddConstParameter("INTERP", "LINEAR");
+  p.SetInputCube("FROM");
+  p.SetOutputCube("TO");
 
-    p.Run();
-  }
-
-  QFile::remove(tempFile.expanded());
+  p.ProcessCube(FillMissingLines, false);
 }
 
-void NullMissingLines(Buffer &in, Buffer &out)
+bool IsLineValid(Buffer &in)
 {
-  const bool lineIsValid = !IsHighPixel(in[0]) || !IsHighPixel(in[1]) || !IsNullPixel(in[2]) || !IsNullPixel(in[3]);
-  if (lineIsValid)
+  return !(IsHighPixel(in[0]) && IsHighPixel(in[1]) && IsNullPixel(in[2]) && IsNullPixel(in[3]));
+}
+
+void FillMissingLines(Buffer &in, Buffer &out)
+{
+  if (IsLineValid(in))
   {
     for (int i = 0; i < in.size(); ++i)
     {
       out[i] = in[i];
+      if (!IsNullPixel(out[i]))
+      {
+        lastValidLine[i] = out[i];
+      }
     }
   }
   else
   {
     for (int i = 0; i < in.size(); ++i)
     {
-      out[i] = NULL8;
+      out[i] = lastValidLine[i];
     }
   }
 }

@@ -45,9 +45,9 @@ void IsisMain() {
   p.KeepTemporaryFiles(!ui.GetBoolean("REMOVE"));
 
   // Run marnonoise to remove noise
-  p.AddToPipeline("marnonoise");
-  p.Application("marnonoise").SetInputParameter("FROM", true);
-  p.Application("marnonoise").SetOutputParameter("TO", "marnonoise");
+  p.AddToPipeline("marnonoise", "marnonoise1");
+  p.Application("marnonoise1").SetInputParameter("FROM", true);
+  p.Application("marnonoise1").SetOutputParameter("TO", "marnonoise1");
 
   // Run findrx on the cube to find the actual position of the reseaus
   auto &reseaus = fromCube.label()->findGroup("Reseaus", Pvl::Traverse);
@@ -65,23 +65,50 @@ void IsisMain() {
   p.Application("remrx").AddParameter("SDIM", "SDIM");
   p.Application("remrx").AddParameter("LDIM", "LDIM");
 
-  // Run a low pass filter on the null data in the cube
-  p.AddToPipeline("lowpass", "pass1");
-  p.Application("pass1").SetInputParameter("FROM", true);
-  p.Application("pass1").SetOutputParameter("TO", "lowpass1");
-  p.Application("pass1").AddConstParameter("SAMP", "3");
-  p.Application("pass1").AddConstParameter("LINE", "3");
-  p.Application("pass1").AddConstParameter("MINIMUM", "4");
-  p.Application("pass1").AddConstParameter("FILTER", "outside");
+  // Need to do this before 'trim', because trim removes the missing line markers.
+  // Need to run it after 'remrx' because we don't want to propagate reseau markers without any way to clean them up.
+  p.AddToPipeline("mar9mlrp");
+  p.Application("mar9mlrp").SetInputParameter("FROM", true);
+  p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
 
-  // Run a low pass filter on the null data in the cube
-  p.AddToPipeline("lowpass", "pass2");
-  p.Application("pass2").SetInputParameter("FROM", true);
-  p.Application("pass2").SetOutputParameter("TO", "lowpass2");
-  p.Application("pass2").AddConstParameter("SAMP", "3");
-  p.Application("pass2").AddConstParameter("LINE", "3");
-  p.Application("pass2").AddConstParameter("MINIMUM", "4");
-  p.Application("pass2").AddConstParameter("FILTER", "outside");
+  // Fill in the nulls.
+  p.AddToPipeline("fillgap", "fillgap1-line");
+  p.Application("fillgap1-line").SetInputParameter("FROM", true);
+  p.Application("fillgap1-line").SetOutputParameter("TO", "fillgap1-line");
+  p.Application("fillgap1-line").AddConstParameter("DIRECTION", "LINE");
+  p.Application("fillgap1-line").AddConstParameter("ONLYFILLNULLS", "true");
+
+  p.AddToPipeline("fillgap", "fillgap1-sample");
+  p.Application("fillgap1-sample").SetInputParameter("FROM", true);
+  p.Application("fillgap1-sample").SetOutputParameter("TO", "fillgap1-sample");
+  p.Application("fillgap1-sample").AddConstParameter("DIRECTION", "sample");
+  p.Application("fillgap1-sample").AddConstParameter("ONLYFILLNULLS", "true");
+
+  // Some images are stubborn and need a second cleaning. 07794013, for example.
+  p.AddToPipeline("marnonoise", "marnonoise2");
+  p.Application("marnonoise2").SetInputParameter("FROM", true);
+  p.Application("marnonoise2").SetOutputParameter("TO", "marnonoise2");
+
+  p.AddToPipeline("fillgap", "fillgap2-line");
+  p.Application("fillgap2-line").SetInputParameter("FROM", true);
+  p.Application("fillgap2-line").SetOutputParameter("TO", "fillgap2-line");
+  p.Application("fillgap2-line").AddConstParameter("DIRECTION", "LINE");
+  p.Application("fillgap2-line").AddConstParameter("ONLYFILLNULLS", "true");
+
+  p.AddToPipeline("fillgap", "fillgap2-sample");
+  p.Application("fillgap2-sample").SetInputParameter("FROM", true);
+  p.Application("fillgap2-sample").SetOutputParameter("TO", "fillgap2-sample");
+  p.Application("fillgap2-sample").AddConstParameter("DIRECTION", "sample");
+  p.Application("fillgap2-sample").AddConstParameter("ONLYFILLNULLS", "true");
+
+  // Some stubborn stains STILL persist.
+  p.AddToPipeline("viknosalt");
+  p.Application("viknosalt").SetInputParameter("FROM", true);
+  p.Application("viknosalt").SetOutputParameter("TO", "viknosalt");
+
+  p.AddToPipeline("viknopepper");
+  p.Application("viknopepper").SetInputParameter("FROM", true);
+  p.Application("viknopepper").SetOutputParameter("TO", "viknosalt");
 
   // Run trim to remove data outside of visual frame
   p.AddToPipeline("trim");
@@ -91,9 +118,9 @@ void IsisMain() {
   p.Application("trim").AddConstParameter("LEFT", "11");
   p.Application("trim").AddConstParameter("RIGHT", "8");
 
-  p.AddToPipeline("mar9mlrp");
-  p.Application("mar9mlrp").SetInputParameter("FROM", true);
-  p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
+  p.AddToPipeline("mar9psr");
+  p.Application("mar9psr").SetInputParameter("FROM", true);
+  p.Application("mar9psr").SetOutputParameter("TO", "mar9psr");
 
   cout << p;
   p.Run();

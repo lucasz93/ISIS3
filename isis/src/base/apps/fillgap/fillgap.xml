@@ -161,6 +161,17 @@
         </list>
       </parameter>
     </group>
+
+    <group name="Options">
+      <parameter name="ONLYFILLNULLS">
+        <type>boolean</type>
+        <default>false</default>
+        <brief>Special pixel types to fill</brief>
+        <description>
+          Sets whether LRS and HRS are filled, or propagated.
+        </description>
+      </parameter>
+    </group>
   </groups>
   <examples>
     <example>

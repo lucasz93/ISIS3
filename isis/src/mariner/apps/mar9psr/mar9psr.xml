@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9mlrp" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+   Mariner 9 Pinstripe Filter
+  </brief>
+
+  <description>
+    <p>
+      This procedure finds and removes pinstripes in Mariner 9 images, as
+      documented in M9PSR.  The input image must be 16-bit; the output image
+      will also be 16-bit.  FLT16B is used to create two low-pass filtered
+      versions of the input image:  1 x 25 pixels and 7 x 25 pixels.  M9PSR is
+      used to find the difference between the two filtered versions and 
+      subtract the difference from the input image.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner 9</missionItem>
+  </category>
+
+  <history>
+    <change name="Ken Herkenhoff" date="1987-08-17">
+      Original version
+    </change>
+    <change name="Tracie Stoewe" date="1987-11-16">
+       Added NIMS documentation
+    </change>
+    <change name="Janet Barrett" date="2001-03-13">
+      Port to Unix
+    </change>
+    <change name="Lucas Zadrozny" date="2023-01-25">
+      Port to ISIS3
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input file to be restored
+        </brief>
+        <description>
+          The Mariner 9 input image file must be 16-bit, and is usually
+          the result of level 1 processing. The image must NOT have
+          been geometrically transformed in any way. Do NOT include the
+          extension with the filename. The program will assume .cub as
+          the filename extension.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+
+      <parameter name="TO">
+        <type>cube</type>
+        <fileMode>output</fileMode>
+        <brief>
+          Output cube
+        </brief>
+        <description>
+          The output image will also be 16-bit, with pinstripe noise
+          removed. If the file extension is omitted, then ".cub" will
+          be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+
+</application>
+

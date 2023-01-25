@@ -287,7 +287,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
         break;
 
       case 8:   // 369 total images.
-      case 10:  // 2 total images. Both exist in a sequennce of Violet.
+      case 10:  // 2 total images. Both exist in a sequence of Violet.
         filterCenter = .414;
         filterName = "Violet";
         filterPos = "8";
@@ -342,7 +342,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   // Create the band bin group
   PvlGroup bandBin("BandBin");
   bandBin += PvlKeyword("FilterName", filterName);
-  bandBin += PvlKeyword("FilterNumber", filterPos);
+  bandBin += PvlKeyword("FilterNumber", filterId);
   bandBin += PvlKeyword("OriginalBand", "1");
   QString center = toString(filterCenter);
   bandBin += PvlKeyword("Center", center);
