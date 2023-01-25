@@ -91,7 +91,7 @@ static QString GetCalibrationFilePrefix(Pvl& fromLabels, Pvl& previousLabels)
 {
   UserInterface &ui = Application::GetUserInterface();
   QString filter1 = fromLabels.findKeyword("FilterNumber", Pvl::Traverse);
-  QString filter2 = previousLabels.findKeyword("FilterNumber", Pvl::Traverse);
+  QString filter2 = previousLabels.findKeyword("FilterPosition", Pvl::Traverse);
 
   if (filter1 == "*")
   {

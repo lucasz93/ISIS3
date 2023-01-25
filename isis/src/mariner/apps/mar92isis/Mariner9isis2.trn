@@ -95,6 +95,16 @@ Group = FilterNumber
   InputPosition  = ROOT
   OutputName     = FilterNumber
   OutputPosition = (Object, IsisCube, Group, BandBin)
+  Translation    = (*, *)
+End_Group
+
+Group = FilterPosition
+  Auto
+  InputKey       = FILTER_NUMBER
+  InputGroup     = ROOT
+  InputPosition  = ROOT
+  OutputName     = FilterPosition
+  OutputPosition = (Object, IsisCube, Group, BandBin)
   Translation    = (*, 0)
   Translation    = (1, 1)
   Translation    = (2, 2)

@@ -343,6 +343,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
   PvlGroup bandBin("BandBin");
   bandBin += PvlKeyword("FilterName", filterName);
   bandBin += PvlKeyword("FilterNumber", filterId);
+  bandBin += PvlKeyword("FilterPosition", filterPos);
   bandBin += PvlKeyword("OriginalBand", "1");
   QString center = toString(filterCenter);
   bandBin += PvlKeyword("Center", center);

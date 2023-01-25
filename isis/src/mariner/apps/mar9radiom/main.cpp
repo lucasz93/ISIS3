@@ -49,7 +49,7 @@ void IsisMain() {
   const QString FILTER = labels->findKeyword("FilterName", Pvl::Traverse);
   std::cout << "Camera: " << CAMERA.toStdString() << std::endl;
   const int IF = CAMERA == "M9_VIDICON_A"
-    ? (int)labels->findKeyword("FilterNumber", Pvl::Traverse)
+    ? (int)labels->findKeyword("FilterPosition", Pvl::Traverse)
     : 9;
   if (!ui.GetBoolean("FALLBACK") && IF != 2 && IF != 5 && IF != 9)
   {
@@ -129,7 +129,7 @@ static char GetFilterCalibration(int IF)
       return 'b';
 
     default:
-      throw IException(IException::User, "Unknown FilterNumber", _FILEINFO_);
+      throw IException(IException::User, "Unknown FilterPosition [" + std::to_string(IF) + "]", _FILEINFO_);
   }
 }
 
