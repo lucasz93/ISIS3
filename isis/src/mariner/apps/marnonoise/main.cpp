@@ -22,13 +22,6 @@ void IsisMain() {
   // Check that it is a Mariner cube.
   Cube iCube;
   iCube.open(ui.GetCubeName("FROM"));
-  Pvl * labels = iCube.label();
-  const QString spacecraftName = labels->findKeyword("SpacecraftName", Pvl::Traverse);
-  if ("Mariner_9" != spacecraftName && "Mariner_10" != spacecraftName) {
-    QString msg = "The cube [" + ui.GetCubeName("FROM") + "] does not appear" +
-        " to be a Mariner9 or Mariner10 cube";
-    throw IException(IException::User, msg, _FILEINFO_);
-  }
 
   // Open the input cube
   Pipeline p("marnonoise");
