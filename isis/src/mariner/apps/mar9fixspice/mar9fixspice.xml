@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<application name="mar9radiom" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://isis.astrogeology.usgs.gov/Schemas/Application/application.xsd">
+  <brief>
+    Fixes InstrumentPointing and InstrumentPosition
+  </brief>
+
+  <description>
+    <p>
+      The Mariner 9 SCLK works for most Mariner 9 labels. However images on the end of
+      a time partition attempt to interpolate with the next time partition, leading to
+      strange time codes. These time codes cause failures when looking up the CKs and SPKs.
+      
+      mar9fixspice embeds the InstrumentPointing and InstrumentPosition directly in the
+      cube, preventing the need for any sort of lookup.
+    </p>
+  </description>
+
+  <category>
+    <missionItem>Mariner 9</missionItem>
+  </category>
+
+  <history>
+    <change name="Lucas Zadrozny" date="2023-02-06">
+      Origina version
+    </change>
+  </history>
+
+  <groups>
+    <group name="Files">
+      <parameter name="FROM">
+        <type>cube</type>
+        <fileMode>input</fileMode>
+        <brief>
+          Input image file name
+        </brief>
+        <description>
+          The input Mariner 9 image file must be linearized (16-bit),
+          and not geometrically transformed. If the file extension
+          is omitted, then ".cub" will be assumed.
+        </description>
+        <filter>
+          *.cub
+        </filter>
+      </parameter>
+    </group>
+  </groups>
+
+</application>
+

@@ -120,11 +120,6 @@ static QString GetCalibrationFilePrefix(Pvl& fromLabels, Pvl& previousLabels)
 
   if (fil != "b" && fil != "2" && fil != "4")
   {
-    if (ui.WasEntered("FORCE"))
-    {
-      // The green filter is the closest match to the polaroid, blue and violet filters.
-      return "4";
-    }
     throw IException(IException::User, "Calibration file does not exist for this filter combination (FROM = " + filter1 + ", PREVIOUS = " + filter2 + ")", _FILEINFO_);
   }
 

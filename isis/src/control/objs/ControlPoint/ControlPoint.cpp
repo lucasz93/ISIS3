@@ -914,6 +914,8 @@ namespace Isis {
     int goodMeasures = 0;
     double pB[3];
 
+    const auto useAprioriSurfacePoint = IsFixed() || IsConstrained() || id.contains("Lidar");
+
     // loop over measures to ...
     // 1) set focal plane x,y coordinates for all unignored measures;
     // 2) sum latitude, longitude, and radius coordinates in preparation for computing a priori
@@ -947,7 +949,7 @@ namespace Isis {
       // TODO: Seems like we should be able to skip this computation if point is fixed or
       // constrained in any coordinate. Currently we are always summing coordinates here. We could
       // save time by not doing this for fixed or constrained points.
-      if (setImageSuccess) {
+      if (setImageSuccess && !useAprioriSurfacePoint) {
         goodMeasures++;
         cam->Coordinate(pB);
         xB += pB[0];
@@ -959,7 +961,7 @@ namespace Isis {
 
     // if point is Fixed or Constrained in any number of coordinates, initialize adjusted surface
     // point to a priori coordinates (set in e.g. qnet or cneteditor) and exit
-    if( IsFixed() || IsConstrained() || id.contains("Lidar")) {
+    if (useAprioriSurfacePoint) {
       adjustedSurfacePoint = aprioriSurfacePoint;
       return Success;
     }
