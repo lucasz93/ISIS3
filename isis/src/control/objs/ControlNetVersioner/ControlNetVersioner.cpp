@@ -1600,6 +1600,9 @@ namespace Isis {
          && measure.has_lineresidual() ) {
       newMeasure->SetResidual(measure.sampleresidual(), measure.lineresidual());
     }
+    if ( measure.has_focalplanemeasuredx() && measure.has_focalplanemeasuredy()) {
+      newMeasure->SetFocalPlaneMeasured(measure.focalplanemeasuredx(), measure.focalplanemeasuredy());
+    }
 
     for (int i = 0; i < measure.log_size(); i++) {
 
@@ -2024,6 +2027,11 @@ namespace Isis {
 
         if ( controlMeasure.GetLineResidual() != Isis::Null ) {
           protoMeasure.set_lineresidual(controlMeasure.GetLineResidual());
+        }
+
+        if ( controlMeasure.GetFocalPlaneMeasuredX() != Isis::Null && controlMeasure.GetFocalPlaneMeasuredY() != Isis::Null ) {
+          protoMeasure.set_focalplanemeasuredx(controlMeasure.GetFocalPlaneMeasuredX());
+          protoMeasure.set_focalplanemeasuredy(controlMeasure.GetFocalPlaneMeasuredY());
         }
 
         if ( controlMeasure.IsRejected() ) {

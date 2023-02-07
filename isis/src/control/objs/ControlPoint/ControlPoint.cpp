@@ -935,27 +935,32 @@ namespace Isis {
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
 
-      bool setImageSuccess = cam->SetImage(m->GetSample(), m->GetLine());
-      // CSM cameras do not have focal planes so use sample and line instead
-      if (cam->GetCameraType() == Camera::Csm) {
-        m->SetFocalPlaneMeasured(m->GetSample(),
-                                 m->GetLine());
-      }
-      else {
-        m->SetFocalPlaneMeasured(cam->DistortionMap()->UndistortedFocalPlaneX(),
-                                 cam->DistortionMap()->UndistortedFocalPlaneY());
-      }
+      std::cout << m->GetFocalPlaneMeasuredX() << " " << m->GetFocalPlaneMeasuredY() << std::endl;
 
-      // TODO: Seems like we should be able to skip this computation if point is fixed or
-      // constrained in any coordinate. Currently we are always summing coordinates here. We could
-      // save time by not doing this for fixed or constrained points.
-      if (setImageSuccess && !useAprioriSurfacePoint) {
-        goodMeasures++;
-        cam->Coordinate(pB);
-        xB += pB[0];
-        yB += pB[1];
-        zB += pB[2];
-        r2B += pB[0]*pB[0] + pB[1]*pB[1] + pB[2]*pB[2];
+      // This is an optimisation for networks which already know their focal plane coordinates (eg MDIM 2.1).
+      if (!useAprioriSurfacePoint || m->GetFocalPlaneMeasuredX() == Null || m->GetFocalPlaneComputedY() == Null) {
+        bool setImageSuccess = cam->SetImage(m->GetSample(), m->GetLine());
+        // CSM cameras do not have focal planes so use sample and line instead
+        if (cam->GetCameraType() == Camera::Csm) {
+          m->SetFocalPlaneMeasured(m->GetSample(),
+                                  m->GetLine());
+        }
+        else {
+          m->SetFocalPlaneMeasured(cam->DistortionMap()->UndistortedFocalPlaneX(),
+                                  cam->DistortionMap()->UndistortedFocalPlaneY());
+        }
+
+        // TODO: Seems like we should be able to skip this computation if point is fixed or
+        // constrained in any coordinate. Currently we are always summing coordinates here. We could
+        // save time by not doing this for fixed or constrained points.
+        if (setImageSuccess && !useAprioriSurfacePoint) {
+          goodMeasures++;
+          cam->Coordinate(pB);
+          xB += pB[0];
+          yB += pB[1];
+          zB += pB[2];
+          r2B += pB[0]*pB[0] + pB[1]*pB[1] + pB[2]*pB[2];
+        }
       }
     }
 

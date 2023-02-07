@@ -109,6 +109,9 @@ message ControlPointFileEntryV0005 {
     optional double       samplesigma    = 15;
     optional double       linesigma      = 16;
     repeated MeasureLogData log          = 17;
+
+    optional double       focalPlaneMeasuredX = 18;
+    optional double       focalPlaneMeasuredY = 19;
   }
 
   //  Actual declaration of variable number of ControlMeasures
