@@ -183,6 +183,7 @@ namespace Isis {
     }
 
     if (m_instrumentPointingSolveOption != NoPointingFactors) {
+      m_anglesAprioriSigma.clear();
       if (scParameterGroup.hasKeyword("CAMERA_ANGLES_SIGMA")) {
         m_anglesAprioriSigma.append((double)(scParameterGroup.findKeyword("CAMERA_ANGLES_SIGMA")));
       }
@@ -212,6 +213,7 @@ namespace Isis {
     }
 
     if (m_instrumentPositionSolveOption != NoPositionFactors) {
+      m_positionAprioriSigma.clear();
       if (scParameterGroup.hasKeyword("SPACECRAFT_POSITION_SIGMA")) {
         m_positionAprioriSigma.append((double)(scParameterGroup.findKeyword("SPACECRAFT_POSITION_SIGMA")));
       }

@@ -192,7 +192,7 @@ void UpdateLabels(Cube *cube, const QString &labels) {
     const auto& metadata = sedr.findGroup(dasErt);
     gmt = (QString)metadata.findKeyword("MeasurementTime");
     ccamera = ((QString)metadata.findKeyword("Instrument")).mid(3, 1); // "TV*A" -> "A".
-    filterId = (QString)metadata.findKeyword("FilterID");
+    filterId = (QString)metadata.findKeyword("FilterNum");
     description = (QString)metadata.findKeyword("Description");
 
     {

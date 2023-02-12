@@ -935,8 +935,6 @@ namespace Isis {
         throw IException(IException::Programmer, msg, _FILEINFO_);
       }
 
-      std::cout << m->GetFocalPlaneMeasuredX() << " " << m->GetFocalPlaneMeasuredY() << std::endl;
-
       // This is an optimisation for networks which already know their focal plane coordinates (eg MDIM 2.1).
       if (!useAprioriSurfacePoint || m->GetFocalPlaneMeasuredX() == Null || m->GetFocalPlaneComputedY() == Null) {
         bool setImageSuccess = cam->SetImage(m->GetSample(), m->GetLine());

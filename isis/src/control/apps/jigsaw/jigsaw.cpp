@@ -387,7 +387,9 @@ namespace Isis {
     //************************************************************************************************
     QList<BundleObservationSolveSettings> observationSolveSettingsList;
     QString fromList = ui.GetFileName("FROMLIST");
+    std::cout << "Reading serial numbers..." << std::flush;
     SerialNumberList cubeSNs(fromList);
+    std::cout << "done!" << std::endl;
     // QVector<BundleObservationSolveSettings*> cubeSolveSettings(cubeSNs.size(), nullptr);
 
     if (ui.WasEntered("SCCONFIG")) {
