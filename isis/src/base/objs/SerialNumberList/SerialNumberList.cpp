@@ -370,7 +370,7 @@ namespace Isis {
    *
    * @return @b bool
    */
-  bool SerialNumberList::hasSerialNumber(QString sn) {
+  bool SerialNumberList::hasSerialNumber(QString sn) const {
     if (m_serialMap.find(sn) == m_serialMap.end()) return false;
     return true;
   }
@@ -396,7 +396,7 @@ namespace Isis {
    *
    * @return @b QString The filename matching the input serial number
    */
-  QString SerialNumberList::fileName(const QString &sn) {
+  QString SerialNumberList::fileName(const QString &sn) const {
     if (hasSerialNumber(sn)) {
       int index = m_serialMap.find(sn)->second;
       return m_pairs[index].filename;

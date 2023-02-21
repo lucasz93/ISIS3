@@ -70,12 +70,12 @@ namespace Isis {
       void add(const QString &filename, bool def2filename = false);
       void add(const QString &serialNumber, const QString &filename);
       void add(const char *serialNumber, const char *filename);
-      bool hasSerialNumber(QString sn);
+      bool hasSerialNumber(QString sn) const;
       
       void remove(const QString &sn);
 
       int size() const;
-      QString fileName(const QString &sn);
+      QString fileName(const QString &sn) const;
       QString fileName(int index);
       QString serialNumber(const QString &filename);
       QString serialNumber(int index);
