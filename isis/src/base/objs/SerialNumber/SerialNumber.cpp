@@ -15,6 +15,9 @@ find files of those names at the top level of this repository. **/
 #include "Process.h"
 #include "PvlToPvlTranslationManager.h"
 #include "FileName.h"
+#include <QMutex>
+
+static QMutex globalComposeLock;
 
 namespace Isis {
   /**
@@ -104,6 +107,8 @@ namespace Isis {
       csmTranslator.Auto(outLabel);
     }
     else {
+      QMutexLocker l(&globalComposeLock);
+
       // Get the mission name
       static QString missionTransFile = "$ISISROOT/appdata/translations/MissionName2DataDir.trn";
       static PvlToPvlTranslationManager missionXlater(missionTransFile);
