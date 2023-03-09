@@ -114,7 +114,7 @@ static void linearize(vector<Buffer *> &in, vector<Buffer *> &out)
       const float A = C[0]*D_ROW*D_ROW+C[1]*D_ROW+C[2]*IS+C[3]*D_ROW*IS+C[4];
       const float DN = std::max(0., INLINE[IS] - DCLINE[IS]);
       const float DNT = SCALE*(DN + B*DN/(DN+D));
-      D_OPLANE[IS] = std::round(DNT + A*(std::pow(DNT, 3) - 128.*DNT*DNT));
+      D_OPLANE[IS] = DNT + A*(std::pow(DNT, 3) - 128.*DNT*DNT);
   }
 
   ++D_ROW;

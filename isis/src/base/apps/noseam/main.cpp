@@ -28,6 +28,15 @@ void IsisMain() {
   Pvl &pref = Preference::Preferences();
   QString pathName = (QString)pref.findGroup("DataDirectory")["Temporary"] + "/";
 
+  QString grange = "";
+  if(ui.GetString("GRANGE") == "USER") {
+    grange = " GRANGE=" + ui.GetAsString("GRANGE") +
+             " MINLAT=" + ui.GetAsString("MINLAT") +
+             " MAXLAT=" + ui.GetAsString("MAXLAT") +
+             " MINLON=" + ui.GetAsString("MINLON") +
+             " MAXLON=" + ui.GetAsString("MAXLON");
+  }
+
   /**
    * Creates a mosaic from the original images.  It is placed here
    * so that the failure MATCHBANDBIN causes does not leave
@@ -35,7 +44,8 @@ void IsisMain() {
   */
   QString parameters = "FROMLIST=" + ui.GetFileName("FROMLIST") +
                       " MOSAIC=" + pathName + "OriginalMosaic.cub" +
-                      " MATCHBANDBIN=" + match;
+                      " MATCHBANDBIN=" + match +
+                      grange;
   ProgramLauncher::RunIsisProgram("automos", parameters);
 
   //Creates the highpass cubes from the cubes FileList
@@ -55,7 +65,8 @@ void IsisMain() {
 
   //Makes a mosaic out of the highpass cube filelist
   parameters = "FROMLIST=HighPassList.lis MOSAIC=" + pathName + "HighpassMosaic.cub"
-               + " MATCHBANDBIN=" + match;
+               + " MATCHBANDBIN=" + match
+               + grange;
   ProgramLauncher::RunIsisProgram("automos", parameters);
 
   //Does a lowpass on the original mosaic

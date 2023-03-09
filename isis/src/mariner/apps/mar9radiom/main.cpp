@@ -147,7 +147,7 @@ static void radiom(vector<Buffer *> &in, vector<Buffer *> &out)
       continue;
     }
 
-    const double v = std::floor(D_IPLANE[IS]*SF*BBUF2[IS]);
+    const double v = D_IPLANE[IS] * SF * BBUF2[IS];
     if (v <= 0)
     {
       D_OPLANE[IS] = NULL8;
