@@ -41,7 +41,7 @@ void IsisMain() {
 
   switch (imageNumber)
   {
-    // These times are listed as being invalid, in the SEDR.
+    // These times are listed as being invalid by the SCLK.
     case  1657867:
     case  1749711:
     case  4940820:
@@ -59,6 +59,10 @@ void IsisMain() {
     case 13165396:
     case 13360390:
     case 13511838:
+      break;
+
+    // These times don't seem to work.
+    case 12685643:
       break;
 
     default:

@@ -80,6 +80,17 @@
     </group>
 
     <group name="Options">
+      <parameter name="MLRP">
+        <type>boolean</type>
+          <brief>
+            Run mar9mlrp
+          </brief>
+        <description>
+          Fills in null lines.
+        </description>
+        <default><item>TRUE</item></default>
+      </parameter>
+
       <parameter name="REMOVE">
         <type>boolean</type>
           <brief>

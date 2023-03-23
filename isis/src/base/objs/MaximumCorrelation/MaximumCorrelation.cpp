@@ -11,16 +11,11 @@ find files of those names at the top level of this repository. **/
 namespace Isis {
   double MaximumCorrelation::MatchAlgorithm(Chip &pattern, Chip &subsearch) {
     MultivariateStatistics mv;
-    std::vector <double> pdn, sdn;
-    pdn.resize(pattern.Samples());
-    sdn.resize(pattern.Samples());
 
     for(int l = 1; l <= pattern.Lines(); l++) {
-      for(int s = 1; s <= pattern.Samples(); s++) {
-        pdn[s-1] = pattern.GetValue(s, l);
-        sdn[s-1] = subsearch.GetValue(s, l);
-      }
-      mv.AddData(&pdn[0], &sdn[0], pattern.Samples());
+      const auto* pdn = pattern.GetLine(1, l);
+      const auto* sdn = subsearch.GetLine(1, l);
+      mv.AddData(pdn, sdn, pattern.Samples());
     }
     double percentValid = (double) mv.ValidPixels() /
                           (pattern.Lines() * pattern.Samples());

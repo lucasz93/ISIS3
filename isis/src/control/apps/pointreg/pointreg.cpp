@@ -27,6 +27,7 @@ find files of those names at the top level of this repository. **/
 #include "Application.h"
 #include "IException.h"
 #include "iTime.h"
+#include "SerialNumber.h"
 
 using namespace std;
 namespace Isis {
@@ -183,6 +184,39 @@ namespace Isis {
       Result m_result;
   };
 
+  class RegisterStats
+  {
+  public:
+    void accumulate(ControlMeasure* cm)
+    {
+      PvlGroup group("Measure");
+
+      group += PvlKeyword("PointID",            cm->GetPointId());
+      group += PvlKeyword("SerialNumber",       cm->GetCubeSerialNumber());
+      group += PvlKeyword("Type",               ControlMeasure::MeasureTypeToString(cm->GetType()));
+
+      if (cm->IsRegistered())
+      {
+        group += PvlKeyword("AprioriSample",    toString(cm->GetAprioriSample()));
+        group += PvlKeyword("AprioriLine",      toString(cm->GetAprioriLine()));
+        
+        if (cm->HasLogData(ControlMeasureLogData::GoodnessOfFit)) {
+          group += PvlKeyword("GoodnessOfFit",  toString(cm->GetLogData(ControlMeasureLogData::GoodnessOfFit).GetNumericalValue()));
+        }
+      }
+
+      m_pvl.addGroup(group);
+    }
+
+    void write(const QString& path)
+    {
+      m_pvl.write(path);
+    }
+
+  private:
+    Pvl m_pvl;
+  };
+
 
   void registerPoint(ControlPoint *outPoint, ControlMeasure *patternCM,
       QString registerMeasures, bool outputFailed);
@@ -226,11 +260,14 @@ namespace Isis {
     }
 
     // Determine which points/measures to register
+    QString registerTo = ui.GetString("REGISTERTO");
     QString registerPoints = ui.GetString("POINTS");
     QString registerMeasures = ui.GetString("MEASURES");
 
     bool outputFailed = ui.GetBoolean("OUTPUTFAILED");
     bool outputIgnored = ui.GetBoolean("OUTPUTIGNORED");
+
+    RegisterStats registerStats;
 
     // Open the files list in a SerialNumberList for
     // reference by SerialNumber
@@ -329,18 +366,46 @@ namespace Isis {
           outPoint->SetIgnored(false);
         }
 
-        ControlMeasure * patternCM = outPoint->GetRefMeasure();
+        QList<ControlMeasure*> patternCMs;
+        QList<ControlMeasure*> candidateCMs;
+        if (registerTo == "REFERENCE") {
+          patternCMs.push_back(outPoint->GetRefMeasure());
+        }
+        else {
+          for (auto& cm : outPoint->getMeasures(true))
+          {
+            if (!cm->IsMeasured()) {
+              candidateCMs.push_back(cm);
+            }
+            else {
+              patternCMs.push_back(cm);
+            }
+          }
+        }
+
+        for (const auto& patternCM : patternCMs)
+        {
+          outPoint->SetRefMeasure(patternCM);
+
+          if (validate != "ONLY") {
+            registerPoint(outPoint, patternCM, registerMeasures, outputFailed);
+          }
+          if (validate != "SKIP") {
+            validatePoint(outPoint, patternCM, ui.GetDouble("SHIFT"));
+          }
+
+          if (registerTo == "REGISTERED") {
+            for (auto& cm : candidateCMs)
+            {
+              registerStats.accumulate(cm);
+              cm->SetType(ControlMeasure::Candidate); // Reset for the pattern loop.
+            }
+          }
+        }
 
         // In case this is an implicit reference, make it explicit since we'll be
         // registering measures to it
-        outPoint->SetRefMeasure(patternCM);
-
-        if (validate != "ONLY") {
-          registerPoint(outPoint, patternCM, registerMeasures, outputFailed);
-        }
-        if (validate != "SKIP") {
-          validatePoint(outPoint, patternCM, ui.GetDouble("SHIFT"));
-        }
+        outPoint->SetRefMeasure(outPoint->GetRefMeasure());
 
         // Check to see if the control point has now been assigned
         // to "ignore".  If not, add it to the network. If so, only
@@ -509,7 +574,12 @@ namespace Isis {
       appLog->addLogGroup(validationTemplate);
     }
 
-    outNet.Write(ui.GetFileName("ONET"));
+    if (registerTo == "REFERENCE") {
+      outNet.Write(ui.GetFileName("ONET"));
+    }
+    else {
+      registerStats.write(ui.GetFileName("OLOG"));
+    }
 
     delete ar;
     ar = NULL;
@@ -789,6 +859,14 @@ namespace Isis {
 
   // Verify a cube has either a Camera or a Projection, throw an exception if not
   void verifyCube(Cube & cube) {
+    static std::set<QString> valid;
+
+    const auto sn = SerialNumber::Compose(cube);
+    if (valid.find(sn) != valid.end())
+    {
+      return;
+    }
+
     try {
       cube.camera();
     }
@@ -801,6 +879,8 @@ namespace Isis {
         throw projError;
       }
     }
+
+    valid.emplace(sn);
   }
 
 

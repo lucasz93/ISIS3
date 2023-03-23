@@ -158,20 +158,22 @@ namespace Isis {
   void Statistics::AddData(const double data) {
     m_totalPixels++;
 
-    if (Isis::IsNullPixel(data)) {
-      m_nullPixels++;
-    }
-    else if (Isis::IsHisPixel(data)) {
-      m_hisPixels++;
-    }
-    else if (Isis::IsHrsPixel(data)) {
-      m_hrsPixels++;
-    }
-    else if (Isis::IsLisPixel(data)) {
-      m_lisPixels++;
-    }
-    else if (Isis::IsLrsPixel(data)) {
-      m_lrsPixels++;
+    if(Isis::IsSpecial(data)) {
+      if (Isis::IsNullPixel(data)) {
+        m_nullPixels++;
+      }
+      else if (Isis::IsHisPixel(data)) {
+        m_hisPixels++;
+      }
+      else if (Isis::IsHrsPixel(data)) {
+        m_hrsPixels++;
+      }
+      else if (Isis::IsLisPixel(data)) {
+        m_lisPixels++;
+      }
+      else if (Isis::IsLrsPixel(data)) {
+        m_lrsPixels++;
+      }
     }
     else if (AboveRange(data)) {
       m_overRangePixels++;
@@ -217,20 +219,22 @@ namespace Isis {
     m_removedData = true;
     m_totalPixels--;
 
-    if (Isis::IsNullPixel(data)) {
-      m_nullPixels--;
-    }
-    else if (Isis::IsHisPixel(data)) {
-      m_hisPixels--;
-    }
-    else if (Isis::IsHrsPixel(data)) {
-      m_hrsPixels--;
-    }
-    else if (Isis::IsLisPixel(data)) {
-      m_lisPixels--;
-    }
-    else if (Isis::IsLrsPixel(data)) {
-      m_lrsPixels--;
+    if (Isis::IsSpecial(data)) {
+      if (Isis::IsNullPixel(data)) {
+        m_nullPixels--;
+      }
+      else if (Isis::IsHisPixel(data)) {
+        m_hisPixels--;
+      }
+      else if (Isis::IsHrsPixel(data)) {
+        m_hrsPixels--;
+      }
+      else if (Isis::IsLisPixel(data)) {
+        m_lisPixels--;
+      }
+      else if (Isis::IsLrsPixel(data)) {
+        m_lrsPixels--;
+      }
     }
     else if (AboveRange(data)) {
       m_overRangePixels--;

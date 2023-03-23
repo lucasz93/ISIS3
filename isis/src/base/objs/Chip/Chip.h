@@ -164,6 +164,14 @@ namespace Isis {
         return m_buf[line-1][sample-1];
       }
 
+      inline const double* GetLine(int sample, int line) const {
+        return &m_buf[line-1][sample-1];
+      }
+
+      inline void SetLine(int sample, int line, int count, const double* src) {
+        memcpy(&m_buf[line-1][sample-1], src, count * sizeof(*src));
+      }
+
       void TackCube(const double cubeSample, const double cubeLine);
 
       /**

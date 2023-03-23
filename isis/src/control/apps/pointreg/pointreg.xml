@@ -316,6 +316,22 @@ every other measure in the point to that reference location.  An
           </filter>
         </parameter>
 
+        <parameter name="OLOG">
+          <type>filename</type>
+          <fileMode>output</fileMode>
+          <brief>
+            Output register log
+          </brief>
+          <description>
+            This is the output control network containing all the
+            newly-registered points in addition to anything left unchanged from
+            the input network.
+          </description>
+          <filter>
+            *.net
+          </filter>
+        </parameter>
+
        <parameter name="FLATFILE">
           <type>filename</type>
           <fileMode>output</fileMode>
@@ -364,6 +380,59 @@ every other measure in the point to that reference location.  An
           run of "pointreg" will remain in the output control network.
         </description>
         <default><item>True</item></default>
+      </parameter>
+    </group>
+
+    <group name="Mode">
+      <parameter name="REGISTERTO">
+        <type>string</type>
+        <brief>
+          How to handle "ignored" points
+        </brief>
+        <description>
+          If this parameter is set to IGNORED, ignored points will be
+          reprocessed. It may set them to "valid" if they are acceptable in a
+          new tolerance range. If this parameter is set to the default value of
+          NOTIGNORED, only the "valid" or "non-ignored" points will be
+          registered.  Otherwise, if it is set to ALL, every point will be
+          registered.  Note that if certain Control Points will not be
+          processed, it implies that all their measures will not be
+          processed as well.
+        </description>
+        <default><item>REFERENCE</item></default>
+        <list>
+          <option value="REFERENCE">
+            <brief>
+              Register against reference measures
+            </brief>
+            <description>
+              A candidate will be registered ONLY to the reference measure.
+              This is the default.
+            </description>
+            <inclusions>
+              <item>ONET</item>
+            </inclusions>
+            <exclusions>
+              <item>OLOG</item>
+            </exclusions>
+          </option>
+          <option value="REGISTERED">
+            <brief>
+              Register against registered measures
+            </brief>
+            <description>
+              A candidate will be registered against all registered measures.
+              The output to this mode isn't a control network, but a PVL
+            </description>
+            <inclusions>
+              <item>OLOG</item>
+            </inclusions>
+            <exclusions>
+              <item>ONET</item>
+              <item>MEASURES</item>
+            </exclusions>
+          </option>
+        </list>
       </parameter>
     </group>
 

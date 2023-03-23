@@ -67,9 +67,12 @@ void IsisMain() {
 
   // Need to do this before 'trim', because trim removes the missing line markers.
   // Need to run it after 'remrx' because we don't want to propagate reseau markers without any way to clean them up.
-  p.AddToPipeline("mar9mlrp");
-  p.Application("mar9mlrp").SetInputParameter("FROM", true);
-  p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
+  if (ui.GetBoolean("MLRP"))
+  {
+    p.AddToPipeline("mar9mlrp");
+    p.Application("mar9mlrp").SetInputParameter("FROM", true);
+    p.Application("mar9mlrp").SetOutputParameter("TO", "mar9mlrp");
+  }
 
   // Fill in the nulls.
   p.AddToPipeline("fillgap", "fillgap1-line");
